@@ -1,0 +1,274 @@
+{
+  "$defs": {
+    "AskUser": {
+      "properties": {
+        "id": {
+          "description": "一個唯一的動作 ID，可以用 UUID 生成",
+          "title": "Id",
+          "type": "string"
+        },
+        "trigger_timestamp": {
+          "description": "此動作在影片中的觸發時間點 (秒)",
+          "title": "Trigger Timestamp",
+          "type": "number"
+        },
+        "comment": {
+          "description": "AI 做出此反應的簡要理由",
+          "title": "Comment",
+          "type": "string"
+        },
+        "action_type": {
+          "const": "ASK_USER",
+          "title": "Action Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "trigger_timestamp",
+        "comment",
+        "action_type"
+      ],
+      "title": "AskUser",
+      "type": "object"
+    },
+    "EndReaction": {
+      "properties": {
+        "id": {
+          "description": "一個唯一的動作 ID，可以用 UUID 生成",
+          "title": "Id",
+          "type": "string"
+        },
+        "trigger_timestamp": {
+          "description": "此動作在影片中的觸發時間點 (秒)",
+          "title": "Trigger Timestamp",
+          "type": "number"
+        },
+        "comment": {
+          "description": "AI 做出此反應的簡要理由",
+          "title": "Comment",
+          "type": "string"
+        },
+        "action_type": {
+          "const": "END_REACTION",
+          "default": "END_REACTION",
+          "title": "Action Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "trigger_timestamp",
+        "comment"
+      ],
+      "title": "EndReaction",
+      "type": "object"
+    },
+    "PauseAction": {
+      "properties": {
+        "id": {
+          "description": "一個唯一的動作 ID，可以用 UUID 生成",
+          "title": "Id",
+          "type": "string"
+        },
+        "trigger_timestamp": {
+          "description": "此動作在影片中的觸發時間點 (秒)",
+          "title": "Trigger Timestamp",
+          "type": "number"
+        },
+        "comment": {
+          "description": "AI 做出此反應的簡要理由",
+          "title": "Comment",
+          "type": "string"
+        },
+        "action_type": {
+          "const": "PAUSE",
+          "default": "PAUSE",
+          "title": "Action Type",
+          "type": "string"
+        },
+        "duration_seconds": {
+          "description": "暫停的持續時間 (秒)",
+          "title": "Duration Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "trigger_timestamp",
+        "comment",
+        "duration_seconds"
+      ],
+      "title": "PauseAction",
+      "type": "object"
+    },
+    "ReplaySegmentAction": {
+      "properties": {
+        "id": {
+          "description": "一個唯一的動作 ID，可以用 UUID 生成",
+          "title": "Id",
+          "type": "string"
+        },
+        "trigger_timestamp": {
+          "description": "此動作在影片中的觸發時間點 (秒)",
+          "title": "Trigger Timestamp",
+          "type": "number"
+        },
+        "comment": {
+          "description": "AI 做出此反應的簡要理由",
+          "title": "Comment",
+          "type": "string"
+        },
+        "action_type": {
+          "const": "REPLAY_SEGMENT",
+          "default": "REPLAY_SEGMENT",
+          "title": "Action Type",
+          "type": "string"
+        },
+        "start_timestamp": {
+          "description": "重看片段的開始時間(秒)",
+          "title": "Start Timestamp",
+          "type": "number"
+        },
+        "end_timestamp": {
+          "description": "重看片段的結束時間(秒)",
+          "title": "End Timestamp",
+          "type": "number"
+        },
+        "post_replay_behavior": {
+          "default": "RESUME_FROM_ORIGINAL",
+          "enum": [
+            "RESUME_FROM_ORIGINAL",
+            "STAY_PAUSED_AT_END"
+          ],
+          "title": "Post Replay Behavior",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "trigger_timestamp",
+        "comment",
+        "start_timestamp",
+        "end_timestamp"
+      ],
+      "title": "ReplaySegmentAction",
+      "type": "object"
+    },
+    "SeekAction": {
+      "properties": {
+        "id": {
+          "description": "一個唯一的動作 ID，可以用 UUID 生成",
+          "title": "Id",
+          "type": "string"
+        },
+        "trigger_timestamp": {
+          "description": "此動作在影片中的觸發時間點 (秒)",
+          "title": "Trigger Timestamp",
+          "type": "number"
+        },
+        "comment": {
+          "description": "AI 做出此反應的簡要理由",
+          "title": "Comment",
+          "type": "string"
+        },
+        "action_type": {
+          "const": "SEEK",
+          "default": "SEEK",
+          "title": "Action Type",
+          "type": "string"
+        },
+        "target_timestamp": {
+          "description": "要跳轉到的影片時間點 (秒)",
+          "title": "Target Timestamp",
+          "type": "number"
+        },
+        "post_seek_behavior": {
+          "default": "STAY_PAUSED",
+          "enum": [
+            "RESUME_PLAYBACK",
+            "STAY_PAUSED"
+          ],
+          "title": "Post Seek Behavior",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "trigger_timestamp",
+        "comment",
+        "target_timestamp"
+      ],
+      "title": "SeekAction",
+      "type": "object"
+    },
+    "SpeakAction": {
+      "properties": {
+        "id": {
+          "description": "一個唯一的動作 ID，可以用 UUID 生成",
+          "title": "Id",
+          "type": "string"
+        },
+        "trigger_timestamp": {
+          "description": "此動作在影片中的觸發時間點 (秒)",
+          "title": "Trigger Timestamp",
+          "type": "number"
+        },
+        "comment": {
+          "description": "AI 做出此反應的簡要理由",
+          "title": "Comment",
+          "type": "string"
+        },
+        "action_type": {
+          "const": "SPEAK",
+          "default": "SPEAK",
+          "title": "Action Type",
+          "type": "string"
+        },
+        "text": {
+          "description": "AI 要說的內容",
+          "title": "Text",
+          "type": "string"
+        },
+        "pause_video": {
+          "default": true,
+          "description": "說話時是否需要先暫停影片。如果為 true，則在說話期間影片會暫停，否則，視頻不會暫停，一边说话，视频会一边播放。如果句子较短，且下一句话离的较远，建议设置为 false，这样可以让视频更连贯。",
+          "title": "Pause Video",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "trigger_timestamp",
+        "comment",
+        "text"
+      ],
+      "title": "SpeakAction",
+      "type": "object"
+    }
+  },
+  "items": {
+    "anyOf": [
+      {
+        "$ref": "#/$defs/SpeakAction"
+      },
+      {
+        "$ref": "#/$defs/PauseAction"
+      },
+      {
+        "$ref": "#/$defs/SeekAction"
+      },
+      {
+        "$ref": "#/$defs/ReplaySegmentAction"
+      },
+      {
+        "$ref": "#/$defs/AskUser"
+      },
+      {
+        "$ref": "#/$defs/EndReaction"
+      }
+    ]
+  },
+  "title": "ActionScript",
+  "type": "array"
+}
