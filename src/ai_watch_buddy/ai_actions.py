@@ -1,5 +1,6 @@
 import json
 from typing import Literal
+import numpy as np
 from pydantic import BaseModel, Field, RootModel
 
 
@@ -20,6 +21,10 @@ class BaseAction(BaseModel):
 class SpeakAction(BaseAction):
     action_type: Literal["SPEAK"] = "SPEAK"
     text: str = Field(..., description="AI 要說的內容")
+    audio: np.ndarray | None = Field(
+        None,
+        description="AI 說話的音頻數據，由tts 生成，不要填写。",
+    )
     # 這個布林值非常關鍵，它決定了是「畫外音」還是「暫停解說」
     pause_video: bool = Field(
         default=True,
