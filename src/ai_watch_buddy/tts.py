@@ -10,33 +10,37 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
 
-async def generate_audio(
-    self, text: str, voice: str = "zh-CN-XiaoxiaoNeural"
-) -> str | None:
-    """
-    Generate speech audio and return as base64 string.
-    text: str
-        the text to speak
+class TTSEngine:
+    def __init__(self):
+        pass
 
-    Returns:
-    str: base64 encoded audio data, or None if generation fails.
-    """
-    try:
-        communicate = edge_tts.Communicate(text, voice)
-        buffer = io.BytesIO()
-        async for chunk in communicate.stream():
-            if chunk["type"] == "audio" and "data" in chunk:
-                buffer.write(chunk["data"])
+    async def generate_audio(
+        self, text: str, voice: str = "zh-CN-XiaoxiaoNeural"
+    ) -> str | None:
+        """
+        Generate speech audio and return as base64 string.
+        text: str
+            the text to speak
 
-        buffer.seek(0)
-        audio_bytes = buffer.read()
-        base64_audio = base64.b64encode(audio_bytes).decode("utf-8")
-        return base64_audio
+        Returns:
+        str: base64 encoded audio data, or None if generation fails.
+        """
+        try:
+            communicate = edge_tts.Communicate(text, voice)
+            buffer = io.BytesIO()
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio" and "data" in chunk:
+                    buffer.write(chunk["data"])
 
-    except Exception as e:
-        logger.critical(f"\nError: edge-tts unable to generate audio: {e}")
-        logger.critical("It's possible that edge-tts is blocked in your region.")
-        return None
+            buffer.seek(0)
+            audio_bytes = buffer.read()
+            base64_audio = base64.b64encode(audio_bytes).decode("utf-8")
+            return base64_audio
+
+        except Exception as e:
+            logger.critical(f"\nError: edge-tts unable to generate audio: {e}")
+            logger.critical("It's possible that edge-tts is blocked in your region.")
+            return None
 
 
 # en-US-AvaMultilingualNeural
