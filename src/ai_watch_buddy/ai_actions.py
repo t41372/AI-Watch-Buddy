@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field, RootModel
 
 # 這是一個基礎模型，定義了所有 Action 的共性
 class BaseAction(BaseModel):
+    model_config = {"arbitrary_types_allowed": True}
+    
     # 每個 Action 都應該有一個獨一無二的 ID，方便追蹤和日誌記錄
     id: str = Field(..., description="一個唯一的動作 ID，可以用 UUID 生成")
     # 這個 Action 在影片的哪個時間點被觸發？這是反應的錨點。
@@ -30,6 +32,7 @@ class SpeakAction(BaseAction):
         default=True,
         description="說話時是否需要先暫停影片。如果為 true，則在說話期間影片會暫停，否則，視頻不會暫停，一边说话，视频会一边播放。如果句子较短，且下一句话离的较远，建议设置为 false，这样可以让视频更连贯。",
     )
+    
 
 
 # 2. 暫停 (Pause) - 用於模擬思考、驚訝等無言的反應
