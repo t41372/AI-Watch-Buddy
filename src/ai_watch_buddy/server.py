@@ -83,6 +83,7 @@ async def websocket_sender(websocket: WebSocket, session: SessionState):
     """
     # 首先，等待直到 session 准备就绪
     while session.status != "session_ready" and session.status != "error":
+        await websocket.send_json({"type": "session_loading"})
         await asyncio.sleep(0.1)
 
     # 如果 session 在连接时已经出错，直接发送错误并关闭
@@ -148,7 +149,9 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
     session = session_storage.get(session_id)
     if not session:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-        logger.warning(f"WebSocket connection rejected for unknown session: {session_id}")
+        logger.warning(
+            f"WebSocket connection rejected for unknown session: {session_id}"
+        )
         return
 
     await manager.connect(websocket, session_id)

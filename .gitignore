@@ -1,3 +1,7 @@
+
+# project-specific files
+video_cache/*
+
 # Python-generated files
 __pycache__/
 *.py[oc]

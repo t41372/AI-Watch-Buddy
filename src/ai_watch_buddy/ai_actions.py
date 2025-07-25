@@ -20,9 +20,9 @@ class BaseAction(BaseModel):
         default_factory=lambda: str(uuid.uuid4()),
         description="A unique identifier for this action instance.",
     )
-    trigger_time: float = Field(
+    trigger_timestamp: float = Field(
         ...,
-        description="The video timestamp (in seconds) when this action should be triggered. Actions with the same trigger_time will be executed sequentially by the player.",
+        description="The video timestamp (in seconds) when this action should be triggered. Actions with the same trigger_timestamp will be executed sequentially by the player.",
     )
     comment: str = Field(
         ...,

@@ -1,22 +1,25 @@
 import asyncio
+from pathlib import Path
 from loguru import logger
 
 from .ai_actions import Action
 from .session import session_storage
 from .action_generate import generate_actions
+from .fetch_video import download_video_async
 
 
 async def download_video(video_url: str, session_id: str) -> str:
     """
-    Placeholder for the video download logic.
-    In a real scenario, this would download the video from the URL
-    and return the local file path.
+    Downloads the video from the given URL and returns the local file path.
     """
-    logger.info(f"[{session_id}] Simulating video download for: {video_url}")
-    await asyncio.sleep(2)  # Simulate I/O bound task
-    local_path = f"/tmp/videos/{session_id}_video.mp4"  # Dummy path for the prototype
-    logger.info(f"[{session_id}] Video 'downloaded' to: {local_path}")
-    return local_path
+    # Create session-specific downloads directory
+    downloads_dir = Path("downloads") / session_id
+
+    # Use the imported download_video_async function
+    local_path = await download_video_async(video_url, downloads_dir)
+
+    logger.info(f"[{session_id}] Video downloaded to: {local_path}")
+    return str(local_path)
 
 
 async def run_action_generation_pipeline(session_id: str) -> None:
@@ -59,9 +62,7 @@ async def run_action_generation_pipeline(session_id: str) -> None:
         logger.info(
             f"[{session_id}] Action generation completed. Total actions put in queue: {actions_generated_count}"
         )
-        # FIX: Set status to session_ready AFTER generation is complete.
-        session.status = "session_ready"
-        logger.info(f"[{session_id}] Session status updated to 'session_ready'.")
+        
 
     except Exception as e:
         logger.error(
@@ -96,9 +97,12 @@ async def initial_pipeline(session_id: str) -> None:
         return
 
     try:
+        
         # Step 1: Download video
         session.status = "downloading_video"
-        local_video_path = await download_video(session.video_url, session_id)
+        local_video_path = str(
+            await download_video_async(session.video_url, target_dir="video_cache")
+        )
         session.local_video_path = local_video_path
         session.status = "video_ready"
 
@@ -108,6 +112,10 @@ async def initial_pipeline(session_id: str) -> None:
         # 3. 在后台开始运行 action 生成（生产者）
         # 注意，我们在这里只是启动它，并不会等待它完成
         asyncio.create_task(run_action_generation_pipeline(session_id))
+        
+        # FIX: Set status to session_ready AFTER generation is complete.
+        session.status = "session_ready"
+        logger.info(f"[{session_id}] Session status updated to 'session_ready'.")
 
     except Exception as e:
         logger.error(
