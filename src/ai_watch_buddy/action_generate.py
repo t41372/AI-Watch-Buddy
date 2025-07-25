@@ -1,17 +1,12 @@
-from .ai_actions import ActionScript
+import json
+import asyncio
+from collections.abc import AsyncGenerator
+from json_repair import repair_json
+from pydantic import ValidationError, TypeAdapter
+from .ai_actions import Action, ActionScript
 
-
-async def _invoke_llm_mock(
-    video_path: str, start_time: float, character_prompt: str
-) -> str:
-    """
-    调用 LLM 生成动作脚本。
-    :param video_path: 视频文件路径
-    :param start_time: 视频开始时间（秒）
-    :param character_prompt: 角色提示信息
-    :return: ActionScript 对象，包含生成的动作列表
-    """
-    sample_json = """
+# ==============================
+sample_json = """
     [
   {
     "id": "e0b02f90-8452-442c-a28a-77c8e8749c95",
@@ -141,28 +136,96 @@ async def _invoke_llm_mock(
     "action_type": "END_REACTION"
   }
 ]"""
-    return sample_json
+# ==============================
+
+
+# 这是一个模拟 LLM 响应的函数，它会流式地返回我们那个 JSON 数组。
+# 在真实场景中，你会用 httpx 去请求真实的 LLM API。
+async def fake_llm_stream_response() -> AsyncGenerator[str, None]:
+    """
+    模拟 LLM API 的流式响应。
+    为了方便测试，我们将完整的 JSON 分块返回。
+    """
+
+    # 模拟网络延迟和分块传输
+    chunk_size = 50
+    for i in range(0, len(sample_json), chunk_size):
+        yield sample_json[i : i + chunk_size]
+        await asyncio.sleep(0.02)
 
 
 async def generate_actions(
     video_path: str, start_time: float, character_prompt: str
-) -> ActionScript:
-    # 1. 调用 LLM 获取 JSON 字符串
-    actions_json_str = await _invoke_llm_mock(video_path, start_time, character_prompt)
+) -> AsyncGenerator[Action, None]:
+    """
+    调用 LLM 生成动作并以流式方式返回。
 
-    # 2. 将 JSON 字符串解析为 ActionScript 对象
-    action_script = ActionScript.model_validate_json(actions_json_str)
+    这个异步生成器是核心处理管道：
+    1.  从 LLM API (模拟的) 获取流式响应。
+    2.  将所有文本块组装成一个完整的 JSON 数组字符串。
+    3.  对 JSON 字符串进行修复（如果需要）和验证。
+    4.  遍历数组，将验证通过的 Action 对象逐个 yield 出来。
 
-    return action_script
+    :param video_path: 视频文件路径 (当前未使用，但为未来保留)
+    :param start_time: 视频开始时间 (当前未使用，但为未来保留)
+    :param character_prompt: 角色提示 (当前未使用，但为未来保留)
+    :return: 一个异步生成器，用于产出 Action 对象。
+    """
+    # 在真实应用中，你会用 video_path, start_time, character_prompt
+    # 来构建请求并调用真实的 LLM API。
+    llm_stream = fake_llm_stream_response()
+
+    # 1. 收集所有数据块
+    full_response = "".join([chunk async for chunk in llm_stream])
+
+    # 2. 尝试解析整个 JSON 数组
+    try:
+        # 首先尝试直接解析
+        actions_data = json.loads(full_response)
+    except json.JSONDecodeError:
+        print("⚠️警告: JSON 解析失败，尝试修复...")
+        try:
+            # 如果失败，使用 json_repair
+            repaired_json_str = repair_json(full_response)
+            actions_data = json.loads(repaired_json_str)
+            print("✅ JSON 成功修复！")
+        except Exception as e:
+            print(f"❌ 错误: 修复后依然无法解析 JSON: {e}")
+            return  # 无法继续，直接返回
+
+    if not isinstance(actions_data, list):
+        print(f"❌ 错误: 预期顶层结构是 JSON 数组，但得到的是 {type(actions_data)}")
+        return
+
+    # 3. 遍历数组，验证并 yield 每个 action
+    for i, action_dict in enumerate(actions_data):
+        try:
+            # 对于 Union 类型，我们使用 TypeAdapter 来验证
+            validated_action = TypeAdapter(Action).validate_python(action_dict)
+            yield validated_action
+        except ValidationError as e:
+            print(
+                f"❌ 错误: 第 {i+1} 个 Action 验证失败，已跳过。数据: {action_dict}, 错误: {e}"
+            )
 
 
 if __name__ == "__main__":
-    import asyncio
 
-    # Example usage
-    video_path = "example_video.mp4"
-    start_time = 0.0
-    character_prompt = "A humorous AI character reacting to a video."
+    async def main():
+        # Example usage
+        video_path = "example_video.mp4"
+        start_time = 0.0
+        character_prompt = "A humorous AI character reacting to a video."
 
-    actions = asyncio.run(generate_actions(video_path, start_time, character_prompt))
-    print(actions)
+        print("--- Streaming Actions ---")
+        action_count = 0
+        async for action in generate_actions(video_path, start_time, character_prompt):
+            action_count += 1
+            print(
+                f"Action {action_count}: {action.model_dump_json(indent=2)}", flush=True
+            )
+            await asyncio.sleep(1)
+        print(f"\n--- End of Stream ---")
+        print(f"Total actions received: {action_count}")
+
+    asyncio.run(main())

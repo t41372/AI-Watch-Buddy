@@ -201,57 +201,10 @@
       ],
       "title": "SeekAction",
       "type": "object"
-    },
-    "SpeakAction": {
-      "properties": {
-        "id": {
-          "description": "一個唯一的動作 ID，可以用 UUID 生成",
-          "title": "Id",
-          "type": "string"
-        },
-        "trigger_timestamp": {
-          "description": "此動作在影片中的觸發時間點 (秒)",
-          "title": "Trigger Timestamp",
-          "type": "number"
-        },
-        "comment": {
-          "description": "AI 做出此反應的簡要理由",
-          "title": "Comment",
-          "type": "string"
-        },
-        "action_type": {
-          "const": "SPEAK",
-          "default": "SPEAK",
-          "title": "Action Type",
-          "type": "string"
-        },
-        "text": {
-          "description": "AI 要說的內容",
-          "title": "Text",
-          "type": "string"
-        },
-        "pause_video": {
-          "default": true,
-          "description": "說話時是否需要先暫停影片。如果為 true，則在說話期間影片會暫停，否則，視頻不會暫停，一边说话，视频会一边播放。如果句子较短，且下一句话离的较远，建议设置为 false，这样可以让视频更连贯。",
-          "title": "Pause Video",
-          "type": "boolean"
-        }
-      },
-      "required": [
-        "id",
-        "trigger_timestamp",
-        "comment",
-        "text"
-      ],
-      "title": "SpeakAction",
-      "type": "object"
     }
   },
   "items": {
     "anyOf": [
-      {
-        "$ref": "#/$defs/SpeakAction"
-      },
       {
         "$ref": "#/$defs/PauseAction"
       },
