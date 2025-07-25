@@ -2,7 +2,8 @@ import asyncio
 from pathlib import Path
 from loguru import logger
 
-from .ai_actions import Action
+from .ai_actions import Action, SpeakAction
+from .tts import tts_instance
 from .session import session_storage
 from .action_generate import generate_actions
 from .fetch_video import download_video_async
@@ -52,6 +53,16 @@ async def run_action_generation_pipeline(session_id: str) -> None:
             start_time=0.0,  # 这里的参数可以从 session 中获取
             character_prompt=f"Character ID: {session.character_id}",
         ):
+            if isinstance(action, SpeakAction):
+                # 生成音频并填充到 action 中
+                audio_base64 = await tts_instance.generate_audio(action.text)
+                if audio_base64:
+                    action.audio = audio_base64
+                else:
+                    logger.error(
+                        f"[{session_id}] Failed to generate audio for action: {action.id}"
+                    )
+                    continue
             # 关键改动：将 action 放入队列，而不是直接发送
             await session.action_queue.put(action)
             actions_generated_count += 1
