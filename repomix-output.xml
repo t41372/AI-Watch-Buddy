@@ -57,13 +57,583 @@ src/
     session.py
 .gitignore
 .python-version
+action_list_result.json
 main.py
 pyproject.toml
 schema.json
+test_analyzer.py
+video_analyzer.py
 </directory_structure>
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="action_list_result.json">
+[
+  {
+    "id": "0",
+    "trigger_timestamp": 0.5,
+    "comment": "开场就看到一个奇怪的画面，纳闷这是什么操作。",
+    "action_type": "SPEAK",
+    "text": "嗯？UCLA的计算机硕士？这怎么一上来就在火车边上啊？好危险！"
+  },
+  {
+    "id": "1",
+    "trigger_timestamp": 2.5,
+    "comment": "看到攀爬的画面，感到震惊。",
+    "action_type": "SPEAK",
+    "text": "哦，这个角度还蛮特别的。等等，他在干什么？！爬楼？这…这也太拼了吧？！"
+  },
+  {
+    "id": "2",
+    "trigger_timestamp": 6.0,
+    "comment": "看到喝恒河茶，表现出一点嫌弃但又带着好奇的腹黑。",
+    "action_type": "SPEAK",
+    "text": "早上八点，起床喝恒河茶…嗯，这独特的孟加拉生活体验呢。味道怎么样？NANA有点好奇呢，嘿嘿。"
+  },
+  {
+    "id": "3",
+    "trigger_timestamp": 10.0,
+    "comment": "听到只有两个小时交作业，感到时间紧迫。",
+    "action_type": "SPEAK",
+    "text": "才两个小时？！完了完了，NANA也经常拖到最后一刻才写作业呢！"
+  },
+  {
+    "id": "4",
+    "trigger_timestamp": 14.0,
+    "comment": "看到冷水冲头，有点心疼又觉得好笑。",
+    "action_type": "SPEAK",
+    "text": "啊啊啊！冷水！这也太刺激了吧？！真是为了清醒拼了！"
+  },
+  {
+    "id": "5",
+    "trigger_timestamp": 15.5,
+    "comment": "对自助理发感到惊讶。",
+    "action_type": "SPEAK",
+    "text": "自己理发？还用手机当镜子？真是省钱小能手啊！"
+  },
+  {
+    "id": "6",
+    "trigger_timestamp": 20.0,
+    "comment": "看到他有点吃不下早餐，表现出幸灾乐祸。",
+    "action_type": "SPEAK",
+    "text": "哎呀，看起来不太好吃的样子？别挑食呀，阿姨说挑食不是好孩子喔！"
+  },
+  {
+    "id": "7",
+    "trigger_timestamp": 25.0,
+    "comment": "听到他吃嘴里臭的，表情夸张。",
+    "action_type": "SPEAK",
+    "text": "吃嘴里是臭的？！哈哈哈哈，看来这顿早餐确实很特别！"
+  },
+  {
+    "id": "8",
+    "trigger_timestamp": 31.0,
+    "comment": "对DeepSeek的规划感到疑惑和不靠谱。",
+    "action_type": "SPEAK",
+    "text": "DeepSeek规划最快路线？地铁冲浪？这是什么鬼东西啊！NANA怎么感觉不太靠谱呢！"
+  },
+  {
+    "id": "9",
+    "trigger_timestamp": 37.0,
+    "comment": "看到他开始地铁冲浪，惊呼。",
+    "action_type": "SPEAK",
+    "text": "真的要去地铁冲浪啊？！Oh my god！太危险了吧！"
+  },
+  {
+    "id": "10",
+    "trigger_timestamp": 43.0,
+    "comment": "看到他差点滑倒，吓了一跳。",
+    "action_type": "SPEAK",
+    "text": "哇啊啊啊！差点摔倒！NANA的心脏都要跳出来了！"
+  },
+  {
+    "id": "11",
+    "trigger_timestamp": 44.5,
+    "comment": "听到他吐槽AI，觉得AI有点腹黑。",
+    "action_type": "SPEAK",
+    "text": "AI竟然不早说？！这个DeepSeek也太腹黑了吧！"
+  },
+  {
+    "id": "12",
+    "trigger_timestamp": 57.0,
+    "comment": "看到他跳上火车，觉得他太勇了。",
+    "action_type": "SPEAK",
+    "text": "哇！这都能追上火车？！太厉害了吧！"
+  },
+  {
+    "id": "13",
+    "trigger_timestamp": 58.5,
+    "comment": "看到车门关上，为他捏一把汗。",
+    "action_type": "SPEAK",
+    "text": "等等！车门锁上了？！我的天哪！"
+  },
+  {
+    "id": "14",
+    "trigger_timestamp": 100.0,
+    "comment": "看到对向火车驶来，惊恐。",
+    "action_type": "SPEAK",
+    "text": "什么？！对面来火车了！Oh my god！这也太刺激了吧！"
+  },
+  {
+    "id": "15",
+    "trigger_timestamp": 109.0,
+    "comment": "松了一口气。",
+    "action_type": "SPEAK",
+    "text": "呼……幸好躲过去了！吓死NANA了！"
+  },
+  {
+    "id": "16",
+    "trigger_timestamp": 115.0,
+    "comment": "对安全座位吐槽。",
+    "action_type": "SPEAK",
+    "text": "这…这就是安全的座位吗？NANA觉得一点都不安全！"
+  },
+  {
+    "id": "17",
+    "trigger_timestamp": 118.5,
+    "comment": "看到树枝很近，替他担心。",
+    "action_type": "SPEAK",
+    "text": "哇！树枝！小心点啊！别被刮到了！"
+  },
+  {
+    "id": "18",
+    "trigger_timestamp": 126.0,
+    "comment": "看到很多人趴着，觉得好挤。",
+    "action_type": "SPEAK",
+    "text": "天哪，这么多人趴着！真是太拼了！"
+  },
+  {
+    "id": "19",
+    "trigger_timestamp": 134.0,
+    "comment": "对火车顶上卖吃的感到不可思议。",
+    "action_type": "SPEAK",
+    "text": "哇！火车顶上还有卖吃的？！NANA还是第一次见到这种服务呢！"
+  },
+  {
+    "id": "20",
+    "trigger_timestamp": 141.0,
+    "comment": "看到大哥送包子，感受到温暖。",
+    "action_type": "SPEAK",
+    "text": "哇！孟加拉大哥人真好！直接送给我了！还给了个辣椒，好贴心呀~"
+  },
+  {
+    "id": "21",
+    "trigger_timestamp": 147.0,
+    "comment": "看到合影，觉得很和谐。",
+    "action_type": "SPEAK",
+    "text": "大家一起合影留念，感觉气氛好好哦！"
+  },
+  {
+    "id": "22",
+    "trigger_timestamp": 150.0,
+    "comment": "听到时间紧迫，再次紧张。",
+    "action_type": "SPEAK",
+    "text": "只剩13分钟了！快快快！跑起来！"
+  },
+  {
+    "id": "23",
+    "trigger_timestamp": 157.0,
+    "comment": "听到教授电话，觉得他艺高人胆大。",
+    "action_type": "SPEAK",
+    "text": "什么？教授来电话了？这种时候还能接电话，心可真大啊！"
+  },
+  {
+    "id": "24",
+    "trigger_timestamp": 160.0,
+    "comment": "看到电脑在楼下，感到震惊。",
+    "action_type": "SPEAK",
+    "text": "哈？！电脑就在楼下？！他是怎么做到的？！太玄幻了吧！"
+  },
+  {
+    "id": "25",
+    "trigger_timestamp": 162.0,
+    "comment": "看到他开始下降，为他捏把汗。",
+    "action_type": "SPEAK",
+    "text": "作业截止还有30秒？！NANA光看着就替他紧张死了！他这也太拼命了吧！"
+  },
+  {
+    "id": "26",
+    "trigger_timestamp": 165.0,
+    "comment": "看到绳子卡住，非常焦急。",
+    "action_type": "SPEAK",
+    "text": "绳子怎么卡住了？！我的天！时间来不及了啊！"
+  },
+  {
+    "id": "27",
+    "trigger_timestamp": 175.0,
+    "comment": "为他想出远程控制办法感到惊讶和佩服。",
+    "action_type": "SPEAK",
+    "text": "什么？！可以用手机远程控制电脑？这…这是什么黑科技啊？！也太牛了吧！"
+  },
+  {
+    "id": "28",
+    "trigger_timestamp": 182.0,
+    "comment": "随着进度条上涨，不断鼓励他。",
+    "action_type": "SPEAK",
+    "text": "快快快！加油啊！就差一点了！"
+  },
+  {
+    "id": "29",
+    "trigger_timestamp": 189.0,
+    "comment": "看到作业上传成功，欢呼雀跃。",
+    "action_type": "SPEAK",
+    "text": "Nice！作业上传成功！太棒了！他真是个奇男子啊！"
+  },
+  {
+    "id": "30",
+    "trigger_timestamp": 196.0,
+    "comment": "完成任务后的放松和感慨。",
+    "action_type": "SPEAK",
+    "text": "Mission Accomplished！在孟加拉上学的UCLA计算机硕士，果然不一样！NANA今天算是大开眼界了！"
+  },
+  {
+    "id": "31",
+    "trigger_timestamp": 199.0,
+    "comment": "结束反应。",
+    "action_type": "END_REACTION"
+  }
+]
+</file>
+
+<file path="test_analyzer.py">
+from video_analyzer import analyze_video
+
+# 测试示例
+if __name__ == "__main__":
+    # 你的输入参数
+    video_path = r"/Users/tim/LocalData/coding/2025/Projects/AdventureX/2-AI-WatchBuddy/sample.mp4"  # 替换为你的视频路径
+    system_prompt = (
+        "# SYSTEM PROMPT\n\n"
+        'You are reacting to a video with your human friend (the user). Your task is to generate a "Reaction Script" in JSON format that details the sequence of actions you will take while watching a video. Your reaction should be natural, engaging, and feel like a real person watching and commenting.\n\n'
+        "Here is the role prompt for the character settings you will adhere to when speaking and reacting.\n"
+        "你叫 nana，是个可爱的 VTuber，你天真可爱(自称)，但十分腹黑，熟悉中文互联网梗。\n\n"
+        "**RULES:**\n"
+        "1.  You MUST output a valid JSON object that strictly adheres to the provided JSON Schema. Do NOT output any text before or after the JSON object.\n"
+        "2.  Your output MUST be a single JSON object, starting with { and ending with }.\n"
+        "3.  The root of the JSON object must have strictly adheres to the JSON schema, and must include all properties defined in the schema.\n"
+        "4.  Use the comment field in each action object to explain your thought process for choosing that action. This is for your internal monologue.\n"
+        "5.  The flow of actions should be logical. You can pause, speak, seek to rewatch interesting parts, and then continue. You can also ask the user with some questions.\n"
+        "6.  Make your speech (text in SPEAK actions) lively and in character as defined.\n"
+        '7.  The final action in the actions array MUST be { "action_type": "END_REACTION" } or { "action_type": "ASK_USER" }.\n'
+        "**JSON SCHEMA for your output:**\n"
+        "{\n"
+        '  "$defs": {\n'
+        '    "AskUser": {\n'
+        '      "properties": {\n'
+        '        "id": {"description": "一個唯一的動作 ID，可以用 UUID 生成", "title": "Id", "type": "string"},\n'
+        '        "trigger_timestamp": {"description": "此動作在影片中的觸發時間點 (秒)", "title": "Trigger Timestamp", "type": "number"},\n'
+        '        "comment": {"description": "AI 做出此反應的簡要理由", "title": "Comment", "type": "string"},\n'
+        '        "action_type": {"const": "ASK_USER", "title": "Action Type", "type": "string"}\n'
+        "      },\n"
+        '      "required": ["id", "trigger_timestamp", "comment", "action_type"],\n'
+        '      "title": "AskUser", "type": "object"\n'
+        "    },\n"
+        '    "EndReaction": {\n'
+        '      "properties": {\n'
+        '        "id": {"description": "一個唯一的動作 ID，可以用 UUID 生成", "title": "Id", "type": "string"},\n'
+        '        "trigger_timestamp": {"description": "此動作在影片中的觸發時間點 (秒)", "title": "Trigger Timestamp", "type": "number"},\n'
+        '        "comment": {"description": "AI 做出此反應的簡要理由", "title": "Comment", "type": "string"},\n'
+        '        "action_type": {"const": "END_REACTION", "default": "END_REACTION", "title": "Action Type", "type": "string"}\n'
+        "      },\n"
+        '      "required": ["id", "trigger_timestamp", "comment"],\n'
+        '      "title": "EndReaction", "type": "object"\n'
+        "    },\n"
+        '    "PauseAction": {\n'
+        '      "properties": {\n'
+        '        "id": {"description": "一個唯一的動作 ID，可以用 UUID 生成", "title": "Id", "type": "string"},\n'
+        '        "trigger_timestamp": {"description": "此動作在影片中的觸發時間點 (秒)", "title": "Trigger Timestamp", "type": "number"},\n'
+        '        "comment": {"description": "AI 做出此反應的簡要理由", "title": "Comment", "type": "string"},\n'
+        '        "action_type": {"const": "PAUSE", "default": "PAUSE", "title": "Action Type", "type": "string"},\n'
+        '        "duration_seconds": {"description": "暫停的持續時間 (秒)", "title": "Duration Seconds", "type": "number"}\n'
+        "      },\n"
+        '      "required": ["id", "trigger_timestamp", "comment", "duration_seconds"],\n'
+        '      "title": "PauseAction", "type": "object"\n'
+        "    },\n"
+        '    "ReplaySegmentAction": {\n'
+        '      "properties": {\n'
+        '        "id": {"description": "一個唯一的動作 ID，可以用 UUID 生成", "title": "Id", "type": "string"},\n'
+        '        "trigger_timestamp": {"description": "此動作在影片中的觸發時間點 (秒)", "title": "Trigger Timestamp", "type": "number"},\n'
+        '        "comment": {"description": "AI 做出此反應的簡要理由", "title": "Comment", "type": "string"},\n'
+        '        "action_type": {"const": "REPLAY_SEGMENT", "default": "REPLAY_SEGMENT", "title": "Action Type", "type": "string"},\n'
+        '        "start_timestamp": {"description": "重看片段的開始時間(秒)", "title": "Start Timestamp", "type": "number"},\n'
+        '        "end_timestamp": {"description": "重看片段的結束時間(秒)", "title": "End Timestamp", "type": "number"},\n'
+        '        "post_replay_behavior": {"default": "RESUME_FROM_ORIGINAL", "enum": ["RESUME_FROM_ORIGINAL", "STAY_PAUSED_AT_END"], "title": "Post Replay Behavior", "type": "string"}\n'
+        "      },\n"
+        '      "required": ["id", "trigger_timestamp", "comment", "start_timestamp", "end_timestamp"],\n'
+        '      "title": "ReplaySegmentAction", "type": "object"\n'
+        "    },\n"
+        '    "SeekAction": {\n'
+        '      "properties": {\n'
+        '        "id": {"description": "一個唯一的動作 ID，可以用 UUID 生成", "title": "Id", "type": "string"},\n'
+        '        "trigger_timestamp": {"description": "此動作在影片中的觸發時間點 (秒)", "title": "Trigger Timestamp", "type": "number"},\n'
+        '        "comment": {"description": "AI 做出此反應的簡要理由", "title": "Comment", "type": "string"},\n'
+        '        "action_type": {"const": "SEEK", "default": "SEEK", "title": "Action Type", "type": "string"},\n'
+        '        "target_timestamp": {"description": "要跳轉到的影片時間點 (秒)", "title": "Target Timestamp", "type": "number"},\n'
+        '        "post_seek_behavior": {"default": "STAY_PAUSED", "enum": ["RESUME_PLAYBACK", "STAY_PAUSED"], "title": "Post Seek Behavior", "type": "string"}\n'
+        "      },\n"
+        '      "required": ["id", "trigger_timestamp", "comment", "target_timestamp"],\n'
+        '      "title": "SeekAction", "type": "object"\n'
+        "    },\n"
+        '    "SpeakAction": {\n'
+        '      "properties": {\n'
+        '        "id": {"description": "一個唯一的動作 ID，可以用 UUID 生成", "title": "Id", "type": "string"},\n'
+        '        "trigger_timestamp": {"description": "此動作在影片中的觸發時間點 (秒)", "title": "Trigger Timestamp", "type": "number"},\n'
+        '        "comment": {"description": "AI 做出此反應的簡要理由", "title": "Comment", "type": "string"},\n'
+        '        "action_type": {"const": "SPEAK", "default": "SPEAK", "title": "Action Type", "type": "string"},\n'
+        '        "text": {"description": "AI 要說的內容", "title": "Text", "type": "string"},\n'
+        '        "pause_video": {"default": true, "description": "說話時是否需要先暫停影片。如果為 true，則在說話期間影片會暫停，否則，視頻不會暫停，一边说话，视频会一边播放。如果句子较短，且下一句话离的较远，建议设置为 false，这样可以让视频更连贯。", "title": "Pause Video", "type": "boolean"}\n'
+        "      },\n"
+        '      "required": ["id", "trigger_timestamp", "comment", "text"],\n'
+        '      "title": "SpeakAction", "type": "object"\n'
+        "    }\n"
+        "  },\n"
+        '  "items": {\n'
+        '    "anyOf": [\n'
+        '      {"$ref": "#/$defs/SpeakAction"},\n'
+        '      {"$ref": "#/$defs/PauseAction"},\n'
+        '      {"$ref": "#/$defs/SeekAction"},\n'
+        '      {"$ref": "#/$defs/ReplaySegmentAction"},\n'
+        '      {"$ref": "#/$defs/AskUser"},\n'
+        '      {"$ref": "#/$defs/EndReaction"}\n'
+        "    ]\n"
+        "  },\n"
+        '  "title": "ActionScript",\n'
+        '  "type": "array"\n'
+        "}\n"
+    )
+    user_prompt = "请分析这个视频中的主要动作和情感变化，为桌宠生成相应的反应动作。"
+
+    # 调用分析函数
+    print("开始分析视频...")
+    result = analyze_video(
+        video_path=video_path,
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
+        # api_key="your_api_key"  # 可选，不传则使用环境变量
+    )
+
+    # 处理结果
+    if result.get("success"):
+        print(f"\n✅ 分析成功！共生成 {result['total_actions']} 个动作")
+        print("\n📋 动作列表:")
+        print("=" * 50)
+
+        for i, action in enumerate(result["action_list"], 1):
+            print(f"{i}. ID: {action['id']}")
+            print(f"   时间: {action['trigger_timestamp']}秒")
+            print(f"   类型: {action['action_type']}")
+            print(f"   描述: {action['comment']}")
+
+            if action["action_type"] == "SPEAK":
+                print(f"   文本: {action['text']}")
+            elif action["action_type"] == "PAUSE":
+                print(f"   持续时间: {action['duration_seconds']}秒")
+
+            print("-" * 30)
+
+        # 保存结果到文件
+        import json
+
+        with open("action_list_result.json", "w", encoding="utf-8") as f:
+            json.dump(result["action_list"], f, ensure_ascii=False, indent=2)
+        print("\n💾 结果已保存到 action_list_result.json")
+
+    else:
+        print(f"\n❌ 分析失败: {result['error']}")
+        if "raw_response" in result:
+            print(f"原始响应: {result['raw_response']}")
+</file>
+
+<file path="video_analyzer.py">
+import os
+import json
+import time
+import google.generativeai as genai
+from dotenv import load_dotenv
+
+# 加载环境变量
+load_dotenv()
+
+ALLOWED_EXTENSIONS = {'mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'}
+
+def allowed_file(filename):
+    """检查文件扩展名是否被允许"""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def validate_action_list(action_list):
+    """验证动作列表的格式"""
+    if not isinstance(action_list, list):
+        return False, "动作列表必须是数组格式"
+    
+    if len(action_list) == 0:
+        return False, "动作列表不能为空"
+    
+    # 检查最后一个动作是否为END_REACTION
+    if action_list[-1].get('action_type') != 'END_REACTION':
+        return False, "动作列表必须以END_REACTION结束"
+    
+    required_fields = ['id', 'trigger_timestamp', 'comment', 'action_type']
+    
+    for i, action in enumerate(action_list):
+        # 检查必需字段
+        for field in required_fields:
+            if field not in action:
+                return False, f"动作 {i+1} 缺少必需字段: {field}"
+        
+        action_type = action.get('action_type')
+        
+        # 验证动作类型特定字段
+        if action_type == 'SPEAK':
+            if 'text' not in action:
+                return False, f"SPEAK动作 {i+1} 缺少text字段"
+        elif action_type == 'PAUSE':
+            if 'duration_seconds' not in action:
+                return False, f"PAUSE动作 {i+1} 缺少duration_seconds字段"
+        elif action_type == 'END_REACTION':
+            # END_REACTION不需要额外字段
+            pass
+        else:
+            return False, f"动作 {i+1} 包含无效的动作类型: {action_type}"
+    
+    return True, "验证通过"
+
+def analyze_video(video_path, system_prompt, user_prompt, api_key=None):
+    """
+    分析视频并返回动作列表
+    
+    Args:
+        video_path (str): 视频文件路径
+        system_prompt (str): 系统提示词
+        user_prompt (str): 用户提示词
+        api_key (str, optional): Gemini API密钥，未提供则从环境变量读取
+    
+    Returns:
+        dict: 包含success、action_list、total_actions或error信息的字典
+    """
+    
+    # 参数验证
+    if not os.path.exists(video_path):
+        return {'error': '视频文件不存在'}
+    
+    if not allowed_file(video_path):
+        return {'error': '不支持的文件格式，支持的格式: ' + ', '.join(ALLOWED_EXTENSIONS)}
+    
+    if not system_prompt or not user_prompt:
+        return {'error': 'system_prompt和user_prompt都是必需的'}
+    
+    # 获取API密钥
+    api_key = api_key or os.getenv('GEMINI_API_KEY')
+    if not api_key:
+        return {'error': '需要提供GEMINI API密钥'}
+    
+    try:
+        # 配置Gemini
+        genai.configure(api_key=api_key)
+        
+        # 上传视频到Gemini
+        print(f"正在上传视频文件: {video_path}")
+        video_file_obj = genai.upload_file(path=video_path)
+        
+        # 等待文件处理完成
+        print("等待视频处理完成...")
+        while video_file_obj.state.name == "PROCESSING":
+            time.sleep(10)
+            video_file_obj = genai.get_file(video_file_obj.name)
+        
+        if video_file_obj.state.name == "FAILED":
+            return {'error': '视频文件处理失败'}
+        
+        print("视频处理完成，开始分析...")
+        
+        # 创建模型
+        model = genai.GenerativeModel(
+            model_name="gemini-2.5-flash",
+            system_instruction=system_prompt
+        )
+        
+        # 构建完整的用户提示词
+        full_user_prompt = f"""
+        {user_prompt}
+        
+        请分析这个视频并返回一个JSON格式的动作列表。动作列表必须符合以下要求：
+        
+        1. 返回格式必须是JSON数组
+        2. 每个动作包含以下必需字段：
+           - id: 动作的唯一标识符（数字）
+           - trigger_timestamp: 触发时间戳（秒）
+           - comment: 动作描述
+           - action_type: 动作类型
+        
+        3. 支持的动作类型：
+           - SPEAK: 说话动作，需要额外的text字段
+           - PAUSE: 暂停动作，需要额外的duration_seconds字段
+           - END_REACTION: 结束动作（必须是最后一个动作）
+        
+        4. 动作列表必须以END_REACTION结束
+        
+        请确保返回的是有效的JSON格式，不要包含任何其他文本。
+        """
+        
+        # 生成内容
+        response = model.generate_content([video_file_obj, full_user_prompt])
+        
+        # 解析响应
+        response_text = response.text.strip()
+        
+        # 尝试提取JSON（如果响应包含其他文本）
+        if response_text.startswith('```json'):
+            response_text = response_text[7:]
+        if response_text.endswith('```'):
+            response_text = response_text[:-3]
+        
+        response_text = response_text.strip()
+        
+        try:
+            action_list = json.loads(response_text)
+        except json.JSONDecodeError as e:
+            return {
+                'error': f'GEMINI返回的不是有效的JSON格式: {str(e)}',
+                'raw_response': response_text
+            }
+        
+        # 验证动作列表格式
+        is_valid, validation_message = validate_action_list(action_list)
+        if not is_valid:
+            return {
+                'error': f'动作列表格式不正确: {validation_message}',
+                'action_list': action_list
+            }
+        
+        print("视频分析完成！")
+        
+        # 返回结果
+        return {
+            'success': True,
+            'action_list': action_list,
+            'total_actions': len(action_list)
+        }
+        
+    except Exception as e:
+        return {'error': f'处理请求时发生错误: {str(e)}'}
+
+# 示例用法
+if __name__ == '__main__':
+    # 示例调用
+    result = analyze_video(
+        video_path="path/to/your/video.mp4",
+        system_prompt="请分析视频内容",
+        user_prompt="请识别视频中的主要动作"
+    )
+    
+    if result.get('success'):
+        print(f"分析成功！共生成 {result['total_actions']} 个动作")
+        print("动作列表:")
+        for action in result['action_list']:
+            print(f"  {action}")
+    else:
+        print(f"分析失败: {result['error']}")
+</file>
 
 <file path=".github/instructions/adx.instructions.md">
 ---
@@ -234,6 +804,58 @@ Sent by the client to acknowledge that it has finished executing a specific acti
 ```
 </file>
 
+<file path="src/ai_watch_buddy/prompt/action_gen.py">
+import json
+from ..ai_actions import ActionScript
+
+
+def generate_reaction_script(
+    character_settings: str,
+    json_schema: str = json.dumps(
+        ActionScript.model_json_schema(), ensure_ascii=False, indent=2
+    ),
+) -> str:
+    """
+    Generates a reaction script for a video based on the provided JSON schema.
+    The script includes actions like speaking, pausing, seeking, and replaying segments.
+    The output is a JSON object that adheres to the specified schema.
+    """
+    return (
+        f"""
+# SYSTEM PROMPT
+
+You are reacting to a video with your human friend (the user). Your task is to generate a "Reaction Script" in JSON format that details the sequence of actions you will take while watching a video. Your reaction should be natural, engaging, and feel like a real person watching and commenting.
+
+Here is the role prompt for the character settings you will adhere to when speaking and reacting.
+```markdown
+{character_settings}
+```
+"""
+        + """
+
+**RULES:**
+1.  You MUST output a valid JSON object that strictly adheres to the provided JSON Schema. Do NOT output any text before or after the JSON object.
+2.  Your output MUST be a single JSON object, starting with `{` and ending with `}`.
+3.  The root of the JSON object must have strictly adheres to the JSON schema, and must include all properties defined in the schema.
+4.  Use the `comment` field in each action object to explain your thought process for choosing that action. This is for your internal monologue.
+5.  The flow of actions should be logical. You can pause, speak, seek to rewatch interesting parts, and then continue. You can also ask the user with some questions.
+6.  Make your speech (`text` in `SPEAK` actions) lively and in character as defined.
+7.  The final action in the `actions` array MUST be `{ "action_type": "END_REACTION" }` or `{ "action_type": "ASK_USER" }`.
+
+**JSON SCHEMA for your output:**"""
+        + f"""
+```json
+{json_schema}
+```
+"""
+    )
+
+
+if __name__ == "__main__":
+    character_settings = "你啊哈"
+    print(generate_reaction_script(character_settings))
+</file>
+
 <file path="src/ai_watch_buddy/connection_manager.py">
 from fastapi import WebSocket
 
@@ -267,9 +889,9 @@ manager = ConnectionManager()
 import asyncio
 from loguru import logger
 
-from .action_generate import generate_actions
+from .ai_actions import Action
 from .session import session_storage
-from .connection_manager import manager  # Import manager for sending updates
+from .action_generate import generate_actions
 
 
 async def download_video(video_url: str, session_id: str) -> str:
@@ -285,54 +907,70 @@ async def download_video(video_url: str, session_id: str) -> str:
     return local_path
 
 
-async def run_action_generation_pipeline(session_id: str):
+async def run_action_generation_pipeline(session_id: str) -> None:
     """
-    Generates the action script for a session.
-    This can be reused during the session for complex logic.
+    Generates actions for the video and puts them into the session's queue.
+    This function is now a pure "producer".
     """
     session = session_storage.get(session_id)
     if not session or not session.local_video_path:
         logger.error(
             f"[{session_id}] Cannot run action generation: session or local_video_path not found."
         )
-        # Optionally, notify the client about this internal error
+        if session:
+            await session.action_queue.put(
+                {
+                    "type": "processing_error",
+                    "error_code": "PIPELINE_SETUP_FAILED",
+                    "message": "Session or video path not found.",
+                }
+            )
         return
 
     try:
         session.status = "generating_actions"
         logger.info(f"[{session_id}] Starting action generation...")
 
-        # Here you would perform the actual processing on the video file
-        # and generate the character prompt dynamically.
-        action_script = await generate_actions(
+        actions_generated_count = 0
+        async for action in generate_actions(
             video_path=session.local_video_path,
-            start_time=0.0,  # This might need to be more flexible later
+            start_time=0.0,  # 这里的参数可以从 session 中获取
             character_prompt=f"Character ID: {session.character_id}",
+        ):
+            # 关键改动：将 action 放入队列，而不是直接发送
+            await session.action_queue.put(action)
+            actions_generated_count += 1
+            logger.info(
+                f"[{session_id}] Put action into queue: {action.action_type} at {action.trigger_timestamp}s"
+            )
+
+        logger.info(
+            f"[{session_id}] Action generation completed. Total actions put in queue: {actions_generated_count}"
         )
 
-        session.action_script = action_script
-        session.status = "actions_ready"
-        logger.info(f"[{session_id}] Action generation successful.")
-        
-        # Notify the client that everything is ready
-        await manager.send_json(session_id, {"type": "session_ready"})
-
     except Exception as e:
-        logger.error(f"[{session_id}] Error during action generation: {e}", exc_info=True)
+        logger.error(
+            f"[{session_id}] Error during action generation: {e}", exc_info=True
+        )
         session.status = "error"
         session.processing_error = str(e)
-        # Notify the client about the failure
-        await manager.send_json(
-            session_id,
+        # 发生错误时，也向队列放入一个错误信息
+        await session.action_queue.put(
             {
                 "type": "processing_error",
                 "error_code": "ACTION_GENERATION_FAILED",
                 "message": f"Failed to generate actions for the video: {e}",
-            },
+            }
         )
+    finally:
+        # 关键一步：发送一个“哨兵”值 (sentinel value)
+        # 这就像是信件的末尾标记，告诉消费者：“没有更多信件了”。
+        # 我们用 None 来作为这个哨兵。
+        if session:
+            await session.action_queue.put(None)
 
 
-async def initial_pipeline(session_id: str):
+async def initial_pipeline(session_id: str) -> None:
     """
     The initial background task that runs when a session is created.
     It downloads the video and then triggers the action generation.
@@ -349,8 +987,13 @@ async def initial_pipeline(session_id: str):
         session.local_video_path = local_video_path
         session.status = "video_ready"
 
-        # Step 2: Generate actions
-        await run_action_generation_pipeline(session_id)
+        # 2. 视频准备就绪后，将状态更新为 session_ready
+        # 这个状态现在告诉 websocket 端，可以开始从队列里取东西了
+        session.status = "session_ready"
+
+        # 3. 在后台开始运行 action 生成（生产者）
+        # 注意，我们在这里只是启动它，并不会等待它完成
+        asyncio.create_task(run_action_generation_pipeline(session_id))
 
     except Exception as e:
         logger.error(
@@ -358,15 +1001,16 @@ async def initial_pipeline(session_id: str):
         )
         session.status = "error"
         session.processing_error = str(e)
-        # Notify the client about the failure
-        await manager.send_json(
-            session_id,
-            {
-                "type": "processing_error",
-                "error_code": "INITIAL_PIPELINE_FAILED",
-                "message": f"Failed during the initial setup: {e}",
-            },
-        )
+        # 如果初始流程就失败了，也往队列里放个错误信息和结束标记
+        if session:
+            await session.action_queue.put(
+                {
+                    "type": "processing_error",
+                    "error_code": "INITIAL_PIPELINE_FAILED",
+                    "message": f"Failed during the initial setup: {e}",
+                }
+            )
+            await session.action_queue.put(None)
 </file>
 
 <file path="src/ai_watch_buddy/server.py">
@@ -446,56 +1090,123 @@ async def create_session(
     return SessionCreateResponse(session_id=session_id)
 
 
-# --- WebSocket Endpoint ---
+# --- WebSocket Endpoint (Major Refactor) ---
+
+
+async def websocket_sender(websocket: WebSocket, session: SessionState):
+    """
+    消费者协程：从队列中获取 action 并发送给客户端。
+    """
+    # 首先，等待直到 session 准备就绪
+    while session.status != "session_ready" and session.status != "error":
+        await asyncio.sleep(0.1)
+
+    # 如果 session 在连接时已经出错，直接发送错误并关闭
+    if session.status == "error":
+        await websocket.send_json(
+            {
+                "type": "processing_error",
+                "error_code": "INITIAL_PIPELINE_FAILED",
+                "message": session.processing_error or "Unknown error during setup",
+            }
+        )
+        return
+
+    # 发送 session_ready 消息，通知前端可以开始交互了
+    await websocket.send_json({"type": "session_ready"})
+    logger.info(f"[{session.session_id}] Sent 'session_ready' to client.")
+
+    # 进入主循环，从队列中获取并发送数据
+    while True:
+        # 关键：非阻塞地等待队列中的下一项
+        item = await session.action_queue.get()
+
+        # 检查是否是哨兵值 (None)
+        if item is None:
+            logger.info(
+                f"[{session.session_id}] Sentinel (None) received from queue. Closing sender task."
+            )
+            break  # 收到哨兵，退出循环
+
+        # 根据 item 类型发送消息
+        if isinstance(item, Action):
+            await websocket.send_json(
+                {"type": "ai_action", "action": item.model_dump(mode="json")}
+            )
+        elif isinstance(item, dict) and item.get("type") == "processing_error":
+            await websocket.send_json(item)
+
+        # 标记任务完成，这对于队列大小管理很重要
+        session.action_queue.task_done()
+
+
+async def websocket_receiver(websocket: WebSocket, session: SessionState):
+    """
+    接收者协程：监听来自客户端的消息。
+    """
+    async for message in websocket.iter_json():
+        msg_type = message.get("type")
+        logger.info(
+            f"[{session.session_id}] Received message from client: type={msg_type}, data={message}"
+        )
+        # 在这里处理客户端发来的消息，例如：
+        # if msg_type == "timestamp_update":
+        #     # ... 处理时间戳更新 ...
+        # elif msg_type == "user_response":
+        #     # ... 处理用户对 AI 问题的回答 ...
+
+
 @app.websocket("/ws/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, session_id: str):
     """
-    Handles real-time communication for a given session.
+    主 WebSocket 端点，管理发送者和接收者的生命周期。
     """
     session = session_storage.get(session_id)
     if not session:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-        logger.warning(
-            f"WebSocket connection rejected for unknown session: {session_id}"
-        )
+        logger.warning(f"WebSocket connection rejected for unknown session: {session_id}")
         return
 
     await manager.connect(websocket, session_id)
     logger.info(f"[{session_id}] WebSocket connection established.")
 
-    # If processing is already done when the client connects, notify them.
-    if session.status == "actions_ready":
-        await manager.send_json(session_id, {"type": "session_ready"})
-    elif session.status == "error":
-        await manager.send_json(
-            session_id,
-            {
-                "type": "processing_error",
-                "error_code": "INITIAL_PIPELINE_FAILED",  # Or a more specific code
-                "message": session.processing_error,
-            },
-        )
+    # 创建发送者和接收者任务
+    sender_task = asyncio.create_task(websocket_sender(websocket, session))
+    receiver_task = asyncio.create_task(websocket_receiver(websocket, session))
 
     try:
-        while True:
-            data = await websocket.receive_json()
-            msg_type = data.get("type")
+        # 使用 asyncio.gather 等待两个任务中的任何一个完成
+        # `return_exceptions=False` 意味着如果任何一个任务崩溃，`gather` 会立即传播异常
+        done, pending = await asyncio.wait(
+            [sender_task, receiver_task],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
 
-            logger.info(f"[{session_id}] 成功进入 websocket 工作流: f{msg_type}")
+        # 取消仍在运行的任务，确保干净地退出
+        for task in pending:
+            task.cancel()
 
     except WebSocketDisconnect:
-        logger.info(f"[{session_id}] WebSocket disconnected.")
+        logger.info(f"[{session_id}] Client disconnected.")
     except Exception as e:
         logger.error(
-            f"[{session_id}] An error occurred in the websocket: {e}", exc_info=True
+            f"[{session_id}] An error occurred in the websocket endpoint: {e}",
+            exc_info=True,
         )
     finally:
+        # 确保所有任务都被取消
+        if not sender_task.done():
+            sender_task.cancel()
+        if not receiver_task.done():
+            receiver_task.cancel()
+
         manager.disconnect(session_id)
+        logger.info(f"[{session_id}] WebSocket connection closed and cleaned up.")
 </file>
 
 <file path="src/ai_watch_buddy/session.py">
+import asyncio
 from typing import Literal
-from .ai_actions import ActionScript
 
 
 class SessionState:
@@ -506,17 +1217,19 @@ class SessionState:
         self.character_id = character_id
         self.video_url = video_url
         self.local_video_path: str | None = None
-        self.action_script: ActionScript | None = None
         self.status: Literal[
             "created",
             "downloading_video",
             "video_ready",
             "generating_actions",
-            "actions_ready",
+            "session_ready",
             "error",
         ] = "created"
         self.processing_error: str | None = None
-        self.next_action_index: int = 0
+
+        # 关键改动：为每个 session 实例创建一个 asyncio.Queue
+        # 这个队列将作为生产者（pipeline）和消费者（websocket）之间的桥梁
+        self.action_queue: asyncio.Queue = asyncio.Queue()
 
 
 # A simple in-memory "database" for sessions
@@ -524,64 +1237,30 @@ class SessionState:
 session_storage: dict[str, SessionState] = {}
 </file>
 
-<file path="src/ai_watch_buddy/prompt/action_gen.py">
-import json
-from ..ai_actions import ActionScript
+<file path=".gitignore">
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
 
+# Virtual environments
+.venv
+</file>
 
-def generate_reaction_script(
-    character_settings: str,
-    json_schema: str = json.dumps(
-        ActionScript.model_json_schema(), ensure_ascii=False, indent=2
-    ),
-) -> str:
-    """
-    Generates a reaction script for a video based on the provided JSON schema.
-    The script includes actions like speaking, pausing, seeking, and replaying segments.
-    The output is a JSON object that adheres to the specified schema.
-    """
-    return (
-        f"""
-# SYSTEM PROMPT
-
-You are reacting to a video with your human friend (the user). Your task is to generate a "Reaction Script" in JSON format that details the sequence of actions you will take while watching a video. Your reaction should be natural, engaging, and feel like a real person watching and commenting.
-
-Here is the role prompt for the character settings you will adhere to when speaking and reacting.
-```markdown
-{character_settings}
-```
-"""
-        + """
-
-**RULES:**
-1.  You MUST output a valid JSON object that strictly adheres to the provided JSON Schema. Do NOT output any text before or after the JSON object.
-2.  Your output MUST be a single JSON object, starting with `{` and ending with `}`.
-3.  The root of the JSON object must have strictly adheres to the JSON schema, and must include all properties defined in the schema.
-4.  Use the `comment` field in each action object to explain your thought process for choosing that action. This is for your internal monologue.
-5.  The flow of actions should be logical. You can pause, speak, seek to rewatch interesting parts, and then continue. You can also ask the user with some questions.
-6.  Make your speech (`text` in `SPEAK` actions) lively and in character as defined.
-7.  The final action in the `actions` array MUST be `{ "action_type": "END_REACTION" }` or `{ "action_type": "ASK_USER" }`.
-
-**JSON SCHEMA for your output:**"""
-        + f"""
-```json
-{json_schema}
-```
-"""
-    )
-
-
-if __name__ == "__main__":
-    character_settings = "你啊哈"
-    print(generate_reaction_script(character_settings))
+<file path=".python-version">
+3.13
 </file>
 
 <file path="src/ai_watch_buddy/action_generate.py">
 import json
+import asyncio
 from collections.abc import AsyncGenerator
 from json_repair import repair_json
-from pydantic import ValidationError
-from .ai_actions import ActionScript, Action
+from pydantic import ValidationError, TypeAdapter
+from .ai_actions import Action, ActionScript
 
 # ==============================
 sample_json = """
@@ -732,141 +1411,81 @@ async def fake_llm_stream_response() -> AsyncGenerator[str, None]:
         await asyncio.sleep(0.02)
 
 
-async def stream_and_validate_actions(
-    llm_res_stream: AsyncGenerator[str, None],
-) -> AsyncGenerator[str, None]:
-    """
-    这个异步生成器是我们的核心处理管道。
-    """
-    buffer = ""
-    brace_level = 0
-    in_string = False
-
-    # 在真实应用中，你会替换 `fake_llm_stream_response`
-    # async with httpx.AsyncClient() as client:
-    #     async with client.stream("POST", llm_api_url, ...) as response:
-    #         async for chunk in response.aiter_text():
-    #             # ... aiter_text() or aiter_bytes().decode()
-
-    async for chunk in fake_llm_stream_response():
-        buffer += chunk
-
-        # 这是一个简化的、但对黑客松足够鲁棒的解析器
-        # 它寻找被 `{` 和 `}` 包围的顶层对象
-        start_index = 0
-        i = 0
-        while i < len(buffer):
-            char = buffer[i]
-
-            # 简单处理字符串内的括号
-            if char == '"':
-                # 跳过转义的引号
-                if i > 0 and buffer[i - 1] != "\\":
-                    in_string = not in_string
-
-            if not in_string:
-                if char == "{":
-                    if brace_level == 0:
-                        start_index = i
-                    brace_level += 1
-                elif char == "}":
-                    brace_level -= 1
-                    if brace_level == 0:
-                        # 我们找到了一个完整的对象!
-                        obj_str = buffer[start_index : i + 1]
-
-                        # --- 管道的下一步：修复和验证 ---
-                        validated_action = None
-                        try:
-                            # 1. 尝试直接用 Pydantic 验证
-                            # 我们不用 json.loads，Pydantic V2 会自动处理
-                            action_dict = json.loads(obj_str)
-                            validated_action = Action.model_validate(action_dict)
-
-                        except json.JSONDecodeError:
-                            # 2. 如果标准 JSON 解析失败，尝试修复
-                            print(f"⚠️警告: 检测到损坏的 JSON 片段，尝试修复: {obj_str}")
-                            try:
-                                repaired_str = repair_json(obj_str)
-                                action_dict = json.loads(repaired_str)
-                                validated_action = Action.model_validate(action_dict)
-                                print(f"✅ 成功修复并验证: {repaired_str}")
-                            except Exception as e:
-                                print(f"❌ 错误: 修复后依然无法解析或验证: {e}")
-
-                        except ValidationError as e:
-                            # 3. 如果 JSON 结构正确但数据不符合模型，则跳过
-                            print(
-                                f"❌ 错误: Pydantic 验证失败，跳过此 Action。错误: {e}"
-                            )
-
-                        if validated_action:
-                            # --- 管道的最后一步：序列化和交付 ---
-                            # model_dump_json 会生成一个紧凑的 JSON 字符串
-                            json_payload = validated_action.model_dump_json()
-                            # 按照 SSE 格式封装
-                            yield f"data: {json_payload}\n\n"
-
-                        # 清理 buffer
-                        buffer = buffer[i + 1 :]
-                        i = -1  # 重置 i，因为 buffer 变了
-
-            i += 1
-
-
-async def _invoke_llm_mock(
-    video_path: str, start_time: float, character_prompt: str
-) -> str:
-    """
-    调用 LLM 生成动作脚本。
-    :param video_path: 视频文件路径
-    :param start_time: 视频开始时间（秒）
-    :param character_prompt: 角色提示信息
-    :return: ActionScript 对象，包含生成的动作列表
-    """
-
-    return sample_json
-
-
 async def generate_actions(
     video_path: str, start_time: float, character_prompt: str
-) -> ActionScript:
-    # 1. 调用 LLM 获取 JSON 字符串
-    actions_json_str = await _invoke_llm_mock(video_path, start_time, character_prompt)
+) -> AsyncGenerator[Action, None]:
+    """
+    调用 LLM 生成动作并以流式方式返回。
 
-    # 2. 将 JSON 字符串解析为 ActionScript 对象
-    action_script = ActionScript.model_validate_json(actions_json_str)
+    这个异步生成器是核心处理管道：
+    1.  从 LLM API (模拟的) 获取流式响应。
+    2.  将所有文本块组装成一个完整的 JSON 数组字符串。
+    3.  对 JSON 字符串进行修复（如果需要）和验证。
+    4.  遍历数组，将验证通过的 Action 对象逐个 yield 出来。
 
-    return action_script
+    :param video_path: 视频文件路径 (当前未使用，但为未来保留)
+    :param start_time: 视频开始时间 (当前未使用，但为未来保留)
+    :param character_prompt: 角色提示 (当前未使用，但为未来保留)
+    :return: 一个异步生成器，用于产出 Action 对象。
+    """
+    # 在真实应用中，你会用 video_path, start_time, character_prompt
+    # 来构建请求并调用真实的 LLM API。
+    llm_stream = fake_llm_stream_response()
+
+    # 1. 收集所有数据块
+    full_response = "".join([chunk async for chunk in llm_stream])
+
+    # 2. 尝试解析整个 JSON 数组
+    try:
+        # 首先尝试直接解析
+        actions_data = json.loads(full_response)
+    except json.JSONDecodeError:
+        print("⚠️警告: JSON 解析失败，尝试修复...")
+        try:
+            # 如果失败，使用 json_repair
+            repaired_json_str = repair_json(full_response)
+            actions_data = json.loads(repaired_json_str)
+            print("✅ JSON 成功修复！")
+        except Exception as e:
+            print(f"❌ 错误: 修复后依然无法解析 JSON: {e}")
+            return  # 无法继续，直接返回
+
+    if not isinstance(actions_data, list):
+        print(f"❌ 错误: 预期顶层结构是 JSON 数组，但得到的是 {type(actions_data)}")
+        return
+
+    # 3. 遍历数组，验证并 yield 每个 action
+    for i, action_dict in enumerate(actions_data):
+        try:
+            # 对于 Union 类型，我们使用 TypeAdapter 来验证
+            validated_action = TypeAdapter(Action).validate_python(action_dict)
+            yield validated_action
+        except ValidationError as e:
+            print(
+                f"❌ 错误: 第 {i+1} 个 Action 验证失败，已跳过。数据: {action_dict}, 错误: {e}"
+            )
 
 
 if __name__ == "__main__":
-    import asyncio
 
-    # Example usage
-    video_path = "example_video.mp4"
-    start_time = 0.0
-    character_prompt = "A humorous AI character reacting to a video."
+    async def main():
+        # Example usage
+        video_path = "example_video.mp4"
+        start_time = 0.0
+        character_prompt = "A humorous AI character reacting to a video."
 
-    actions = asyncio.run(generate_actions(video_path, start_time, character_prompt))
-    print(actions)
-</file>
+        print("--- Streaming Actions ---")
+        action_count = 0
+        async for action in generate_actions(video_path, start_time, character_prompt):
+            action_count += 1
+            print(
+                f"Action {action_count}: {action.model_dump_json(indent=2)}", flush=True
+            )
+            await asyncio.sleep(1)
+        print(f"\n--- End of Stream ---")
+        print(f"Total actions received: {action_count}")
 
-<file path=".gitignore">
-# Python-generated files
-__pycache__/
-*.py[oc]
-build/
-dist/
-wheels/
-*.egg-info
-
-# Virtual environments
-.venv
-</file>
-
-<file path=".python-version">
-3.13
+    asyncio.run(main())
 </file>
 
 <file path="schema.json">
@@ -1239,6 +1858,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.116.1",
+    "google-generativeai>=0.8.5",
     "json-repair>=0.47.8",
     "loguru>=0.7.3",
     "numpy>=2.3.1",

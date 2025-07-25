@@ -74,48 +74,115 @@ async def create_session(
     return SessionCreateResponse(session_id=session_id)
 
 
-# --- WebSocket Endpoint ---
+# --- WebSocket Endpoint (Major Refactor) ---
+
+
+async def websocket_sender(websocket: WebSocket, session: SessionState):
+    """
+    消费者协程：从队列中获取 action 并发送给客户端。
+    """
+    # 首先，等待直到 session 准备就绪
+    while session.status != "session_ready" and session.status != "error":
+        await asyncio.sleep(0.1)
+
+    # 如果 session 在连接时已经出错，直接发送错误并关闭
+    if session.status == "error":
+        await websocket.send_json(
+            {
+                "type": "processing_error",
+                "error_code": "INITIAL_PIPELINE_FAILED",
+                "message": session.processing_error or "Unknown error during setup",
+            }
+        )
+        return
+
+    # 发送 session_ready 消息，通知前端可以开始交互了
+    await websocket.send_json({"type": "session_ready"})
+    logger.info(f"[{session.session_id}] Sent 'session_ready' to client.")
+
+    # 进入主循环，从队列中获取并发送数据
+    while True:
+        # 关键：非阻塞地等待队列中的下一项
+        item = await session.action_queue.get()
+
+        # 检查是否是哨兵值 (None)
+        if item is None:
+            logger.info(
+                f"[{session.session_id}] Sentinel (None) received from queue. Closing sender task."
+            )
+            break  # 收到哨兵，退出循环
+
+        # 根据 item 类型发送消息
+        if isinstance(item, Action):
+            await websocket.send_json(
+                {"type": "ai_action", "action": item.model_dump(mode="json")}
+            )
+        elif isinstance(item, dict) and item.get("type") == "processing_error":
+            await websocket.send_json(item)
+
+        # 标记任务完成，这对于队列大小管理很重要
+        session.action_queue.task_done()
+
+
+async def websocket_receiver(websocket: WebSocket, session: SessionState):
+    """
+    接收者协程：监听来自客户端的消息。
+    """
+    async for message in websocket.iter_json():
+        msg_type = message.get("type")
+        logger.info(
+            f"[{session.session_id}] Received message from client: type={msg_type}, data={message}"
+        )
+        # 在这里处理客户端发来的消息，例如：
+        # if msg_type == "timestamp_update":
+        #     # ... 处理时间戳更新 ...
+        # elif msg_type == "user_response":
+        #     # ... 处理用户对 AI 问题的回答 ...
+
+
 @app.websocket("/ws/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, session_id: str):
     """
-    Handles real-time communication for a given session.
+    主 WebSocket 端点，管理发送者和接收者的生命周期。
     """
     session = session_storage.get(session_id)
     if not session:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-        logger.warning(
-            f"WebSocket connection rejected for unknown session: {session_id}"
-        )
+        logger.warning(f"WebSocket connection rejected for unknown session: {session_id}")
         return
 
     await manager.connect(websocket, session_id)
     logger.info(f"[{session_id}] WebSocket connection established.")
 
-    # If processing is already done when the client connects, notify them.
-    if session.status == "actions_ready":
-        await manager.send_json(session_id, {"type": "session_ready"})
-    elif session.status == "error":
-        await manager.send_json(
-            session_id,
-            {
-                "type": "processing_error",
-                "error_code": "INITIAL_PIPELINE_FAILED",  # Or a more specific code
-                "message": session.processing_error,
-            },
-        )
+    # 创建发送者和接收者任务
+    sender_task = asyncio.create_task(websocket_sender(websocket, session))
+    receiver_task = asyncio.create_task(websocket_receiver(websocket, session))
 
     try:
-        while True:
-            data = await websocket.receive_json()
-            msg_type = data.get("type")
+        # 使用 asyncio.gather 等待两个任务中的任何一个完成
+        # `return_exceptions=False` 意味着如果任何一个任务崩溃，`gather` 会立即传播异常
+        done, pending = await asyncio.wait(
+            [sender_task, receiver_task],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
 
-            logger.info(f"[{session_id}] 成功进入 websocket 工作流: f{msg_type}")
+        # 取消仍在运行的任务，确保干净地退出
+        for task in pending:
+            task.cancel()
 
     except WebSocketDisconnect:
-        logger.info(f"[{session_id}] WebSocket disconnected.")
+        logger.info(f"[{session_id}] Client disconnected.")
     except Exception as e:
         logger.error(
-            f"[{session_id}] An error occurred in the websocket: {e}", exc_info=True
+            f"[{session_id}] An error occurred in the websocket endpoint: {e}",
+            exc_info=True,
         )
     finally:
+        # 确保所有任务都被取消
+        if not sender_task.done():
+            sender_task.cancel()
+        if not receiver_task.done():
+            receiver_task.cancel()
+
         manager.disconnect(session_id)
+        logger.info(f"[{session_id}] WebSocket connection closed and cleaned up.")

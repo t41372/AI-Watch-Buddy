@@ -1,0 +1,225 @@
+[
+  {
+    "id": "0",
+    "trigger_timestamp": 0.5,
+    "comment": "开场就看到一个奇怪的画面，纳闷这是什么操作。",
+    "action_type": "SPEAK",
+    "text": "嗯？UCLA的计算机硕士？这怎么一上来就在火车边上啊？好危险！"
+  },
+  {
+    "id": "1",
+    "trigger_timestamp": 2.5,
+    "comment": "看到攀爬的画面，感到震惊。",
+    "action_type": "SPEAK",
+    "text": "哦，这个角度还蛮特别的。等等，他在干什么？！爬楼？这…这也太拼了吧？！"
+  },
+  {
+    "id": "2",
+    "trigger_timestamp": 6.0,
+    "comment": "看到喝恒河茶，表现出一点嫌弃但又带着好奇的腹黑。",
+    "action_type": "SPEAK",
+    "text": "早上八点，起床喝恒河茶…嗯，这独特的孟加拉生活体验呢。味道怎么样？NANA有点好奇呢，嘿嘿。"
+  },
+  {
+    "id": "3",
+    "trigger_timestamp": 10.0,
+    "comment": "听到只有两个小时交作业，感到时间紧迫。",
+    "action_type": "SPEAK",
+    "text": "才两个小时？！完了完了，NANA也经常拖到最后一刻才写作业呢！"
+  },
+  {
+    "id": "4",
+    "trigger_timestamp": 14.0,
+    "comment": "看到冷水冲头，有点心疼又觉得好笑。",
+    "action_type": "SPEAK",
+    "text": "啊啊啊！冷水！这也太刺激了吧？！真是为了清醒拼了！"
+  },
+  {
+    "id": "5",
+    "trigger_timestamp": 15.5,
+    "comment": "对自助理发感到惊讶。",
+    "action_type": "SPEAK",
+    "text": "自己理发？还用手机当镜子？真是省钱小能手啊！"
+  },
+  {
+    "id": "6",
+    "trigger_timestamp": 20.0,
+    "comment": "看到他有点吃不下早餐，表现出幸灾乐祸。",
+    "action_type": "SPEAK",
+    "text": "哎呀，看起来不太好吃的样子？别挑食呀，阿姨说挑食不是好孩子喔！"
+  },
+  {
+    "id": "7",
+    "trigger_timestamp": 25.0,
+    "comment": "听到他吃嘴里臭的，表情夸张。",
+    "action_type": "SPEAK",
+    "text": "吃嘴里是臭的？！哈哈哈哈，看来这顿早餐确实很特别！"
+  },
+  {
+    "id": "8",
+    "trigger_timestamp": 31.0,
+    "comment": "对DeepSeek的规划感到疑惑和不靠谱。",
+    "action_type": "SPEAK",
+    "text": "DeepSeek规划最快路线？地铁冲浪？这是什么鬼东西啊！NANA怎么感觉不太靠谱呢！"
+  },
+  {
+    "id": "9",
+    "trigger_timestamp": 37.0,
+    "comment": "看到他开始地铁冲浪，惊呼。",
+    "action_type": "SPEAK",
+    "text": "真的要去地铁冲浪啊？！Oh my god！太危险了吧！"
+  },
+  {
+    "id": "10",
+    "trigger_timestamp": 43.0,
+    "comment": "看到他差点滑倒，吓了一跳。",
+    "action_type": "SPEAK",
+    "text": "哇啊啊啊！差点摔倒！NANA的心脏都要跳出来了！"
+  },
+  {
+    "id": "11",
+    "trigger_timestamp": 44.5,
+    "comment": "听到他吐槽AI，觉得AI有点腹黑。",
+    "action_type": "SPEAK",
+    "text": "AI竟然不早说？！这个DeepSeek也太腹黑了吧！"
+  },
+  {
+    "id": "12",
+    "trigger_timestamp": 57.0,
+    "comment": "看到他跳上火车，觉得他太勇了。",
+    "action_type": "SPEAK",
+    "text": "哇！这都能追上火车？！太厉害了吧！"
+  },
+  {
+    "id": "13",
+    "trigger_timestamp": 58.5,
+    "comment": "看到车门关上，为他捏一把汗。",
+    "action_type": "SPEAK",
+    "text": "等等！车门锁上了？！我的天哪！"
+  },
+  {
+    "id": "14",
+    "trigger_timestamp": 100.0,
+    "comment": "看到对向火车驶来，惊恐。",
+    "action_type": "SPEAK",
+    "text": "什么？！对面来火车了！Oh my god！这也太刺激了吧！"
+  },
+  {
+    "id": "15",
+    "trigger_timestamp": 109.0,
+    "comment": "松了一口气。",
+    "action_type": "SPEAK",
+    "text": "呼……幸好躲过去了！吓死NANA了！"
+  },
+  {
+    "id": "16",
+    "trigger_timestamp": 115.0,
+    "comment": "对安全座位吐槽。",
+    "action_type": "SPEAK",
+    "text": "这…这就是安全的座位吗？NANA觉得一点都不安全！"
+  },
+  {
+    "id": "17",
+    "trigger_timestamp": 118.5,
+    "comment": "看到树枝很近，替他担心。",
+    "action_type": "SPEAK",
+    "text": "哇！树枝！小心点啊！别被刮到了！"
+  },
+  {
+    "id": "18",
+    "trigger_timestamp": 126.0,
+    "comment": "看到很多人趴着，觉得好挤。",
+    "action_type": "SPEAK",
+    "text": "天哪，这么多人趴着！真是太拼了！"
+  },
+  {
+    "id": "19",
+    "trigger_timestamp": 134.0,
+    "comment": "对火车顶上卖吃的感到不可思议。",
+    "action_type": "SPEAK",
+    "text": "哇！火车顶上还有卖吃的？！NANA还是第一次见到这种服务呢！"
+  },
+  {
+    "id": "20",
+    "trigger_timestamp": 141.0,
+    "comment": "看到大哥送包子，感受到温暖。",
+    "action_type": "SPEAK",
+    "text": "哇！孟加拉大哥人真好！直接送给我了！还给了个辣椒，好贴心呀~"
+  },
+  {
+    "id": "21",
+    "trigger_timestamp": 147.0,
+    "comment": "看到合影，觉得很和谐。",
+    "action_type": "SPEAK",
+    "text": "大家一起合影留念，感觉气氛好好哦！"
+  },
+  {
+    "id": "22",
+    "trigger_timestamp": 150.0,
+    "comment": "听到时间紧迫，再次紧张。",
+    "action_type": "SPEAK",
+    "text": "只剩13分钟了！快快快！跑起来！"
+  },
+  {
+    "id": "23",
+    "trigger_timestamp": 157.0,
+    "comment": "听到教授电话，觉得他艺高人胆大。",
+    "action_type": "SPEAK",
+    "text": "什么？教授来电话了？这种时候还能接电话，心可真大啊！"
+  },
+  {
+    "id": "24",
+    "trigger_timestamp": 160.0,
+    "comment": "看到电脑在楼下，感到震惊。",
+    "action_type": "SPEAK",
+    "text": "哈？！电脑就在楼下？！他是怎么做到的？！太玄幻了吧！"
+  },
+  {
+    "id": "25",
+    "trigger_timestamp": 162.0,
+    "comment": "看到他开始下降，为他捏把汗。",
+    "action_type": "SPEAK",
+    "text": "作业截止还有30秒？！NANA光看着就替他紧张死了！他这也太拼命了吧！"
+  },
+  {
+    "id": "26",
+    "trigger_timestamp": 165.0,
+    "comment": "看到绳子卡住，非常焦急。",
+    "action_type": "SPEAK",
+    "text": "绳子怎么卡住了？！我的天！时间来不及了啊！"
+  },
+  {
+    "id": "27",
+    "trigger_timestamp": 175.0,
+    "comment": "为他想出远程控制办法感到惊讶和佩服。",
+    "action_type": "SPEAK",
+    "text": "什么？！可以用手机远程控制电脑？这…这是什么黑科技啊？！也太牛了吧！"
+  },
+  {
+    "id": "28",
+    "trigger_timestamp": 182.0,
+    "comment": "随着进度条上涨，不断鼓励他。",
+    "action_type": "SPEAK",
+    "text": "快快快！加油啊！就差一点了！"
+  },
+  {
+    "id": "29",
+    "trigger_timestamp": 189.0,
+    "comment": "看到作业上传成功，欢呼雀跃。",
+    "action_type": "SPEAK",
+    "text": "Nice！作业上传成功！太棒了！他真是个奇男子啊！"
+  },
+  {
+    "id": "30",
+    "trigger_timestamp": 196.0,
+    "comment": "完成任务后的放松和感慨。",
+    "action_type": "SPEAK",
+    "text": "Mission Accomplished！在孟加拉上学的UCLA计算机硕士，果然不一样！NANA今天算是大开眼界了！"
+  },
+  {
+    "id": "31",
+    "trigger_timestamp": 199.0,
+    "comment": "结束反应。",
+    "action_type": "END_REACTION"
+  }
+]
