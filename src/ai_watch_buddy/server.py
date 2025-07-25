@@ -89,14 +89,13 @@ async def create_session(
 
 async def websocket_sender(websocket: WebSocket, session: SessionState):
     """
-    消费者协程：从队列中获取 action 并发送给客户端。
+    Consumer coroutine: Gets actions from the queue and sends them to the client.
+    This task now runs indefinitely until cancelled.
     """
-    # 首先，等待直到 session 准备就绪
-    while session.status != "session_ready" and session.status != "error":
-        await websocket.send_json({"type": "session_loading"})
-        await asyncio.sleep(0.1)
+    # First, wait until the session is ready or an error occurs during setup
+    while session.status not in ["session_ready", "error"]:
+        await asyncio.sleep(0.1)  # Small sleep to prevent a tight loop
 
-    # 如果 session 在连接时已经出错，直接发送错误并关闭
     if session.status == "error":
         await websocket.send_json(
             {
@@ -107,23 +106,23 @@ async def websocket_sender(websocket: WebSocket, session: SessionState):
         )
         return
 
-    # 发送 session_ready 消息，通知前端可以开始交互了
     await websocket.send_json({"type": "session_ready"})
     logger.info(f"[{session.session_id}] Sent 'session_ready' to client.")
 
-    # 进入主循环，从队列中获取并发送数据
+    # Main loop to process actions from the queue
     while True:
-        # 关键：非阻塞地等待队列中的下一项
         item = await session.action_queue.get()
 
-        # 检查是否是哨兵值 (None)
+        # **MODIFICATION**: Instead of breaking, just log and continue waiting.
+        # This keeps the sender alive for future actions.
         if item is None:
             logger.info(
-                f"[{session.session_id}] Sentinel (None) received from queue. Closing sender task."
+                f"[{session.session_id}] Initial action generation complete. Sender is now idle, awaiting further actions."
             )
-            break  # 收到哨兵，退出循环
+            session.action_queue.task_done()
+            continue
 
-        # 根据 item 类型发送消息
+        # Send the message based on the item type
         if isinstance(item, Action):
             await websocket.send_json(
                 {"type": "ai_action", "action": item.model_dump(mode="json")}
@@ -131,38 +130,30 @@ async def websocket_sender(websocket: WebSocket, session: SessionState):
         elif isinstance(item, dict) and item.get("type") == "processing_error":
             await websocket.send_json(item)
 
-        # 标记任务完成，这对于队列大小管理很重要
         session.action_queue.task_done()
 
 
 async def websocket_receiver(websocket: WebSocket, session: SessionState):
     """
-    接收者协程：监听来自客户端的消息。
+    Receiver coroutine: Listens for messages from the client.
+    This runs until the client disconnects, which raises WebSocketDisconnect.
     """
     async for message in websocket.iter_json():
         msg_type = message.get("type")
         logger.info(
-            f"[{session.session_id}] Received message from client: type={msg_type}, data={message}"
+            f"[{session.session_id}] Received message from client: type={msg_type}"
         )
-        # 在这里处理客户端发来的消息，例如：
-        # if msg_type == "timestamp_update":
-        #     # ... 处理时间戳更新 ...
-        # elif msg_type == "user_response":
-        #     # ... 处理用户对 AI 问题的回答 ...
-        
-        if msg_type == "trigger-load-next":
-            #TODO 处理加载下一段视频的请求 (lazy load)
-            await websocket.send_json(
-                {"type": "load_next", "message": "Loading next segment..."}
-            )
-            logger.info(f"[{session.session_id}] Triggered load next segment.")
 
+        if msg_type == "trigger-load-next":
+            # Here you can trigger new tasks that might put more actions into the queue
+            logger.info(f"[{session.session_id}] Client triggered a future action.")
+            # Example: asyncio.create_task(load_more_actions(session))
 
 
 @app.websocket("/ws/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, session_id: str):
     """
-    主 WebSocket 端点，管理发送者和接收者的生命周期。
+    Main WebSocket endpoint that manages the sender and receiver tasks' lifecycles.
     """
     session = session_storage.get(session_id)
     if not session:
@@ -175,22 +166,13 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
     await manager.connect(websocket, session_id)
     logger.info(f"[{session_id}] WebSocket connection established.")
 
-    # 创建发送者和接收者任务
     sender_task = asyncio.create_task(websocket_sender(websocket, session))
     receiver_task = asyncio.create_task(websocket_receiver(websocket, session))
 
     try:
-        # 使用 asyncio.gather 等待两个任务中的任何一个完成
-        # `return_exceptions=False` 意味着如果任何一个任务崩溃，`gather` 会立即传播异常
-        done, pending = await asyncio.wait(
-            [sender_task, receiver_task],
-            return_when=asyncio.FIRST_COMPLETED,
-        )
-
-        # 取消仍在运行的任务，确保干净地退出
-        for task in pending:
-            task.cancel()
-
+        # **MODIFICATION**: Use asyncio.gather to run tasks concurrently.
+        # It will return only when one of the tasks raises an unhandled exception.
+        await asyncio.gather(sender_task, receiver_task)
     except WebSocketDisconnect:
         logger.info(f"[{session_id}] Client disconnected.")
     except Exception as e:
@@ -199,11 +181,8 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
             exc_info=True,
         )
     finally:
-        # 确保所有任务都被取消
-        if not sender_task.done():
-            sender_task.cancel()
-        if not receiver_task.done():
-            receiver_task.cancel()
-
+        # Cleanly cancel both tasks and disconnect the manager.
+        sender_task.cancel()
+        receiver_task.cancel()
         manager.disconnect(session_id)
         logger.info(f"[{session_id}] WebSocket connection closed and cleaned up.")
