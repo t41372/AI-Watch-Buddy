@@ -10,6 +10,7 @@ from fastapi import (
     status,
     WebSocketDisconnect,
 )
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from .session import SessionState, session_storage
@@ -18,6 +19,15 @@ from .ai_actions import Action
 from .connection_manager import manager
 
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # --- Data Models for API ---
