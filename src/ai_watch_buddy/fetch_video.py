@@ -21,33 +21,25 @@ def download_video(url: str, target_dir: str | Path) -> Path:
         "paths": {"home": str(target_dir)},  # save in target_dir
         "outtmpl": "%(title)s.%(ext)s",  # nicer names than default
         "quiet": True,  # no console spam
+        "merge_output_format": "mp4",  # force mp4 output
     }
 
     with YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
+        final_path = target_dir / Path(ydl.prepare_filename(info)).name
         if not info:
             raise RuntimeError("Download failed: no info returned")
 
-        final_path: Path | None = None
-        
-        # Try to get final path from 'filepath' or 'requested_downloads'
-        if 'filepath' in info:
-            final_path = Path(info['filepath'])
-        elif "requested_downloads" in info and info["requested_downloads"]:
-            download_info = info["requested_downloads"][0]
-            if "filepath" in download_info:
-                final_path = Path(download_info["filepath"])
-        
-        # Fallback to _filename if available
-        if not final_path and "_filename" in info:
-            final_path = Path(info["_filename"])
-        
         if not final_path:
-            raise RuntimeError("Download failed: no filename available")
+            raise RuntimeError(
+                "Download failed: could not determine final filename from yt-dlp info"
+            )
 
     if not final_path.exists():
-        raise RuntimeError(f"Download appears to have failed. File not found: {final_path}")
-    
+        raise RuntimeError(
+            f"Download appears to have failed. File not found: {final_path}"
+        )
+
     return final_path
 
 

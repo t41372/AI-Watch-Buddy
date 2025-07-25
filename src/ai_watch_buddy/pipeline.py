@@ -59,10 +59,12 @@ async def run_action_generation_pipeline(session_id: str) -> None:
                 f"[{session_id}] Put action into queue: {action.action_type} at {action.trigger_timestamp}s"
             )
 
-        logger.info(
-            f"[{session_id}] Action generation completed. Total actions put in queue: {actions_generated_count}"
-        )
-        
+        # IMPORTANT: Set status to ready only after the loop is successfully completed.
+        if session.status != "error":
+            session.status = "session_ready"
+            logger.info(
+                f"[{session_id}] Action generation completed. Total actions: {actions_generated_count}. Status set to 'session_ready'."
+            )
 
     except Exception as e:
         logger.error(
@@ -97,7 +99,6 @@ async def initial_pipeline(session_id: str) -> None:
         return
 
     try:
-        
         # Step 1: Download video
         session.status = "downloading_video"
         local_video_path = str(
@@ -106,16 +107,10 @@ async def initial_pipeline(session_id: str) -> None:
         session.local_video_path = local_video_path
         session.status = "video_ready"
 
-        # FIX: REMOVE this premature status change.
-        # session.status = "session_ready"
-
-        # 3. 在后台开始运行 action 生成（生产者）
-        # 注意，我们在这里只是启动它，并不会等待它完成
+        # 2. Start action generation in the background.
+        # DO NOT set status to "session_ready" here.
         asyncio.create_task(run_action_generation_pipeline(session_id))
-        
-        # FIX: Set status to session_ready AFTER generation is complete.
-        session.status = "session_ready"
-        logger.info(f"[{session_id}] Session status updated to 'session_ready'.")
+        logger.info(f"[{session_id}] Initial pipeline complete, action generation started.")
 
     except Exception as e:
         logger.error(
