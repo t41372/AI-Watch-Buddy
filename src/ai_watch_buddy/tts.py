@@ -47,12 +47,13 @@ class TTSEngine:
 # en-US-EmmaMultilingualNeural
 # en-US-JennyNeural
 
+tts_instance = TTSEngine()
+
 if __name__ == "__main__":
     import asyncio
 
-    tts = TTSEngine()
     text = "Hello, this is a test of the TTS engine."
-    audio_base64 = asyncio.run(tts.generate_audio(text))
+    audio_base64 = asyncio.run(tts_instance.generate_audio(text))
     if audio_base64:
         print(
             f"Generated audio (base64): {audio_base64[:50]}..."
