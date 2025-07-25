@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "edge-tts>=7.0.2",
     "fastapi>=0.116.1",
     "google-generativeai>=0.8.5",
     "json-repair>=0.47.8",

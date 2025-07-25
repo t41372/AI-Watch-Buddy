@@ -149,6 +149,14 @@ async def websocket_receiver(websocket: WebSocket, session: SessionState):
         #     # ... 处理时间戳更新 ...
         # elif msg_type == "user_response":
         #     # ... 处理用户对 AI 问题的回答 ...
+        
+        if msg_type == "trigger-load-next":
+            #TODO 处理加载下一段视频的请求 (lazy load)
+            await websocket.send_json(
+                {"type": "load_next", "message": "Loading next segment..."}
+            )
+            logger.info(f"[{session.session_id}] Triggered load next segment.")
+
 
 
 @app.websocket("/ws/{session_id}")
