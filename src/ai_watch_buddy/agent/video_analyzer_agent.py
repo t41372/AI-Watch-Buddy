@@ -1,9 +1,10 @@
 import os
 import time
 from typing import AsyncGenerator, List, Optional
+import asyncio
 
 from google import genai
-from google.genai.types import File, Content, Part, GenerateContentConfig
+from google.genai.types import File, Content, Part, GenerateContentConfig, FileData
 
 from ..actions import Action
 from .text_stream_to_action import str_stream_to_actions
@@ -26,6 +27,7 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
         """
         self._client = genai.Client(api_key=api_key or os.getenv("GEMINI_API_KEY"))
         self._video_file: Optional[File] = None
+        self._video_input: Optional[str] = None  # Will store the path or URL
         self._summary: Optional[str] = None
         self._contents: List[Content] = []
         self._summary_ready: bool = False
@@ -83,46 +85,51 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
 
     async def get_video_summary(self, video_path_or_url: str) -> None:
         """
-        Processes a video from a local path or URL, uploads it, and generates a summary.
+        Processes a video from a local path or URL, uploads it if necessary, and generates a summary.
         """
         try:
-            # Only handle local file upload as per interface specification
-            # URLs should be handled differently or converted to local files first
-            if video_path_or_url.startswith(("http://", "https://")):
-                raise ValueError(
-                    "URL handling not implemented. Please provide a local file path."
-                )
+            self._video_input = video_path_or_url  # Store for later use
 
-            # Handle local file upload
-            print(f"正在上传视频文件: {video_path_or_url}")
-            self._video_file = self._client.files.upload(file=video_path_or_url)
+            is_url = video_path_or_url.startswith(("http://", "https://"))
 
-            # Wait for processing to complete
-            while (
-                self._video_file
-                and self._video_file.state
-                and self._video_file.state.name == "PROCESSING"
-            ):
-                print("[处理中]..", end="", flush=True)
-                time.sleep(5)
-                if self._video_file.name:
-                    self._video_file = self._client.files.get(
-                        name=self._video_file.name
+            if is_url:
+                # Handle URL input
+                print(f"准备使用 URL 处理视频: {video_path_or_url}")
+                self._video_file = None
+                file_data = FileData(file_uri=video_path_or_url, mime_type="video/mp4")
+                video_part_for_api = Part(file_data=file_data)
+            else:
+                # Handle local file upload
+                print(f"正在上传视频文件: {video_path_or_url}")
+                uploaded_file = self._client.files.upload(file=video_path_or_url)
+
+                # Wait for processing to complete
+                while (
+                    uploaded_file
+                    and uploaded_file.state
+                    and uploaded_file.state.name == "PROCESSING"
+                ):
+                    print("[处理中]..", end="", flush=True)
+                    time.sleep(5)
+                    if uploaded_file.name:
+                        uploaded_file = self._client.files.get(name=uploaded_file.name)
+
+                if (
+                    uploaded_file
+                    and uploaded_file.state
+                    and uploaded_file.state.name == "FAILED"
+                ):
+                    state_name = (
+                        uploaded_file.state.name if uploaded_file.state else "UNKNOWN"
                     )
+                    raise ValueError(f"Video upload failed: {state_name}")
 
-            if (
-                self._video_file
-                and self._video_file.state
-                and self._video_file.state.name == "FAILED"
-            ):
-                state_name = (
-                    self._video_file.state.name if self._video_file.state else "UNKNOWN"
-                )
-                raise ValueError(f"Video upload failed: {state_name}")
+                self._video_file = uploaded_file
+                video_part_for_api = self._video_file
 
             # Generate summary
             contents = [
-                self._video_file,
+                video_part_for_api,
                 Content(
                     role="user",
                     parts=[Part.from_text(text="请为这个视频生成一个详细的内容摘要。")],
@@ -140,6 +147,7 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
             self._summary = response.text
             self._summary_ready = True
             print("视频摘要生成完成")
+            print(f"摘要内容: {self._summary}")
 
         except Exception as e:
             print(f"生成视频摘要时出错: {e}")
@@ -171,9 +179,9 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
         if mode not in ["video", "summary"]:
             raise ValueError("Mode must be 'video' or 'summary'")
 
-        if mode == "video" and not self._video_file:
+        if mode == "video" and not self._video_input:
             raise RuntimeError(
-                "Video file is not ready. Call get_video_summary() first."
+                "Video source is not ready. Call get_video_summary() first."
             )
 
         if mode == "summary" and not self._summary_ready:
@@ -182,11 +190,25 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
         # Build contents based on mode
         contents = []
 
-        if mode == "video" and self._video_file:
-            # For video mode, use original video file
+        if mode == "video":
+            if not self._video_input:
+                raise RuntimeError("Video input not set.")
+
+            is_url = self._video_input.startswith(("http://", "https://"))
+            if is_url:
+                file_data = FileData(file_uri=self._video_input, mime_type="video/mp4")
+                video_part = Part(file_data=file_data)
+            else:
+                if not self._video_file:
+                    raise RuntimeError(
+                        "Local video file was not properly processed and stored."
+                    )
+                video_part = self._video_file
+
+            # For video mode, use original video file or URL
             contents.extend(
                 [
-                    self._video_file,
+                    video_part,
                     Content(
                         role="user",
                         parts=[
@@ -214,6 +236,9 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
             # Add conversation history
             contents.extend(self._contents)
             # Use action prompt for system instruction
+            system_prompt = self.action_prompt
+        else:
+            # This case should not be reached due to initial checks, but as a fallback:
             system_prompt = self.action_prompt
 
         config = GenerateContentConfig(

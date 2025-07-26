@@ -1,21 +1,16 @@
-import asyncio
 import json
-from pathlib import Path
+import asyncio
 from loguru import logger
-from typing import List, Optional
+from typing import Optional
 import os
 from dotenv import load_dotenv
 
 from .actions import Action, SpeakAction
-from .tts.edge_tts import TTSEngine
 from .tts.fish_audio_tts import FishAudioTTSEngine
 from .session import session_storage
 from .fetch_video import download_video_async
-from .action_generate import generate_actions
-
-# TODO: You need to create and import your actual agent implementation.
-# from .agent.video_action_agent_implementation import VideoActionAgentImpl
-from .agent.video_action_agent_interface import VideoActionAgentInterface
+from .agent.video_analyzer_agent import VideoAnalyzerAgent
+from .prompts.character_prompts import cute_prompt
 
 load_dotenv()
 
@@ -56,10 +51,10 @@ async def run_conversation_pipeline(
 
 - **Interruption Timestamp:** {interruption_timestamp} (The video is PAUSED at this time)
 - **User Actions:**
-{json.dumps(user_action_list, indent=2)}
+{json.dumps([action.model_dump() for action in user_action_list], indent=2)}
 
 - **Your Cancelled Actions:**
-{json.dumps(pending_action_list, indent=2)}
+{json.dumps([action.model_dump() for action in pending_action_list], indent=2)}
 
 Based on this report and your core instructions, generate your new Reaction Script now.
 """
@@ -81,7 +76,6 @@ async def generate_and_queue_actions(
     session_id: str,
     mode: str,
     clear_pending_actions: bool = True,
-    use_mock: bool = True,
 ) -> None:
     """
     Generic function to generate actions using the session's agent and put them in the queue.
@@ -90,14 +84,9 @@ async def generate_and_queue_actions(
         session_id: The session identifier
         mode: The generation mode (e.g., "video", "summary")
         clear_pending_actions: Whether to clear existing pending actions
-        use_mock: Whether to use mock data instead of the real agent
     """
     session = session_storage.get(session_id)
-    if session is None:
-        logger.critical(
-            f"[{session_id}] Session not found in generate_and_queue_actions"
-        )
-    if not use_mock and (not session or not session.agent):
+    if not session or not session.agent:
         logger.error(
             f"[{session_id}] Cannot generate actions: session or agent not found."
         )
@@ -110,24 +99,11 @@ async def generate_and_queue_actions(
             logger.info(f"[{session_id}] Cleared pending actions from the queue.")
 
         session.status = "generating_actions"
-        logger.info(
-            f"[{session_id}] Starting action generation with mode '{mode}' (mock={use_mock})..."
-        )
+        logger.info(f"[{session_id}] Starting action generation with mode '{mode}'...")
 
         actions_generated_count = 0
 
-        # Choose data source based on use_mock parameter
-        if use_mock:
-            # Use mock data from action_generate.py
-            logger.info(f"[{session_id}] Using mock data for action generation")
-            action_source = generate_actions(
-                video_path="",  # Mock doesn't use these parameters
-                start_time=0.0,
-                character_prompt="",
-            )
-        else:
-            # Use real agent
-            action_source = session.agent.produce_action_stream(mode=mode)
+        action_source = session.agent.produce_action_stream(mode=mode)
 
         async for action in action_source:
             # Handle both Action objects (from mock) and dict (from agent)
@@ -141,13 +117,17 @@ async def generate_and_queue_actions(
             # Generate audio for SpeakAction
             if isinstance(action, SpeakAction):
                 # Initialize Fish Audio TTS - you'll need to provide your API key
-                tts_instance = FishAudioTTSEngine(api_key=os.getenv("FISH_AUDIO_API_KEY"))
+                tts_instance = FishAudioTTSEngine(
+                    api_key=os.getenv("FISH_AUDIO_API_KEY")
+                )
                 # tts_instance = TTSEngine()
                 audio_base64 = await tts_instance.generate_audio(action.text)
                 if audio_base64:
                     action.audio = audio_base64
                 else:
-                    logger.warning(f"[{session_id}] Failed to generate audio for action: {action.id}")
+                    logger.warning(
+                        f"[{session_id}] Failed to generate audio for action: {action.id}"
+                    )
 
             await session.action_queue.put(action)
             actions_generated_count += 1
@@ -167,52 +147,45 @@ async def generate_and_queue_actions(
         )
         session.status = "error"
         session.processing_error = str(e)
-        await session.action_queue.put(
-            {
-                "type": "processing_error",
-                "error_code": "ACTION_GENERATION_FAILED",
-                "message": str(e),
-            }
-        )
+        error_payload = {
+            "type": "processing_error",
+            "error_code": "ACTION_GENERATION_FAILED",
+            "message": str(e),
+        }
+        await session.action_queue.put(error_payload)
     finally:
         await session.action_queue.put(None)
 
 
-async def run_initial_generation(session_id: str, use_mock: bool = True):
+async def run_initial_generation(session_id: str):
     """
     Runs initial action generation and summary generation in parallel,
     then sets session_ready when both are complete.
 
     Args:
         session_id: The session identifier
-        use_mock: Whether to use mock data instead of the real agent
     """
     session = session_storage.get(session_id)
-    if not session:
-        logger.error(f"[{session_id}] Session not found in run_initial_generation")
-        return
-
-    # Only check for agent if not using mock
-    if not use_mock and not session.agent:
-        logger.error(f"[{session_id}] Agent not found and not using mock")
+    if not session or not session.agent:
+        logger.error(
+            f"[{session_id}] Session or agent not found in run_initial_generation"
+        )
         return
 
     try:
+        # Determine the video input for the agent: use local path if available, otherwise use original URL.
+        video_input = (
+            session.local_video_path if session.local_video_path else session.video_url
+        )
+
         logger.info(
-            f"[{session_id}] Starting parallel summary and action generation (mock={use_mock})..."
+            f"[{session_id}] Starting parallel summary and action generation for: {video_input}"
         )
 
         # Create both tasks to run in parallel
-        if use_mock:
-            # For mock mode, create a simple completed task
-            summary_task = asyncio.create_task(asyncio.sleep(0))
-        else:
-            # For real mode, use the agent
-            summary_task = asyncio.create_task(
-                session.agent.get_video_summary(
-                    video_path_or_url=session.local_video_path
-                )
-            )
+        summary_task = asyncio.create_task(
+            session.agent.get_video_summary(video_path_or_url=video_input)
+        )
 
         action_generation_task = asyncio.create_task(
             generate_and_queue_actions(
@@ -225,8 +198,7 @@ async def run_initial_generation(session_id: str, use_mock: bool = True):
 
         logger.info(f"[{session_id}] Both summary and action generation completed.")
 
-        # Only verify summary if not using mock
-        if not use_mock and not session.agent.summary_ready:
+        if not session.agent.summary_ready:
             raise RuntimeError(
                 "Agent summary was not ready after summary task completion."
             )
@@ -244,13 +216,12 @@ async def run_initial_generation(session_id: str, use_mock: bool = True):
         )
         session.status = "error"
         session.processing_error = str(e)
-        await session.action_queue.put(
-            {
-                "type": "processing_error",
-                "error_code": "INITIAL_GENERATION_FAILED",
-                "message": str(e),
-            }
-        )
+        error_payload = {
+            "type": "processing_error",
+            "error_code": "INITIAL_GENERATION_FAILED",
+            "message": str(e),
+        }
+        await session.action_queue.put(error_payload)
         await session.action_queue.put(None)
 
 
@@ -263,19 +234,35 @@ async def initial_pipeline(session_id: str) -> None:
         return
 
     try:
-        # Update: No need to download
-        # Step 1: Download video (blocking within this pipeline)
-        # session.status = "downloading_video"
-        # local_video_path = str(await download_video_async(session.video_url, target_dir="video_cache"))
-        # session.local_video_path = local_video_path
-        # session.status = "video_ready"
-        # logger.info(f"[{session_id}] Video ready at: {local_video_path}")
+        # Step 1: Check video URL and download if necessary
+        video_url = session.video_url
+        is_youtube_url = "youtube.com" in video_url or "youtu.be" in video_url
+
+        if is_youtube_url:
+            logger.info(
+                f"[{session_id}] YouTube URL detected, skipping download: {video_url}"
+            )
+            session.local_video_path = None
+        else:
+            session.status = "downloading_video"
+            logger.info(
+                f"[{session_id}] Non-YouTube URL detected, downloading from: {video_url}"
+            )
+            local_video_path = str(
+                await download_video_async(session.video_url, target_dir="video_cache")
+            )
+            session.local_video_path = local_video_path
+            logger.info(
+                f"[{session_id}] Video downloaded and ready at: {local_video_path}"
+            )
+
+        session.status = "video_ready"
 
         # Step 2: Initialize the agent
-        # TODO: Replace with your actual implementation.
-        # agent = VideoActionAgentImpl(...)
-        # session.agent = agent
-        logger.info(f"[{session_id}] Agent initialization skipped (using mock mode).")
+        persona = session.character_prompt or cute_prompt
+        agent = VideoAnalyzerAgent(persona_prompt=persona)
+        session.agent = agent
+        logger.info(f"[{session_id}] Agent initialized with persona.")
 
         # Step 3: Start parallel summary and action generation in the background.
         session.action_generation_task = asyncio.create_task(
@@ -292,11 +279,10 @@ async def initial_pipeline(session_id: str) -> None:
         session.status = "error"
         session.processing_error = str(e)
         if session:
-            await session.action_queue.put(
-                {
-                    "type": "processing_error",
-                    "error_code": "INITIAL_PIPELINE_FAILED",
-                    "message": str(e),
-                }
-            )
+            error_payload = {
+                "type": "processing_error",
+                "error_code": "INITIAL_PIPELINE_FAILED",
+                "message": str(e),
+            }
+            await session.action_queue.put(error_payload)
             await session.action_queue.put(None)

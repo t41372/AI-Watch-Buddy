@@ -9,7 +9,6 @@ dependencies = [
     "fastapi>=0.116.1",
     "fish-audio-sdk>=2025.6.3",
     "google-genai>=1.27.0",
-    "google-generativeai>=0.8.5",
     "json-repair>=0.47.8",
     "loguru>=0.7.3",
     "numpy>=2.3.1",

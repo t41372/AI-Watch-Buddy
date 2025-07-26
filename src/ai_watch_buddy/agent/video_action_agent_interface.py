@@ -103,4 +103,6 @@ class VideoActionAgentInterface(abc.ABC):
         """
         # The 'yield' keyword makes this a generator, matching the signature.
         # This is a placeholder and will not be executed in the interface.
+        if False:
+            yield
         raise NotImplementedError

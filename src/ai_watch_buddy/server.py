@@ -1,6 +1,5 @@
-import asyncio
 import uuid
-from typing import List
+import asyncio
 from loguru import logger
 
 from fastapi import (
@@ -18,7 +17,7 @@ from .pipeline import (
     initial_pipeline,
     generate_and_queue_actions,
     run_conversation_pipeline,
-)       
+)
 from .actions import Action, UserInteractionPayload
 from .connection_manager import manager
 
@@ -78,6 +77,7 @@ async def create_session(
         session_id=session_id,
         character_id=request.character_id,
         video_url=request.video_url,
+        character_prompt=request.text,
     )
     session_storage[session_id] = session
 
@@ -166,7 +166,9 @@ async def websocket_receiver(websocket: WebSocket, session: SessionState):
             )
             session.action_generation_task = asyncio.create_task(
                 generate_and_queue_actions(
-                    session.session_id, mode="summary", clear_pending_actions=True
+                    session.session_id,
+                    mode="summary",
+                    clear_pending_actions=True,
                 )
             )
 

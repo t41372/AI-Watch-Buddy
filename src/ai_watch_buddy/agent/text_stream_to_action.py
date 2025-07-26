@@ -36,6 +36,7 @@ def str_stream_to_actions(
     for response in llm_stream:
         # Extract text from GenerateContentResponse
         chunk = response.text if response.text else ""
+        print(chunk, end="", flush=True)
         buffer += chunk
 
         # 如果还没有找到JSON数组的开始，寻找 '['
