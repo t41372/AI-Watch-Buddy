@@ -1,9 +1,10 @@
 import json
 from ..actions import ActionScript
+from .character_prompts import cute_prompt
 
 
-def generate_reaction_script(
-    character_settings: str,
+def action_generation_prompt(
+    character_settings: str = cute_prompt,
     json_schema: str = json.dumps(
         ActionScript.model_json_schema(), ensure_ascii=False, indent=2
     ),
@@ -66,4 +67,4 @@ JSON SCHEMA for your output:
 
 if __name__ == "__main__":
     character_settings = "你是一个喜欢吐槽和讲冷笑话的AI"
-    print(generate_reaction_script(character_settings))
+    print(action_generation_prompt(character_settings))
