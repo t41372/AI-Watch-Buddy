@@ -1,11 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getApiBaseUrl, getWebSocketUrl } from '@/utils/url';
 
 export interface GeneralSettings {
-  primaryBaseUrl: string;
-  secondaryBaseUrl: string;
+  baseUrl: string;
   websocketBaseUrl: string;
   reduceVideoVolumeOnSpeech: boolean;
   videoVolumeReductionPercent: number;
@@ -35,13 +33,12 @@ interface SettingsContextType {
   loadSettings: () => void;
 }
 
-const getDefaultGeneralSettings = (): GeneralSettings => ({
-  primaryBaseUrl: getApiBaseUrl(),
-  secondaryBaseUrl: 'http://127.0.0.1:8001',
-  websocketBaseUrl: getWebSocketUrl(),
+const defaultGeneralSettings: GeneralSettings = {
+  baseUrl: 'http://127.0.0.1:8000',
+  websocketBaseUrl: 'ws://127.0.0.1:8000/ws',
   reduceVideoVolumeOnSpeech: true,
   videoVolumeReductionPercent: 50
-});
+};
 
 const defaultBackgroundSettings: BackgroundSettings = {
   type: 'image',
@@ -68,7 +65,7 @@ interface SettingsProviderProps {
 }
 
 export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) => {
-  const [generalSettings, setGeneralSettings] = useState<GeneralSettings>(getDefaultGeneralSettings());
+  const [generalSettings, setGeneralSettings] = useState<GeneralSettings>(defaultGeneralSettings);
   const [backgroundSettings, setBackgroundSettings] = useState<BackgroundSettings>(defaultBackgroundSettings);
 
   // Load settings from localStorage on mount
@@ -108,10 +105,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       const savedGeneralSettings = localStorage.getItem('generalSettings');
       if (savedGeneralSettings) {
         const parsed = JSON.parse(savedGeneralSettings);
-        setGeneralSettings({ ...getDefaultGeneralSettings(), ...parsed });
-      } else {
-        // If no saved settings, use the defaults based on current host
-        setGeneralSettings(getDefaultGeneralSettings());
+        setGeneralSettings({ ...defaultGeneralSettings, ...parsed });
       }
 
       // Load background settings
@@ -129,7 +123,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
     } catch (error) {
       console.error('Failed to load settings:', error);
       // Reset to defaults and clear corrupted localStorage data
-      setGeneralSettings(getDefaultGeneralSettings());
+      setGeneralSettings(defaultGeneralSettings);
       setBackgroundSettings(defaultBackgroundSettings);
       try {
         localStorage.removeItem('generalSettings');

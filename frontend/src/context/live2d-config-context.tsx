@@ -3,7 +3,6 @@
 import {
   createContext, useContext, useState, useMemo,
 } from 'react';
-import { getLive2DModelUrl } from '@/utils/url';
 
 /**
  * Model emotion mapping interface
@@ -81,7 +80,7 @@ interface Live2DConfigState {
  * Default model configuration with specified URL
  * Optimized for right-side companion area display
  */
-const getDefaultModelInfo = (): ModelInfo => ({
+const DEFAULT_MODEL_INFO: ModelInfo = {
   name: "Elaina",
   description: "Default Live2D model - AI Companion",
   url: getLive2DModelUrl(),
@@ -112,13 +111,13 @@ const getDefaultModelInfo = (): ModelInfo => ({
   pointerInteractive: true,
   scrollToResize: true,
   initialScale: 0.8, // Consistent with kScale
-});
+};
 
 /**
  * Default values and constants
  */
 const DEFAULT_CONFIG = {
-  modelInfo: getDefaultModelInfo(),
+  modelInfo: DEFAULT_MODEL_INFO,
   isLoading: false,
 };
 

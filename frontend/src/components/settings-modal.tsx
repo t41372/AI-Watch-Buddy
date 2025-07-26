@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useSettings, BackgroundSettings, GeneralSettings } from '@/context/settings-context';
-import { getApiBaseUrl, getWebSocketUrl } from '@/utils/url';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -23,9 +22,8 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
   
   // Default values to prevent undefined issues
   const defaultGeneralSettings: GeneralSettings = {
-    primaryBaseUrl: getApiBaseUrl(),
-    secondaryBaseUrl: 'http://127.0.0.1:8001',
-    websocketBaseUrl: getWebSocketUrl(),
+    baseUrl: 'http://127.0.0.1:8000',
+    websocketBaseUrl: 'ws://127.0.0.1:8000/ws',
     reduceVideoVolumeOnSpeech: true,
     videoVolumeReductionPercent: 50
   };
@@ -198,34 +196,15 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-[13px] font-medium text-[#202124] mb-2">
-                    Primary Base URL
+                    Base URL
                   </label>
                   <input
                     type="url"
-                    value={localGeneralSettings?.primaryBaseUrl ?? ''}
-                    onChange={(e) => setLocalGeneralSettings(prev => ({ ...prev, primaryBaseUrl: e.target.value }))}
-                    placeholder={defaultGeneralSettings.primaryBaseUrl}
+                    value={localGeneralSettings?.baseUrl ?? ''}
+                    onChange={(e) => setLocalGeneralSettings(prev => ({ ...prev, baseUrl: e.target.value }))}
+                    placeholder="http://127.0.0.1:8000"
                     className="w-full px-3 py-2 text-[14px] border border-[#dadce0] rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:ring-opacity-20 focus:border-[#1a73e8] transition-colors"
                   />
-                  <p className="text-[12px] text-[#5f6368] mt-1">
-                    Main server URL for sessions, websockets, and Live2D models
-                  </p>
-                </div>
-                
-                <div>
-                  <label className="block text-[13px] font-medium text-[#202124] mb-2">
-                    Secondary Base URL
-                  </label>
-                  <input
-                    type="url"
-                    value={localGeneralSettings?.secondaryBaseUrl ?? ''}
-                    onChange={(e) => setLocalGeneralSettings(prev => ({ ...prev, secondaryBaseUrl: e.target.value }))}
-                    placeholder="http://127.0.0.1:8001"
-                    className="w-full px-3 py-2 text-[14px] border border-[#dadce0] rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:ring-opacity-20 focus:border-[#1a73e8] transition-colors"
-                  />
-                  <p className="text-[12px] text-[#5f6368] mt-1">
-                    Alternative server URL for additional services
-                  </p>
                 </div>
                 
                 <div>
@@ -239,9 +218,6 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                     placeholder="ws://127.0.0.1:8000/ws"
                     className="w-full px-3 py-2 text-[14px] border border-[#dadce0] rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:ring-opacity-20 focus:border-[#1a73e8] transition-colors"
                   />
-                  <p className="text-[12px] text-[#5f6368] mt-1">
-                    WebSocket connection URL for real-time communication
-                  </p>
                 </div>
               </div>
             </div>
