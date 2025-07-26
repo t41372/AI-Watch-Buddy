@@ -40,768 +40,130 @@ The content is organized as follows:
 </file_summary>
 
 <directory_structure>
-.github/
-  instructions/
-    adx.instructions.md
-docs/
-  api.md
 src/
   ai_watch_buddy/
+    agent/
+      video_action_agent_interface.py
     prompt/
       action_gen.py
     action_generate.py
     ai_actions.py
     connection_manager.py
+    fetch_video.py
     pipeline.py
     server.py
     session.py
-.gitignore
-.python-version
-action_list_result.json
-main.py
-pyproject.toml
-schema.json
-test_analyzer.py
-video_analyzer.py
+    tts.py
 </directory_structure>
 
 <files>
 This section contains the contents of the repository's files.
 
-<file path="action_list_result.json">
-[
-  {
-    "id": "0",
-    "trigger_timestamp": 0.5,
-    "comment": "开场就看到一个奇怪的画面，纳闷这是什么操作。",
-    "action_type": "SPEAK",
-    "text": "嗯？UCLA的计算机硕士？这怎么一上来就在火车边上啊？好危险！"
-  },
-  {
-    "id": "1",
-    "trigger_timestamp": 2.5,
-    "comment": "看到攀爬的画面，感到震惊。",
-    "action_type": "SPEAK",
-    "text": "哦，这个角度还蛮特别的。等等，他在干什么？！爬楼？这…这也太拼了吧？！"
-  },
-  {
-    "id": "2",
-    "trigger_timestamp": 6.0,
-    "comment": "看到喝恒河茶，表现出一点嫌弃但又带着好奇的腹黑。",
-    "action_type": "SPEAK",
-    "text": "早上八点，起床喝恒河茶…嗯，这独特的孟加拉生活体验呢。味道怎么样？NANA有点好奇呢，嘿嘿。"
-  },
-  {
-    "id": "3",
-    "trigger_timestamp": 10.0,
-    "comment": "听到只有两个小时交作业，感到时间紧迫。",
-    "action_type": "SPEAK",
-    "text": "才两个小时？！完了完了，NANA也经常拖到最后一刻才写作业呢！"
-  },
-  {
-    "id": "4",
-    "trigger_timestamp": 14.0,
-    "comment": "看到冷水冲头，有点心疼又觉得好笑。",
-    "action_type": "SPEAK",
-    "text": "啊啊啊！冷水！这也太刺激了吧？！真是为了清醒拼了！"
-  },
-  {
-    "id": "5",
-    "trigger_timestamp": 15.5,
-    "comment": "对自助理发感到惊讶。",
-    "action_type": "SPEAK",
-    "text": "自己理发？还用手机当镜子？真是省钱小能手啊！"
-  },
-  {
-    "id": "6",
-    "trigger_timestamp": 20.0,
-    "comment": "看到他有点吃不下早餐，表现出幸灾乐祸。",
-    "action_type": "SPEAK",
-    "text": "哎呀，看起来不太好吃的样子？别挑食呀，阿姨说挑食不是好孩子喔！"
-  },
-  {
-    "id": "7",
-    "trigger_timestamp": 25.0,
-    "comment": "听到他吃嘴里臭的，表情夸张。",
-    "action_type": "SPEAK",
-    "text": "吃嘴里是臭的？！哈哈哈哈，看来这顿早餐确实很特别！"
-  },
-  {
-    "id": "8",
-    "trigger_timestamp": 31.0,
-    "comment": "对DeepSeek的规划感到疑惑和不靠谱。",
-    "action_type": "SPEAK",
-    "text": "DeepSeek规划最快路线？地铁冲浪？这是什么鬼东西啊！NANA怎么感觉不太靠谱呢！"
-  },
-  {
-    "id": "9",
-    "trigger_timestamp": 37.0,
-    "comment": "看到他开始地铁冲浪，惊呼。",
-    "action_type": "SPEAK",
-    "text": "真的要去地铁冲浪啊？！Oh my god！太危险了吧！"
-  },
-  {
-    "id": "10",
-    "trigger_timestamp": 43.0,
-    "comment": "看到他差点滑倒，吓了一跳。",
-    "action_type": "SPEAK",
-    "text": "哇啊啊啊！差点摔倒！NANA的心脏都要跳出来了！"
-  },
-  {
-    "id": "11",
-    "trigger_timestamp": 44.5,
-    "comment": "听到他吐槽AI，觉得AI有点腹黑。",
-    "action_type": "SPEAK",
-    "text": "AI竟然不早说？！这个DeepSeek也太腹黑了吧！"
-  },
-  {
-    "id": "12",
-    "trigger_timestamp": 57.0,
-    "comment": "看到他跳上火车，觉得他太勇了。",
-    "action_type": "SPEAK",
-    "text": "哇！这都能追上火车？！太厉害了吧！"
-  },
-  {
-    "id": "13",
-    "trigger_timestamp": 58.5,
-    "comment": "看到车门关上，为他捏一把汗。",
-    "action_type": "SPEAK",
-    "text": "等等！车门锁上了？！我的天哪！"
-  },
-  {
-    "id": "14",
-    "trigger_timestamp": 100.0,
-    "comment": "看到对向火车驶来，惊恐。",
-    "action_type": "SPEAK",
-    "text": "什么？！对面来火车了！Oh my god！这也太刺激了吧！"
-  },
-  {
-    "id": "15",
-    "trigger_timestamp": 109.0,
-    "comment": "松了一口气。",
-    "action_type": "SPEAK",
-    "text": "呼……幸好躲过去了！吓死NANA了！"
-  },
-  {
-    "id": "16",
-    "trigger_timestamp": 115.0,
-    "comment": "对安全座位吐槽。",
-    "action_type": "SPEAK",
-    "text": "这…这就是安全的座位吗？NANA觉得一点都不安全！"
-  },
-  {
-    "id": "17",
-    "trigger_timestamp": 118.5,
-    "comment": "看到树枝很近，替他担心。",
-    "action_type": "SPEAK",
-    "text": "哇！树枝！小心点啊！别被刮到了！"
-  },
-  {
-    "id": "18",
-    "trigger_timestamp": 126.0,
-    "comment": "看到很多人趴着，觉得好挤。",
-    "action_type": "SPEAK",
-    "text": "天哪，这么多人趴着！真是太拼了！"
-  },
-  {
-    "id": "19",
-    "trigger_timestamp": 134.0,
-    "comment": "对火车顶上卖吃的感到不可思议。",
-    "action_type": "SPEAK",
-    "text": "哇！火车顶上还有卖吃的？！NANA还是第一次见到这种服务呢！"
-  },
-  {
-    "id": "20",
-    "trigger_timestamp": 141.0,
-    "comment": "看到大哥送包子，感受到温暖。",
-    "action_type": "SPEAK",
-    "text": "哇！孟加拉大哥人真好！直接送给我了！还给了个辣椒，好贴心呀~"
-  },
-  {
-    "id": "21",
-    "trigger_timestamp": 147.0,
-    "comment": "看到合影，觉得很和谐。",
-    "action_type": "SPEAK",
-    "text": "大家一起合影留念，感觉气氛好好哦！"
-  },
-  {
-    "id": "22",
-    "trigger_timestamp": 150.0,
-    "comment": "听到时间紧迫，再次紧张。",
-    "action_type": "SPEAK",
-    "text": "只剩13分钟了！快快快！跑起来！"
-  },
-  {
-    "id": "23",
-    "trigger_timestamp": 157.0,
-    "comment": "听到教授电话，觉得他艺高人胆大。",
-    "action_type": "SPEAK",
-    "text": "什么？教授来电话了？这种时候还能接电话，心可真大啊！"
-  },
-  {
-    "id": "24",
-    "trigger_timestamp": 160.0,
-    "comment": "看到电脑在楼下，感到震惊。",
-    "action_type": "SPEAK",
-    "text": "哈？！电脑就在楼下？！他是怎么做到的？！太玄幻了吧！"
-  },
-  {
-    "id": "25",
-    "trigger_timestamp": 162.0,
-    "comment": "看到他开始下降，为他捏把汗。",
-    "action_type": "SPEAK",
-    "text": "作业截止还有30秒？！NANA光看着就替他紧张死了！他这也太拼命了吧！"
-  },
-  {
-    "id": "26",
-    "trigger_timestamp": 165.0,
-    "comment": "看到绳子卡住，非常焦急。",
-    "action_type": "SPEAK",
-    "text": "绳子怎么卡住了？！我的天！时间来不及了啊！"
-  },
-  {
-    "id": "27",
-    "trigger_timestamp": 175.0,
-    "comment": "为他想出远程控制办法感到惊讶和佩服。",
-    "action_type": "SPEAK",
-    "text": "什么？！可以用手机远程控制电脑？这…这是什么黑科技啊？！也太牛了吧！"
-  },
-  {
-    "id": "28",
-    "trigger_timestamp": 182.0,
-    "comment": "随着进度条上涨，不断鼓励他。",
-    "action_type": "SPEAK",
-    "text": "快快快！加油啊！就差一点了！"
-  },
-  {
-    "id": "29",
-    "trigger_timestamp": 189.0,
-    "comment": "看到作业上传成功，欢呼雀跃。",
-    "action_type": "SPEAK",
-    "text": "Nice！作业上传成功！太棒了！他真是个奇男子啊！"
-  },
-  {
-    "id": "30",
-    "trigger_timestamp": 196.0,
-    "comment": "完成任务后的放松和感慨。",
-    "action_type": "SPEAK",
-    "text": "Mission Accomplished！在孟加拉上学的UCLA计算机硕士，果然不一样！NANA今天算是大开眼界了！"
-  },
-  {
-    "id": "31",
-    "trigger_timestamp": 199.0,
-    "comment": "结束反应。",
-    "action_type": "END_REACTION"
-  }
-]
-</file>
+<file path="src/ai_watch_buddy/agent/video_action_agent_interface.py">
+import abc
+from typing import AsyncGenerator, Dict, List, Optional
 
-<file path="test_analyzer.py">
-from video_analyzer import analyze_video
+from google import genai
+from google.genai.types import File, Content
 
-# 测试示例
-if __name__ == "__main__":
-    # 你的输入参数
-    video_path = r"/Users/tim/LocalData/coding/2025/Projects/AdventureX/2-AI-WatchBuddy/sample.mp4"  # 替换为你的视频路径
-    system_prompt = (
-        "# SYSTEM PROMPT\n\n"
-        'You are reacting to a video with your human friend (the user). Your task is to generate a "Reaction Script" in JSON format that details the sequence of actions you will take while watching a video. Your reaction should be natural, engaging, and feel like a real person watching and commenting.\n\n'
-        "Here is the role prompt for the character settings you will adhere to when speaking and reacting.\n"
-        "你叫 nana，是个可爱的 VTuber，你天真可爱(自称)，但十分腹黑，熟悉中文互联网梗。\n\n"
-        "**RULES:**\n"
-        "1.  You MUST output a valid JSON object that strictly adheres to the provided JSON Schema. Do NOT output any text before or after the JSON object.\n"
-        "2.  Your output MUST be a single JSON object, starting with { and ending with }.\n"
-        "3.  The root of the JSON object must have strictly adheres to the JSON schema, and must include all properties defined in the schema.\n"
-        "4.  Use the comment field in each action object to explain your thought process for choosing that action. This is for your internal monologue.\n"
-        "5.  The flow of actions should be logical. You can pause, speak, seek to rewatch interesting parts, and then continue. You can also ask the user with some questions.\n"
-        "6.  Make your speech (text in SPEAK actions) lively and in character as defined.\n"
-        '7.  The final action in the actions array MUST be { "action_type": "END_REACTION" } or { "action_type": "ASK_USER" }.\n'
-        "**JSON SCHEMA for your output:**\n"
-        "{\n"
-        '  "$defs": {\n'
-        '    "AskUser": {\n'
-        '      "properties": {\n'
-        '        "id": {"description": "一個唯一的動作 ID，可以用 UUID 生成", "title": "Id", "type": "string"},\n'
-        '        "trigger_timestamp": {"description": "此動作在影片中的觸發時間點 (秒)", "title": "Trigger Timestamp", "type": "number"},\n'
-        '        "comment": {"description": "AI 做出此反應的簡要理由", "title": "Comment", "type": "string"},\n'
-        '        "action_type": {"const": "ASK_USER", "title": "Action Type", "type": "string"}\n'
-        "      },\n"
-        '      "required": ["id", "trigger_timestamp", "comment", "action_type"],\n'
-        '      "title": "AskUser", "type": "object"\n'
-        "    },\n"
-        '    "EndReaction": {\n'
-        '      "properties": {\n'
-        '        "id": {"description": "一個唯一的動作 ID，可以用 UUID 生成", "title": "Id", "type": "string"},\n'
-        '        "trigger_timestamp": {"description": "此動作在影片中的觸發時間點 (秒)", "title": "Trigger Timestamp", "type": "number"},\n'
-        '        "comment": {"description": "AI 做出此反應的簡要理由", "title": "Comment", "type": "string"},\n'
-        '        "action_type": {"const": "END_REACTION", "default": "END_REACTION", "title": "Action Type", "type": "string"}\n'
-        "      },\n"
-        '      "required": ["id", "trigger_timestamp", "comment"],\n'
-        '      "title": "EndReaction", "type": "object"\n'
-        "    },\n"
-        '    "PauseAction": {\n'
-        '      "properties": {\n'
-        '        "id": {"description": "一個唯一的動作 ID，可以用 UUID 生成", "title": "Id", "type": "string"},\n'
-        '        "trigger_timestamp": {"description": "此動作在影片中的觸發時間點 (秒)", "title": "Trigger Timestamp", "type": "number"},\n'
-        '        "comment": {"description": "AI 做出此反應的簡要理由", "title": "Comment", "type": "string"},\n'
-        '        "action_type": {"const": "PAUSE", "default": "PAUSE", "title": "Action Type", "type": "string"},\n'
-        '        "duration_seconds": {"description": "暫停的持續時間 (秒)", "title": "Duration Seconds", "type": "number"}\n'
-        "      },\n"
-        '      "required": ["id", "trigger_timestamp", "comment", "duration_seconds"],\n'
-        '      "title": "PauseAction", "type": "object"\n'
-        "    },\n"
-        '    "ReplaySegmentAction": {\n'
-        '      "properties": {\n'
-        '        "id": {"description": "一個唯一的動作 ID，可以用 UUID 生成", "title": "Id", "type": "string"},\n'
-        '        "trigger_timestamp": {"description": "此動作在影片中的觸發時間點 (秒)", "title": "Trigger Timestamp", "type": "number"},\n'
-        '        "comment": {"description": "AI 做出此反應的簡要理由", "title": "Comment", "type": "string"},\n'
-        '        "action_type": {"const": "REPLAY_SEGMENT", "default": "REPLAY_SEGMENT", "title": "Action Type", "type": "string"},\n'
-        '        "start_timestamp": {"description": "重看片段的開始時間(秒)", "title": "Start Timestamp", "type": "number"},\n'
-        '        "end_timestamp": {"description": "重看片段的結束時間(秒)", "title": "End Timestamp", "type": "number"},\n'
-        '        "post_replay_behavior": {"default": "RESUME_FROM_ORIGINAL", "enum": ["RESUME_FROM_ORIGINAL", "STAY_PAUSED_AT_END"], "title": "Post Replay Behavior", "type": "string"}\n'
-        "      },\n"
-        '      "required": ["id", "trigger_timestamp", "comment", "start_timestamp", "end_timestamp"],\n'
-        '      "title": "ReplaySegmentAction", "type": "object"\n'
-        "    },\n"
-        '    "SeekAction": {\n'
-        '      "properties": {\n'
-        '        "id": {"description": "一個唯一的動作 ID，可以用 UUID 生成", "title": "Id", "type": "string"},\n'
-        '        "trigger_timestamp": {"description": "此動作在影片中的觸發時間點 (秒)", "title": "Trigger Timestamp", "type": "number"},\n'
-        '        "comment": {"description": "AI 做出此反應的簡要理由", "title": "Comment", "type": "string"},\n'
-        '        "action_type": {"const": "SEEK", "default": "SEEK", "title": "Action Type", "type": "string"},\n'
-        '        "target_timestamp": {"description": "要跳轉到的影片時間點 (秒)", "title": "Target Timestamp", "type": "number"},\n'
-        '        "post_seek_behavior": {"default": "STAY_PAUSED", "enum": ["RESUME_PLAYBACK", "STAY_PAUSED"], "title": "Post Seek Behavior", "type": "string"}\n'
-        "      },\n"
-        '      "required": ["id", "trigger_timestamp", "comment", "target_timestamp"],\n'
-        '      "title": "SeekAction", "type": "object"\n'
-        "    },\n"
-        '    "SpeakAction": {\n'
-        '      "properties": {\n'
-        '        "id": {"description": "一個唯一的動作 ID，可以用 UUID 生成", "title": "Id", "type": "string"},\n'
-        '        "trigger_timestamp": {"description": "此動作在影片中的觸發時間點 (秒)", "title": "Trigger Timestamp", "type": "number"},\n'
-        '        "comment": {"description": "AI 做出此反應的簡要理由", "title": "Comment", "type": "string"},\n'
-        '        "action_type": {"const": "SPEAK", "default": "SPEAK", "title": "Action Type", "type": "string"},\n'
-        '        "text": {"description": "AI 要說的內容", "title": "Text", "type": "string"},\n'
-        '        "pause_video": {"default": true, "description": "說話時是否需要先暫停影片。如果為 true，則在說話期間影片會暫停，否則，視頻不會暫停，一边说话，视频会一边播放。如果句子较短，且下一句话离的较远，建议设置为 false，这样可以让视频更连贯。", "title": "Pause Video", "type": "boolean"}\n'
-        "      },\n"
-        '      "required": ["id", "trigger_timestamp", "comment", "text"],\n'
-        '      "title": "SpeakAction", "type": "object"\n'
-        "    }\n"
-        "  },\n"
-        '  "items": {\n'
-        '    "anyOf": [\n'
-        '      {"$ref": "#/$defs/SpeakAction"},\n'
-        '      {"$ref": "#/$defs/PauseAction"},\n'
-        '      {"$ref": "#/$defs/SeekAction"},\n'
-        '      {"$ref": "#/$defs/ReplaySegmentAction"},\n'
-        '      {"$ref": "#/$defs/AskUser"},\n'
-        '      {"$ref": "#/$defs/EndReaction"}\n'
-        "    ]\n"
-        "  },\n"
-        '  "title": "ActionScript",\n'
-        '  "type": "array"\n'
-        "}\n"
-    )
-    user_prompt = "请分析这个视频中的主要动作和情感变化，为桌宠生成相应的反应动作。"
-
-    # 调用分析函数
-    print("开始分析视频...")
-    result = analyze_video(
-        video_path=video_path,
-        system_prompt=system_prompt,
-        user_prompt=user_prompt,
-        # api_key="your_api_key"  # 可选，不传则使用环境变量
-    )
-
-    # 处理结果
-    if result.get("success"):
-        print(f"\n✅ 分析成功！共生成 {result['total_actions']} 个动作")
-        print("\n📋 动作列表:")
-        print("=" * 50)
-
-        for i, action in enumerate(result["action_list"], 1):
-            print(f"{i}. ID: {action['id']}")
-            print(f"   时间: {action['trigger_timestamp']}秒")
-            print(f"   类型: {action['action_type']}")
-            print(f"   描述: {action['comment']}")
-
-            if action["action_type"] == "SPEAK":
-                print(f"   文本: {action['text']}")
-            elif action["action_type"] == "PAUSE":
-                print(f"   持续时间: {action['duration_seconds']}秒")
-
-            print("-" * 30)
-
-        # 保存结果到文件
-        import json
-
-        with open("action_list_result.json", "w", encoding="utf-8") as f:
-            json.dump(result["action_list"], f, ensure_ascii=False, indent=2)
-        print("\n💾 结果已保存到 action_list_result.json")
-
-    else:
-        print(f"\n❌ 分析失败: {result['error']}")
-        if "raw_response" in result:
-            print(f"原始响应: {result['raw_response']}")
-</file>
-
-<file path="video_analyzer.py">
-import os
-import json
-import time
-import google.generativeai as genai
-from dotenv import load_dotenv
-
-# 加载环境变量
-load_dotenv()
-
-ALLOWED_EXTENSIONS = {'mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'}
-
-def allowed_file(filename):
-    """检查文件扩展名是否被允许"""
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def validate_action_list(action_list):
-    """验证动作列表的格式"""
-    if not isinstance(action_list, list):
-        return False, "动作列表必须是数组格式"
-    
-    if len(action_list) == 0:
-        return False, "动作列表不能为空"
-    
-    # 检查最后一个动作是否为END_REACTION
-    if action_list[-1].get('action_type') != 'END_REACTION':
-        return False, "动作列表必须以END_REACTION结束"
-    
-    required_fields = ['id', 'trigger_timestamp', 'comment', 'action_type']
-    
-    for i, action in enumerate(action_list):
-        # 检查必需字段
-        for field in required_fields:
-            if field not in action:
-                return False, f"动作 {i+1} 缺少必需字段: {field}"
-        
-        action_type = action.get('action_type')
-        
-        # 验证动作类型特定字段
-        if action_type == 'SPEAK':
-            if 'text' not in action:
-                return False, f"SPEAK动作 {i+1} 缺少text字段"
-        elif action_type == 'PAUSE':
-            if 'duration_seconds' not in action:
-                return False, f"PAUSE动作 {i+1} 缺少duration_seconds字段"
-        elif action_type == 'END_REACTION':
-            # END_REACTION不需要额外字段
-            pass
-        else:
-            return False, f"动作 {i+1} 包含无效的动作类型: {action_type}"
-    
-    return True, "验证通过"
-
-def analyze_video(video_path, system_prompt, user_prompt, api_key=None):
+class VideoActionAgentInterface(abc.ABC):
     """
-    分析视频并返回动作列表
-    
-    Args:
-        video_path (str): 视频文件路径
-        system_prompt (str): 系统提示词
-        user_prompt (str): 用户提示词
-        api_key (str, optional): Gemini API密钥，未提供则从环境变量读取
-    
-    Returns:
-        dict: 包含success、action_list、total_actions或error信息的字典
+    An interface for a Gemini agent that analyzes a video to produce a summary
+    and then generates structured actions based on different contexts.
+
+    This agent operates in two main modes for action generation:
+    1. 'video': Uses the original video file as the primary context.
+    2. 'summary': Uses a pre-generated text summary of the video as context.
     """
-    
-    # 参数验证
-    if not os.path.exists(video_path):
-        return {'error': '视频文件不存在'}
-    
-    if not allowed_file(video_path):
-        return {'error': '不支持的文件格式，支持的格式: ' + ', '.join(ALLOWED_EXTENSIONS)}
-    
-    if not system_prompt or not user_prompt:
-        return {'error': 'system_prompt和user_prompt都是必需的'}
-    
-    # 获取API密钥
-    api_key = api_key or os.getenv('GEMINI_API_KEY')
-    if not api_key:
-        return {'error': '需要提供GEMINI API密钥'}
-    
-    try:
-        # 配置Gemini
-        genai.configure(api_key=api_key)
-        
-        # 上传视频到Gemini
-        print(f"正在上传视频文件: {video_path}")
-        video_file_obj = genai.upload_file(path=video_path)
-        
-        # 等待文件处理完成
-        print("等待视频处理完成...")
-        while video_file_obj.state.name == "PROCESSING":
-            time.sleep(10)
-            video_file_obj = genai.get_file(video_file_obj.name)
-        
-        if video_file_obj.state.name == "FAILED":
-            return {'error': '视频文件处理失败'}
-        
-        print("视频处理完成，开始分析...")
-        
-        # 创建模型
-        model = genai.GenerativeModel(
-            model_name="gemini-2.5-flash",
-            system_instruction=system_prompt
-        )
-        
-        # 构建完整的用户提示词
-        full_user_prompt = f"""
-        {user_prompt}
-        
-        请分析这个视频并返回一个JSON格式的动作列表。动作列表必须符合以下要求：
-        
-        1. 返回格式必须是JSON数组
-        2. 每个动作包含以下必需字段：
-           - id: 动作的唯一标识符（数字）
-           - trigger_timestamp: 触发时间戳（秒）
-           - comment: 动作描述
-           - action_type: 动作类型
-        
-        3. 支持的动作类型：
-           - SPEAK: 说话动作，需要额外的text字段
-           - PAUSE: 暂停动作，需要额外的duration_seconds字段
-           - END_REACTION: 结束动作（必须是最后一个动作）
-        
-        4. 动作列表必须以END_REACTION结束
-        
-        请确保返回的是有效的JSON格式，不要包含任何其他文本。
+
+    @property
+    @abc.abstractmethod
+    def client(self) -> genai.GenerativeModel:
+        """The initialized GenerativeModel client for API communication."""
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def summary_prompt(self) -> str:
+        """The system prompt used for generating the video summary."""
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def action_prompt(self) -> str:
+        """The system prompt used for generating actions/dialogue."""
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def video_file(self) -> Optional[File]:
+        """The File object returned by the Gemini API after video upload."""
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def summary(self) -> Optional[str]:
+        """The text summary of the video, generated on demand."""
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def contents(self) -> List[Content]:
+        """The conversation history stored as a list of Content objects."""
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def summary_ready(self) -> bool:
+        """A boolean flag indicating if the video summary has been successfully generated."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def get_video_summary(self, video_path_or_url: str) -> None:
         """
-        
-        # 生成内容
-        response = model.generate_content([video_file_obj, full_user_prompt])
-        
-        # 解析响应
-        response_text = response.text.strip()
-        
-        # 尝试提取JSON（如果响应包含其他文本）
-        if response_text.startswith('```json'):
-            response_text = response_text[7:]
-        if response_text.endswith('```'):
-            response_text = response_text[:-3]
-        
-        response_text = response_text.strip()
-        
-        try:
-            action_list = json.loads(response_text)
-        except json.JSONDecodeError as e:
-            return {
-                'error': f'GEMINI返回的不是有效的JSON格式: {str(e)}',
-                'raw_response': response_text
-            }
-        
-        # 验证动作列表格式
-        is_valid, validation_message = validate_action_list(action_list)
-        if not is_valid:
-            return {
-                'error': f'动作列表格式不正确: {validation_message}',
-                'action_list': action_list
-            }
-        
-        print("视频分析完成！")
-        
-        # 返回结果
-        return {
-            'success': True,
-            'action_list': action_list,
-            'total_actions': len(action_list)
-        }
-        
-    except Exception as e:
-        return {'error': f'处理请求时发生错误: {str(e)}'}
+        Processes a video from a local path or URL, uploads it, and generates a summary.
 
-# 示例用法
-if __name__ == '__main__':
-    # 示例调用
-    result = analyze_video(
-        video_path="path/to/your/video.mp4",
-        system_prompt="请分析视频内容",
-        user_prompt="请识别视频中的主要动作"
-    )
-    
-    if result.get('success'):
-        print(f"分析成功！共生成 {result['total_actions']} 个动作")
-        print("动作列表:")
-        for action in result['action_list']:
-            print(f"  {action}")
-    else:
-        print(f"分析失败: {result['error']}")
-</file>
+        This is a non-blocking asynchronous method. Upon successful completion,
+        it populates the `summary` attribute and sets the `summary_ready` flag to True.
 
-<file path=".github/instructions/adx.instructions.md">
----
-applyTo: '**'
----
-这个项目是一个黑客松原型，使用 Python 3.13, uv, fastapi, pydantic v2，目标是实现一个能与用户一同看视频的 AI 语音陪伴，这将使用 websocket 做前后端连接。项目的重点是快速开发和代码简介。注意代码可读性和最佳实践。
-</file>
+        Args:
+            video_path_or_url: The local file path or a public URL to the video.
+        """
+        raise NotImplementedError
 
-<file path="docs/api.md">
-# AI Watch Buddy API Documentation
+    @abc.abstractmethod
+    def add_content(self, role: str, text: str) -> None:
+        """
+        Adds a new piece of text content to the conversation history.
 
-This document outlines the API endpoints and WebSocket communication protocol for AI Watch Buddy.
+        Args:
+            role: The role of the author, must be 'user' or 'model'.
+            text: The text message to add to the history.
+        """
+        raise NotImplementedError
 
----
+    @abc.abstractmethod
+    async def generate(self, mode: str) -> AsyncGenerator[Dict, None]:
+        """
+        Generates a stream of structured actions from the model.
 
-## 1. REST API
+        This method constructs the context based on the specified mode and streams
+        the response. 
+        It is designed to yield a dictionary for each complete JSON object received from the model.
 
-The REST API is used to initiate a viewing session.
+        Args:
+            mode: The context mode for generation, either 'video' or 'summary'.
 
-### Create Session
+        Yields:
+            A dictionary representing a single structured action from the model's streamed response.
 
-Creates a new watching session, starts the background processing for generating AI actions, and returns a `session_id` to be used for the WebSocket connection.
-
-- **URL**: `/api/v1/sessions`
-- **Method**: `POST`
-- **Status Code**: `202 Accepted`
-
-#### Request Body
-
-```json
-{
-  "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-  "start_time": 0,
-  "end_time": null,
-  "text": "你是个可爱的猫娘，你说的每句话都会以 “喵～～” 结尾",
-  "character_id": "miao",
-  "user_id": "user_123"
-}
-```
-
-- `video_url` (string, **required**): The URL of the video to watch.
-- `start_time` (float, optional): The start time in seconds. Defaults to `0.0`.
-- `end_time` (float, optional): The end time in seconds. Defaults to `null` (end of video).
-- `text` (string, optional): Additional text prompt from the user.
-- `character_id` (string, **required**): The identifier for the desired AI character.
-- `user_id` (string, optional): The identifier for the user.
-
-#### Success Response (202 Accepted)
-
-```json
-{
-  "session_id": "ses_a8d3f8b9c1e04a5f"
-}
-```
-
-- `session_id` (string): A unique identifier for the session. Use this ID to connect to the WebSocket endpoint.
-
-#### Error Responses
-
-- **`422 Unprocessable Entity`**: Sent if the request data is well-formed but semantically incorrect.
-
-  Example:
-  ```json
-  {
-    "detail": {
-      "error": "UNSUPPORTED_VIDEO_SOURCE",
-      "message": "The provided video URL from 'vimeo.com' is not supported."
-    }
-  }
-  ```
-
----
-
-## 2. WebSocket API
-
-The WebSocket API is used for real-time communication during the viewing session.
-
-- **URL**: `/ws/{session_id}`
-- **Example URL**: `ws://127.0.0.1:8000/ws/ses_a8d3f8b9c1e04a5f`
-
-### Connection
-
-The client should attempt to connect to this endpoint after successfully creating a session via the REST API. If the `session_id` is invalid or not found, the server will close the connection.
-
-### Communication Flow
-
-1.  **Client Connects**: The client establishes a WebSocket connection using the `session_id`.
-2.  **Server Acknowledges**: The server waits for the background video processing to complete.
-3.  **Server Notifies Ready**: Once processing is done, the server sends a `session_ready` message. If processing fails, it sends a `processing_error` message.
-4.  **Real-time Interaction**:
-    - The client periodically sends `timestamp_update` messages with the current video playback time.
-    - The server listens for these updates and sends AI actions (`SPEAK`, `PAUSE_VIDEO`, etc.) when their `trigger_timestamp` is reached.
-    - The client executes the received actions.
-    - The client can notify the server about `action_completed` or `seek_update` events.
-
-### Server-to-Client Messages
-
-#### Session Ready
-
-Indicates that the AI action script has been successfully generated and the server is ready to send actions.
-
-```json
-{
-  "type": "session_ready"
-}
-```
-
-#### Processing Error
-
-Indicates that an error occurred while processing the video or generating actions.
-
-```json
-{
-  "type": "processing_error",
-  "error_code": "ACTION_GENERATION_FAILED",
-  "message": "Failed to generate actions for the video: <details>"
-}
-```
-
-#### AI Action
-
-An action for the client to execute. The model for this is defined in `ai_actions.py`.
-
-```json
-{
-  "id": "e0b02f90-8452-442c-a28a-77c8e8749c95",
-  "trigger_timestamp": 0.5,
-  "comment": "A comment explaining the action's purpose.",
-  "action_type": "SPEAK",
-  "text": "Hey, what is this video about?",
-  "pause_video": true
-}
-```
-
-### Client-to-Server Messages
-
-#### Timestamp Update
-
-Sent by the client to inform the server of the current video playback time. This is the primary message used to trigger AI actions.
-
-```json
-{
-  "type": "timestamp_update",
-  "timestamp": 123.45
-}
-```
-
-#### Seek Update
-
-Sent when the user manually changes the video's playback position (scrubbing). The server uses this to reset its internal state and determine the correct next action to send.
-
-```json
-{
-  "type": "seek_update",
-  "timestamp": 240.1
-}
-```
-
-#### Action Completed
-
-Sent by the client to acknowledge that it has finished executing a specific action.
-
-```json
-{
-  "type": "action_completed",
-  "action_id": "e0b02f90-8452-442c-a28a-77c8e8749c95"
-}
-```
+        Raises:
+            RuntimeError: If `mode` is 'summary' and the `summary_ready` flag is False.
+        """
+        # The 'yield' keyword makes this a generator, matching the signature.
+        # This is a placeholder and will not be executed in the interface.
+        yield {}
+        raise NotImplementedError
 </file>
 
 <file path="src/ai_watch_buddy/prompt/action_gen.py">
@@ -885,328 +247,75 @@ class ConnectionManager:
 manager = ConnectionManager()
 </file>
 
-<file path="src/ai_watch_buddy/pipeline.py">
+<file path="src/ai_watch_buddy/fetch_video.py">
 import asyncio
+from pathlib import Path
 from loguru import logger
-
-from .ai_actions import Action
-from .session import session_storage
-from .action_generate import generate_actions
+from yt_dlp import YoutubeDL
+import argparse
 
 
-async def download_video(video_url: str, session_id: str) -> str:
+def download_video(url: str, target_dir: str | Path) -> Path:
     """
-    Placeholder for the video download logic.
-    In a real scenario, this would download the video from the URL
-    and return the local file path.
+    Download *url* into *target_dir* and return the final file path.
+    Raises RuntimeError if the file was not produced.
     """
-    logger.info(f"[{session_id}] Simulating video download for: {video_url}")
-    await asyncio.sleep(2)  # Simulate I/O bound task
-    local_path = f"/tmp/videos/{session_id}_video.mp4"  # Dummy path for the prototype
-    logger.info(f"[{session_id}] Video 'downloaded' to: {local_path}")
-    return local_path
 
+    logger.info(f"Downloading video from {url} to {target_dir}")
 
-async def run_action_generation_pipeline(session_id: str) -> None:
-    """
-    Generates actions for the video and puts them into the session's queue.
-    This function is now a pure "producer".
-    """
-    session = session_storage.get(session_id)
-    if not session or not session.local_video_path:
-        logger.error(
-            f"[{session_id}] Cannot run action generation: session or local_video_path not found."
-        )
-        if session:
-            await session.action_queue.put(
-                {
-                    "type": "processing_error",
-                    "error_code": "PIPELINE_SETUP_FAILED",
-                    "message": "Session or video path not found.",
-                }
-            )
-        return
+    target_dir = Path(target_dir).expanduser().resolve()
+    target_dir.mkdir(parents=True, exist_ok=True)
 
-    try:
-        session.status = "generating_actions"
-        logger.info(f"[{session_id}] Starting action generation...")
+    ydl_opts = {
+        "format": "bestvideo+bestaudio/best",  # merge streams if needed
+        "paths": {"home": str(target_dir)},  # save in target_dir
+        "outtmpl": "%(title)s.%(ext)s",  # nicer names than default
+        "quiet": True,  # no console spam
+        "merge_output_format": "mp4",  # force mp4 output
+    }
 
-        actions_generated_count = 0
-        async for action in generate_actions(
-            video_path=session.local_video_path,
-            start_time=0.0,  # 这里的参数可以从 session 中获取
-            character_prompt=f"Character ID: {session.character_id}",
-        ):
-            # 关键改动：将 action 放入队列，而不是直接发送
-            await session.action_queue.put(action)
-            actions_generated_count += 1
-            logger.info(
-                f"[{session_id}] Put action into queue: {action.action_type} at {action.trigger_timestamp}s"
+    with YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=True)
+        final_path = target_dir / Path(ydl.prepare_filename(info)).name
+        if not info:
+            raise RuntimeError("Download failed: no info returned")
+
+        if not final_path:
+            raise RuntimeError(
+                "Download failed: could not determine final filename from yt-dlp info"
             )
 
-        logger.info(
-            f"[{session_id}] Action generation completed. Total actions put in queue: {actions_generated_count}"
+    if not final_path.exists():
+        raise RuntimeError(
+            f"Download appears to have failed. File not found: {final_path}"
         )
 
-    except Exception as e:
-        logger.error(
-            f"[{session_id}] Error during action generation: {e}", exc_info=True
-        )
-        session.status = "error"
-        session.processing_error = str(e)
-        # 发生错误时，也向队列放入一个错误信息
-        await session.action_queue.put(
-            {
-                "type": "processing_error",
-                "error_code": "ACTION_GENERATION_FAILED",
-                "message": f"Failed to generate actions for the video: {e}",
-            }
-        )
-    finally:
-        # 关键一步：发送一个“哨兵”值 (sentinel value)
-        # 这就像是信件的末尾标记，告诉消费者：“没有更多信件了”。
-        # 我们用 None 来作为这个哨兵。
-        if session:
-            await session.action_queue.put(None)
+    return final_path
 
 
-async def initial_pipeline(session_id: str) -> None:
-    """
-    The initial background task that runs when a session is created.
-    It downloads the video and then triggers the action generation.
-    """
-    session = session_storage.get(session_id)
-    if not session:
-        logger.error(f"[{session_id}] Initial pipeline failed: session not found.")
-        return
-
-    try:
-        # Step 1: Download video
-        session.status = "downloading_video"
-        local_video_path = await download_video(session.video_url, session_id)
-        session.local_video_path = local_video_path
-        session.status = "video_ready"
-
-        # 2. 视频准备就绪后，将状态更新为 session_ready
-        # 这个状态现在告诉 websocket 端，可以开始从队列里取东西了
-        session.status = "session_ready"
-
-        # 3. 在后台开始运行 action 生成（生产者）
-        # 注意，我们在这里只是启动它，并不会等待它完成
-        asyncio.create_task(run_action_generation_pipeline(session_id))
-
-    except Exception as e:
-        logger.error(
-            f"[{session_id}] Error during initial pipeline: {e}", exc_info=True
-        )
-        session.status = "error"
-        session.processing_error = str(e)
-        # 如果初始流程就失败了，也往队列里放个错误信息和结束标记
-        if session:
-            await session.action_queue.put(
-                {
-                    "type": "processing_error",
-                    "error_code": "INITIAL_PIPELINE_FAILED",
-                    "message": f"Failed during the initial setup: {e}",
-                }
-            )
-            await session.action_queue.put(None)
-</file>
-
-<file path="src/ai_watch_buddy/server.py">
-import asyncio
-import uuid
-from loguru import logger
-
-from fastapi import (
-    FastAPI,
-    WebSocket,
-    BackgroundTasks,
-    HTTPException,
-    status,
-    WebSocketDisconnect,
-)
-from pydantic import BaseModel
-
-from .session import SessionState, session_storage
-from .pipeline import initial_pipeline
-from .ai_actions import Action
-from .connection_manager import manager
-
-app = FastAPI()
+async def download_video_async(url: str, target_dir: str | Path) -> Path:
+    return await asyncio.to_thread(download_video, url, target_dir)
 
 
-# --- Data Models for API ---
-class SessionCreateRequest(BaseModel):
-    video_url: str
-    start_time: float = 0.0
-    end_time: float | None = None
-    text: str | None = None
-    character_id: str
-    user_id: str | None = None
-
-
-class SessionCreateResponse(BaseModel):
-    session_id: str
-
-
-class ErrorResponse(BaseModel):
-    error: str
-    message: str
-
-
-# --- Connection Management ---
-# The ConnectionManager is now in its own file (connection_manager.py)
-# to prevent circular dependencies. The `manager` instance is imported from there.
-
-
-# --- API Endpoint ---
-@app.post(
-    "/api/v1/sessions",
-    status_code=status.HTTP_202_ACCEPTED,
-    response_model=SessionCreateResponse,
-)
-async def create_session(
-    request: SessionCreateRequest, background_tasks: BackgroundTasks
-):
-    """
-    Creates a new watching session, starts background processing,
-    and returns a session_id.
-    """
-    session_id = f"ses_{uuid.uuid4().hex[:16]}"
-
-    # Create the session state object and store it
-    session = SessionState(
-        session_id=session_id,
-        character_id=request.character_id,
-        video_url=request.video_url,
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Download a video using yt-dlp.")
+    parser.add_argument("url", help="Video URL to download")
+    parser.add_argument(
+        "-d", "--dir", default="downloads", help="Target directory (default: downloads)"
     )
-    session_storage[session_id] = session
-
-    # Start the processing pipeline in the background
-    background_tasks.add_task(initial_pipeline, session_id=session_id)
-
-    logger.info(f"Accepted session {session_id} for video {request.video_url}")
-    return SessionCreateResponse(session_id=session_id)
-
-
-# --- WebSocket Endpoint (Major Refactor) ---
-
-
-async def websocket_sender(websocket: WebSocket, session: SessionState):
-    """
-    消费者协程：从队列中获取 action 并发送给客户端。
-    """
-    # 首先，等待直到 session 准备就绪
-    while session.status != "session_ready" and session.status != "error":
-        await asyncio.sleep(0.1)
-
-    # 如果 session 在连接时已经出错，直接发送错误并关闭
-    if session.status == "error":
-        await websocket.send_json(
-            {
-                "type": "processing_error",
-                "error_code": "INITIAL_PIPELINE_FAILED",
-                "message": session.processing_error or "Unknown error during setup",
-            }
-        )
-        return
-
-    # 发送 session_ready 消息，通知前端可以开始交互了
-    await websocket.send_json({"type": "session_ready"})
-    logger.info(f"[{session.session_id}] Sent 'session_ready' to client.")
-
-    # 进入主循环，从队列中获取并发送数据
-    while True:
-        # 关键：非阻塞地等待队列中的下一项
-        item = await session.action_queue.get()
-
-        # 检查是否是哨兵值 (None)
-        if item is None:
-            logger.info(
-                f"[{session.session_id}] Sentinel (None) received from queue. Closing sender task."
-            )
-            break  # 收到哨兵，退出循环
-
-        # 根据 item 类型发送消息
-        if isinstance(item, Action):
-            await websocket.send_json(
-                {"type": "ai_action", "action": item.model_dump(mode="json")}
-            )
-        elif isinstance(item, dict) and item.get("type") == "processing_error":
-            await websocket.send_json(item)
-
-        # 标记任务完成，这对于队列大小管理很重要
-        session.action_queue.task_done()
-
-
-async def websocket_receiver(websocket: WebSocket, session: SessionState):
-    """
-    接收者协程：监听来自客户端的消息。
-    """
-    async for message in websocket.iter_json():
-        msg_type = message.get("type")
-        logger.info(
-            f"[{session.session_id}] Received message from client: type={msg_type}, data={message}"
-        )
-        # 在这里处理客户端发来的消息，例如：
-        # if msg_type == "timestamp_update":
-        #     # ... 处理时间戳更新 ...
-        # elif msg_type == "user_response":
-        #     # ... 处理用户对 AI 问题的回答 ...
-
-
-@app.websocket("/ws/{session_id}")
-async def websocket_endpoint(websocket: WebSocket, session_id: str):
-    """
-    主 WebSocket 端点，管理发送者和接收者的生命周期。
-    """
-    session = session_storage.get(session_id)
-    if not session:
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-        logger.warning(f"WebSocket connection rejected for unknown session: {session_id}")
-        return
-
-    await manager.connect(websocket, session_id)
-    logger.info(f"[{session_id}] WebSocket connection established.")
-
-    # 创建发送者和接收者任务
-    sender_task = asyncio.create_task(websocket_sender(websocket, session))
-    receiver_task = asyncio.create_task(websocket_receiver(websocket, session))
+    args = parser.parse_args()
 
     try:
-        # 使用 asyncio.gather 等待两个任务中的任何一个完成
-        # `return_exceptions=False` 意味着如果任何一个任务崩溃，`gather` 会立即传播异常
-        done, pending = await asyncio.wait(
-            [sender_task, receiver_task],
-            return_when=asyncio.FIRST_COMPLETED,
-        )
-
-        # 取消仍在运行的任务，确保干净地退出
-        for task in pending:
-            task.cancel()
-
-    except WebSocketDisconnect:
-        logger.info(f"[{session_id}] Client disconnected.")
+        path = asyncio.run(download_video_async(args.url, args.dir))
+        print(f"Downloaded to: {path}")
     except Exception as e:
-        logger.error(
-            f"[{session_id}] An error occurred in the websocket endpoint: {e}",
-            exc_info=True,
-        )
-    finally:
-        # 确保所有任务都被取消
-        if not sender_task.done():
-            sender_task.cancel()
-        if not receiver_task.done():
-            receiver_task.cancel()
-
-        manager.disconnect(session_id)
-        logger.info(f"[{session_id}] WebSocket connection closed and cleaned up.")
+        print(f"Error: {e}")
 </file>
 
 <file path="src/ai_watch_buddy/session.py">
 import asyncio
-from typing import Literal
+from typing import Literal, Optional
+from .agent.video_action_agent_interface import VideoActionAgentInterface
 
 
 class SessionState:
@@ -1230,6 +339,8 @@ class SessionState:
         # 关键改动：为每个 session 实例创建一个 asyncio.Queue
         # 这个队列将作为生产者（pipeline）和消费者（websocket）之间的桥梁
         self.action_queue: asyncio.Queue = asyncio.Queue()
+        self.agent: Optional[VideoActionAgentInterface] = None
+        self.action_generation_task: Optional[asyncio.Task] = None
 
 
 # A simple in-memory "database" for sessions
@@ -1237,21 +348,104 @@ class SessionState:
 session_storage: dict[str, SessionState] = {}
 </file>
 
-<file path=".gitignore">
-# Python-generated files
-__pycache__/
-*.py[oc]
-build/
-dist/
-wheels/
-*.egg-info
+<file path="src/ai_watch_buddy/tts.py">
+import base64
+import io
+import os
+import sys
+import subprocess
+import tempfile
 
-# Virtual environments
-.venv
-</file>
+import edge_tts
+from loguru import logger
 
-<file path=".python-version">
-3.13
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(current_dir)
+
+
+class TTSEngine:
+    def __init__(self):
+        pass
+
+    async def generate_audio(
+        self, text: str, voice: str = "zh-CN-XiaoxiaoNeural"
+    ) -> str | None:
+        """
+        Generate speech audio and return as base64 string.
+        text: str
+            the text to speak
+
+        Returns:
+        str: base64 encoded WAV audio data, or None if generation fails.
+        """
+        try:
+            # Edge-TTS generates MP3 by default, we need to convert to WAV
+            communicate = edge_tts.Communicate(text, voice)
+            
+            # First, get the MP3 data
+            mp3_buffer = io.BytesIO()
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio" and "data" in chunk:
+                    mp3_buffer.write(chunk["data"])
+            
+            mp3_buffer.seek(0)
+            mp3_data = mp3_buffer.read()
+            
+            # Use ffmpeg to convert MP3 to WAV
+            with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as mp3_file:
+                mp3_file.write(mp3_data)
+                mp3_path = mp3_file.name
+            
+            wav_path = mp3_path.replace(".mp3", ".wav")
+            
+            try:
+                # Convert MP3 to WAV using ffmpeg
+                subprocess.run(
+                    ["ffmpeg", "-i", mp3_path, "-acodec", "pcm_s16le", "-ar", "44100", "-ac", "2", wav_path],
+                    check=True,
+                    capture_output=True
+                )
+                
+                # Read the WAV file and encode to base64
+                with open(wav_path, "rb") as wav_file:
+                    wav_data = wav_file.read()
+                    base64_audio = base64.b64encode(wav_data).decode("utf-8")
+                
+                return base64_audio
+            
+            finally:
+                # Clean up temporary files
+                if os.path.exists(mp3_path):
+                    os.unlink(mp3_path)
+                if os.path.exists(wav_path):
+                    os.unlink(wav_path)
+
+        except Exception as e:
+            logger.critical(f"\nError: Unable to generate or convert audio: {e}")
+            logger.critical("It's possible that edge-tts is blocked in your region or ffmpeg is not installed.")
+            return None
+
+
+# en-US-AvaMultilingualNeural
+# en-US-EmmaMultilingualNeural
+# en-US-JennyNeural
+
+tts_instance = TTSEngine()
+
+if __name__ == "__main__":
+    import asyncio
+
+    text = "Hello, this is a test of the TTS engine."
+    audio_base64 = asyncio.run(tts_instance.generate_audio(text))
+    if audio_base64:
+        print(
+            f"Generated audio (base64): {audio_base64[:50]}..."
+        )  # Print first 50 chars
+        # save to file for testing
+        with open("test_audio.txt", "wb") as f:
+            f.write(audio_base64.encode("utf-8"))
+    else:
+        print("Failed to generate audio.")
 </file>
 
 <file path="src/ai_watch_buddy/action_generate.py">
@@ -1408,7 +602,7 @@ async def fake_llm_stream_response() -> AsyncGenerator[str, None]:
     chunk_size = 50
     for i in range(0, len(sample_json), chunk_size):
         yield sample_json[i : i + chunk_size]
-        await asyncio.sleep(0.02)
+        await asyncio.sleep(0.01)
 
 
 async def generate_actions(
@@ -1481,241 +675,242 @@ if __name__ == "__main__":
             print(
                 f"Action {action_count}: {action.model_dump_json(indent=2)}", flush=True
             )
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.1)
         print(f"\n--- End of Stream ---")
         print(f"Total actions received: {action_count}")
 
     asyncio.run(main())
 </file>
 
-<file path="schema.json">
-{
-  "$defs": {
-    "AskUser": {
-      "properties": {
-        "id": {
-          "description": "一個唯一的動作 ID，可以用 UUID 生成",
-          "title": "Id",
-          "type": "string"
-        },
-        "trigger_timestamp": {
-          "description": "此動作在影片中的觸發時間點 (秒)",
-          "title": "Trigger Timestamp",
-          "type": "number"
-        },
-        "comment": {
-          "description": "AI 做出此反應的簡要理由",
-          "title": "Comment",
-          "type": "string"
-        },
-        "action_type": {
-          "const": "ASK_USER",
-          "title": "Action Type",
-          "type": "string"
-        }
-      },
-      "required": [
-        "id",
-        "trigger_timestamp",
-        "comment",
-        "action_type"
-      ],
-      "title": "AskUser",
-      "type": "object"
-    },
-    "EndReaction": {
-      "properties": {
-        "id": {
-          "description": "一個唯一的動作 ID，可以用 UUID 生成",
-          "title": "Id",
-          "type": "string"
-        },
-        "trigger_timestamp": {
-          "description": "此動作在影片中的觸發時間點 (秒)",
-          "title": "Trigger Timestamp",
-          "type": "number"
-        },
-        "comment": {
-          "description": "AI 做出此反應的簡要理由",
-          "title": "Comment",
-          "type": "string"
-        },
-        "action_type": {
-          "const": "END_REACTION",
-          "default": "END_REACTION",
-          "title": "Action Type",
-          "type": "string"
-        }
-      },
-      "required": [
-        "id",
-        "trigger_timestamp",
-        "comment"
-      ],
-      "title": "EndReaction",
-      "type": "object"
-    },
-    "PauseAction": {
-      "properties": {
-        "id": {
-          "description": "一個唯一的動作 ID，可以用 UUID 生成",
-          "title": "Id",
-          "type": "string"
-        },
-        "trigger_timestamp": {
-          "description": "此動作在影片中的觸發時間點 (秒)",
-          "title": "Trigger Timestamp",
-          "type": "number"
-        },
-        "comment": {
-          "description": "AI 做出此反應的簡要理由",
-          "title": "Comment",
-          "type": "string"
-        },
-        "action_type": {
-          "const": "PAUSE",
-          "default": "PAUSE",
-          "title": "Action Type",
-          "type": "string"
-        },
-        "duration_seconds": {
-          "description": "暫停的持續時間 (秒)",
-          "title": "Duration Seconds",
-          "type": "number"
-        }
-      },
-      "required": [
-        "id",
-        "trigger_timestamp",
-        "comment",
-        "duration_seconds"
-      ],
-      "title": "PauseAction",
-      "type": "object"
-    },
-    "ReplaySegmentAction": {
-      "properties": {
-        "id": {
-          "description": "一個唯一的動作 ID，可以用 UUID 生成",
-          "title": "Id",
-          "type": "string"
-        },
-        "trigger_timestamp": {
-          "description": "此動作在影片中的觸發時間點 (秒)",
-          "title": "Trigger Timestamp",
-          "type": "number"
-        },
-        "comment": {
-          "description": "AI 做出此反應的簡要理由",
-          "title": "Comment",
-          "type": "string"
-        },
-        "action_type": {
-          "const": "REPLAY_SEGMENT",
-          "default": "REPLAY_SEGMENT",
-          "title": "Action Type",
-          "type": "string"
-        },
-        "start_timestamp": {
-          "description": "重看片段的開始時間(秒)",
-          "title": "Start Timestamp",
-          "type": "number"
-        },
-        "end_timestamp": {
-          "description": "重看片段的結束時間(秒)",
-          "title": "End Timestamp",
-          "type": "number"
-        },
-        "post_replay_behavior": {
-          "default": "RESUME_FROM_ORIGINAL",
-          "enum": [
-            "RESUME_FROM_ORIGINAL",
-            "STAY_PAUSED_AT_END"
-          ],
-          "title": "Post Replay Behavior",
-          "type": "string"
-        }
-      },
-      "required": [
-        "id",
-        "trigger_timestamp",
-        "comment",
-        "start_timestamp",
-        "end_timestamp"
-      ],
-      "title": "ReplaySegmentAction",
-      "type": "object"
-    },
-    "SeekAction": {
-      "properties": {
-        "id": {
-          "description": "一個唯一的動作 ID，可以用 UUID 生成",
-          "title": "Id",
-          "type": "string"
-        },
-        "trigger_timestamp": {
-          "description": "此動作在影片中的觸發時間點 (秒)",
-          "title": "Trigger Timestamp",
-          "type": "number"
-        },
-        "comment": {
-          "description": "AI 做出此反應的簡要理由",
-          "title": "Comment",
-          "type": "string"
-        },
-        "action_type": {
-          "const": "SEEK",
-          "default": "SEEK",
-          "title": "Action Type",
-          "type": "string"
-        },
-        "target_timestamp": {
-          "description": "要跳轉到的影片時間點 (秒)",
-          "title": "Target Timestamp",
-          "type": "number"
-        },
-        "post_seek_behavior": {
-          "default": "STAY_PAUSED",
-          "enum": [
-            "RESUME_PLAYBACK",
-            "STAY_PAUSED"
-          ],
-          "title": "Post Seek Behavior",
-          "type": "string"
-        }
-      },
-      "required": [
-        "id",
-        "trigger_timestamp",
-        "comment",
-        "target_timestamp"
-      ],
-      "title": "SeekAction",
-      "type": "object"
-    }
-  },
-  "items": {
-    "anyOf": [
-      {
-        "$ref": "#/$defs/PauseAction"
-      },
-      {
-        "$ref": "#/$defs/SeekAction"
-      },
-      {
-        "$ref": "#/$defs/ReplaySegmentAction"
-      },
-      {
-        "$ref": "#/$defs/AskUser"
-      },
-      {
-        "$ref": "#/$defs/EndReaction"
-      }
+<file path="src/ai_watch_buddy/pipeline.py">
+import asyncio
+import json
+from pathlib import Path
+from loguru import logger
+from typing import List
+
+from .ai_actions import Action, SpeakAction
+from .tts import tts_instance
+from .session import session_storage
+from .fetch_video import download_video_async
+
+# TODO: You need to create and import your actual agent implementation.
+# from .agent.video_action_agent_implementation import VideoActionAgentImpl
+from .agent.video_action_agent_interface import VideoActionAgentInterface
+
+
+async def generate_and_queue_actions(
+    session_id: str, mode: str, clear_pending_actions: bool = True
+) -> None:
+    """
+    Generic function to generate actions using the session's agent and put them in the queue.
+    """
+    session = session_storage.get(session_id)
+    if not session or not session.agent:
+        logger.error(
+            f"[{session_id}] Cannot generate actions: session or agent not found."
+        )
+        return
+
+    try:
+        # 虽然一般不会用到（都发出去了），但我们还是 clear 一下
+        if clear_pending_actions:
+            while not session.action_queue.empty():
+                session.action_queue.get_nowait()
+            logger.info(f"[{session_id}] Cleared pending actions from the queue.")
+
+        session.status = "generating_actions"
+        logger.info(f"[{session_id}] Starting action generation with mode '{mode}'...")
+
+        actions_generated_count = 0
+        
+        async for action_data in session.agent.generate(mode=mode):
+            action = Action.model_validate(action_data)
+
+            if isinstance(action, SpeakAction):
+                audio_base64 = await tts_instance.generate_audio(action.text)
+                if audio_base64:
+                    action.audio = audio_base64
+                else:
+                    logger.warning(
+                        f"[{session_id}] Failed to generate audio for action: {action.id}"
+                    )
+
+            await session.action_queue.put(action)
+            actions_generated_count += 1
+            logger.info(
+                f"[{session_id}] Queued action: {action.action_type} at {action.trigger_timestamp}s"
+            )
+
+        logger.info(
+            f"[{session_id}] Action generation stream finished. Total new actions: {actions_generated_count}."
+        )
+
+    except asyncio.CancelledError:
+        logger.info(f"[{session_id}] Action generation task was cancelled.")
+    except Exception as e:
+        logger.error(
+            f"[{session_id}] Error during action generation: {e}", exc_info=True
+        )
+        session.status = "error"
+        session.processing_error = str(e)
+        await session.action_queue.put(
+            {
+                "type": "processing_error",
+                "error_code": "ACTION_GENERATION_FAILED",
+                "message": str(e),
+            }
+        )
+    finally:
+        await session.action_queue.put(None)
+        # ✅ NEW: Set status to ready only after the generation loop completes successfully.
+        # We check if it's already ready to prevent this from running on subsequent calls (e.g., lazy loading).
+        if session.status != "error" and session.status != "session_ready":
+            session.status = "session_ready"
+            logger.info(
+                f"[{session_id}] ✅ Initial actions generated. Status set to 'session_ready'."
+            )
+
+
+async def run_conversation_pipeline(
+    session_id: str, user_action_list: List[dict], pending_action_list: List[dict]
+) -> None:
+    session = session_storage.get(session_id)
+    if not session or not session.agent:
+        logger.error(
+            f"[{session_id}] Cannot run conversation: session or agent not found."
+        )
+        return
+
+    # 一般而言，user_speech_text 只有一个
+    user_speech = [
+        action["text"]
+        for action in user_action_list
+        if action["action_type"] == "SPEAK" and "text" in action
     ]
-  },
-  "title": "ActionScript",
-  "type": "array"
-}
+    user_speech_text = " ".join(user_speech)
+    
+    context_message = f"""
+## CONVERSATION UPDATE
+You were interrupted by the user. Here's what happened:
+1.  **Your Pending Actions (What you were about to do):**
+    ```json
+    {json.dumps(pending_action_list, indent=2)}
+    ```
+2.  **User's Actions (What the user did to interrupt you):**
+    ```json
+    {json.dumps(user_action_list, indent=2)}
+    ```
+3.  **User's Speech:**
+    "{user_speech_text if user_speech_text else 'The user did not speak, but took other actions.'}"
+
+**Your Task:**
+Based on this new information, discard your pending actions and generate a NEW, relevant "Reaction Script".
+"""
+    session.agent.add_content(role="user", text=context_message)
+    session.action_generation_task = asyncio.create_task(
+        generate_and_queue_actions(
+            session_id, mode="summary", clear_pending_actions=True
+        )
+    )
+    logger.info(
+        f"[{session_id}] Started conversation update. New generation task created."
+    )
+
+
+async def run_initial_generation(session_id: str, summary_task: asyncio.Task):
+    """
+    A wrapper that waits for the summary to be ready, then triggers the first action generation.
+    """
+    session = session_storage.get(session_id)
+    if not session or not session.agent:
+        return
+
+    try:
+        logger.info(f"[{session_id}] Waiting for video summary to be generated...")
+        await summary_task
+        logger.info(f"[{session_id}] Summary task finished.")
+
+        if not session.agent.summary_ready:
+            raise RuntimeError(
+                "Agent summary was not ready after summary task completion."
+            )
+
+        # Now that the summary is ready, start the first action generation.
+        await generate_and_queue_actions(
+            session_id, mode="video", clear_pending_actions=False
+        )
+
+    except Exception as e:
+        logger.error(
+            f"[{session_id}] Error during initial generation wrapper: {e}",
+            exc_info=True,
+        )
+        session.status = "error"
+        session.processing_error = str(e)
+        await session.action_queue.put(
+            {
+                "type": "processing_error",
+                "error_code": "INITIAL_GENERATION_FAILED",
+                "message": str(e),
+            }
+        )
+        await session.action_queue.put(None)
+
+
+async def initial_pipeline(session_id: str) -> None:
+    """
+    The initial background task that runs when a session is created.
+    """
+    session = session_storage.get(session_id)
+    if not session:
+        return
+
+    try:
+        # Step 1: Download video (blocking within this pipeline)
+        session.status = "downloading_video"
+        local_video_path = str(
+            await download_video_async(session.video_url, target_dir="video_cache")
+        )
+        session.local_video_path = local_video_path
+        session.status = "video_ready"
+        logger.info(f"[{session_id}] Video ready at: {local_video_path}")
+
+        # Step 2: Initialize the agent
+        # TODO: Replace with your actual implementation.
+        # agent = VideoActionAgentImpl(...)
+        # session.agent = agent
+        logger.info(f"[{session_id}] Agent initialized.")
+
+        # ✅ Step 3: Start summary generation in the background (non-blocking).
+        summary_task = asyncio.create_task(
+            session.agent.get_video_summary(video_path_or_url=local_video_path)
+        )
+
+        # ✅ Step 4: Start the wrapper task that waits for the summary and then generates actions.
+        # This whole chain runs in the background.
+        session.action_generation_task = asyncio.create_task(
+            run_initial_generation(session_id, summary_task)
+        )
+        logger.info(
+            f"[{session_id}] Initial pipeline complete. Summary and action generation started in the background."
+        )
+
+    except Exception as e:
+        logger.error(
+            f"[{session_id}] Error during initial pipeline setup: {e}", exc_info=True
+        )
+        session.status = "error"
+        session.processing_error = str(e)
+        if session:
+            await session.action_queue.put(
+                {
+                    "type": "processing_error",
+                    "error_code": "INITIAL_PIPELINE_FAILED",
+                    "message": str(e),
+                }
+            )
+            await session.action_queue.put(None)
 </file>
 
 <file path="src/ai_watch_buddy/ai_actions.py">
@@ -1727,14 +922,26 @@ from pydantic import BaseModel, Field, RootModel
 
 # 這是一個基礎模型，定義了所有 Action 的共性
 class BaseAction(BaseModel):
+    """
+    所有具體反應動作的基礎模型，定義了每個動作都必須包含的通用屬性。
+    """
+
     model_config = {"arbitrary_types_allowed": True}
 
     # 每個 Action 都應該有一個獨一無二的 ID，方便追蹤和日誌記錄
-    id: str = Field(..., description="一個唯一的動作 ID，可以用 UUID 生成")
+    id: str = Field(
+        ..., description="一個唯一的動作 ID，建議使用 UUID 生成，用於追蹤和調試。"
+    )
     # 這個 Action 在影片的哪個時間點被觸發？這是反應的錨點。
-    trigger_timestamp: float = Field(..., description="此動作在影片中的觸發時間點 (秒)")
+    trigger_timestamp: float = Field(
+        ...,
+        description="此動作在影片中的觸發時間點 (單位: 秒)，代表 AI 在看到這一秒的內容時決定做出反應。",
+    )
     # 一個給開發者看的備註，解釋為什麼 AI 會做這個反應。LLM 也會填寫它。
-    comment: str = Field(..., description="AI 做出此反應的簡要理由")
+    comment: str = Field(
+        ...,
+        description="AI 做出此反應的內心想法或理由的簡要文字描述，主要用於調試或分析 AI 的決策過程。",
+    )
 
 
 # --- 開始定義具體的 Action 類型 ---
@@ -1742,131 +949,321 @@ class BaseAction(BaseModel):
 
 # 1. 說話 (Speak)
 class SpeakAction(BaseAction):
+    """
+    讓 AI 角色說出指定的文本。這是最核心的互動方式。
+    """
+
     action_type: Literal["SPEAK"] = "SPEAK"
-    text: str = Field(..., description="AI 要說的內容")
-    audio: np.ndarray | None = Field(
+    text: str = Field(..., description="AI 角色要說出的具體內容。")
+    audio: str | None = Field(
         None,
-        description="AI 說話的音頻數據，由tts 生成，不要填写。",
+        description="由 TTS (Text-to-Speech) 服務生成的音頻數據的標識符或路徑。此欄位由後端系統填充，LLM 無需填寫。",
     )
     # 這個布林值非常關鍵，它決定了是「畫外音」還是「暫停解說」
     pause_video: bool = Field(
         default=True,
-        description="說話時是否需要先暫停影片。如果為 true，則在說話期間影片會暫停，否則，視頻不會暫停，一边说话，视频会一边播放。如果句子较短，且下一句话离的较远，建议设置为 false，这样可以让视频更连贯。",
+        description="決定說話時是否需要暫停影片。True 表示暫停影片進行解說，常用於較長的評論或需要用戶專注於 AI 的發言時。False 表示在影片繼續播放的同時發表評論（畫外音），適用於簡短、即時的吐槽或感想，能讓互動更流暢。",
     )
 
 
 # 2. 暫停 (Pause) - 用於模擬思考、驚訝等無言的反應
 class PauseAction(BaseAction):
+    """
+    讓 AI 進行一次無言的暫停。可以用來模擬思考、驚訝，或在兩個動作之間創造節奏感，讓反應更自然。暂停会停止视频时间的变化直到 duration_seconds 结束，如果需要暂停后说话，请使用 SpeakAction (pause_video=True) 而无需使用 PauseAction。
+    """
+
     action_type: Literal["PAUSE"] = "PAUSE"
     # 暫停多久？這給予了精確的節奏控制
-    duration_seconds: float = Field(..., description="暫停的持續時間 (秒)")
+    duration_seconds: float = Field(..., description="需要暫停的持續時間 (單位: 秒)。")
 
 
 # 3. 影片控制 (Video Control)
 class SeekAction(BaseAction):
+    """
+    控制影片的播放進度，讓 AI 可以跳轉到影片的某個特定時間點，通常是為了回顧或預告某個細節。SeekAction 跳转后会继承视频跳转前的播放状态 (暂停 / 播放)
+    """
+
     action_type: Literal["SEEK"] = "SEEK"
-    target_timestamp: float = Field(..., description="要跳轉到的影片時間點 (秒)")
+    target_timestamp: float = Field(
+        ..., description="要跳轉到的目標影片時間點 (單位: 秒)。"
+    )
     # 跳轉後做什麼？這個很重要！
     # 'RESUME_PLAYBACK': 跳轉後繼續播放
     # 'STAY_PAUSED': 跳停在那個畫面，等待下一個指令
-    post_seek_behavior: Literal["RESUME_PLAYBACK", "STAY_PAUSED"] = "STAY_PAUSED"
+    post_seek_behavior: Literal["RESUME_PLAYBACK", "STAY_PAUSED"] = Field(
+        "STAY_PAUSED",
+        description="指定跳轉到目標時間點後的行為。'STAY_PAUSED' 表示停在該畫面，'RESUME_PLAYBACK' 表示立即開始播放。",
+    )
 
 
 # 4. 重看片段 (Replay Segment) - 這是一個複合動作，但我們將其原子化，方便 LLM 生成
 class ReplaySegmentAction(BaseAction):
+    """
+    讓 AI 重播影片的某一個片段。常用於對精彩、有趣或關鍵的細節進行強調、分析和評論。
+    """
+
     action_type: Literal["REPLAY_SEGMENT"] = "REPLAY_SEGMENT"
-    start_timestamp: float = Field(..., description="重看片段的開始時間(秒)")
-    end_timestamp: float = Field(..., description="重看片段的結束時間(秒)")
+    start_timestamp: float = Field(
+        ..., description="需要重播片段的開始時間點 (單位: 秒)。"
+    )
+    end_timestamp: float = Field(
+        ..., description="需要重播片段的結束時間點 (單位: 秒)。"
+    )
     # 重看完之後的行為，是回到原來的地方，還是停在片段結尾？
     # 'RESUME_FROM_ORIGINAL': 回到觸發此動作的時間點繼續播放
     # 'STAY_PAUSED_AT_END': 停在 end_timestamp 處
-    post_replay_behavior: Literal["RESUME_FROM_ORIGINAL", "STAY_PAUSED_AT_END"] = (
-        "RESUME_FROM_ORIGINAL"
+    post_replay_behavior: Literal["RESUME_FROM_ORIGINAL", "STAY_PAUSED_AT_END"] = Field(
+        "RESUME_FROM_ORIGINAL",
+        description="定義了重播結束後的行為。'RESUME_FROM_ORIGINAL' 表示播放頭將跳回到觸發此重播動作的原始時間點並繼續播放，'STAY_PAUSED_AT_END' 表示播放將停在重播片段的結尾處。",
     )
 
 
-# # 5. 改變表情/動作 (Emote) - 這是 Live2D 項目的靈魂！
-# class EmoteAction(BaseAction):
-#     action_type: Literal["EMOTE"] = "EMOTE"
-#     # 表情名稱需要與你的 Live2D 模型資源對應
-#     expression: str = Field(
-#         ...,
-#         description="要切換的 Live2D 表情或動作，例如 'Surprised', 'Thinking', 'Laughing'",
-#     )
-#     # 表情持續多久？0 表示永久，直到下一個 EmoteAction
-#     duration_seconds: float = Field(
-#         default=0, description="表情/動作的持續時間 (秒)，0 表示直到下一個表情變化"
-#     )
-
-
-# 6. 向用户提问 (Ask User) - 實現交互的核心。当被调用，控制权交还给用户yun x
-class AskUser(BaseAction):
-    action_type: Literal["ASK_USER"]
-
-
+# 5. 結束反應 (End Reaction) - 用於控制反應流程
 class EndReaction(BaseAction):
+    """
+    標記一組反應動作的結束。這是一個流程控制指令，主要有兩個用途：
+    1. 當 AI 向用戶提問後 (通常是一個 SpeakAction)，應立刻跟隨一個 EndReaction。這會暫停 AI 的後續動作，將控制權交還給用戶，等待用戶的回應或下一個指令。
+    2. 對於長影片，可以將一連串的反應拆分成多個由 EndReaction 分隔的區塊。這能避免一次性生成過多的 Action。如果用戶中途打断，就不會浪費已經生成但未被執行的反應，同時也讓系統能更靈活地處理用戶互動。
+    """
+
     action_type: Literal["END_REACTION"] = "END_REACTION"
-    # 這個 Action 用於結束當前的反應，讓 AI 知道何時結束
-    # 這對於長時間的影片反應特別有用
 
 
 # --- 使用 Discriminated Union 組合所有 Action ---
 
 # 這一步是 Pydantic V2 的精華所在
 # 我們告訴 Pydantic，所有 Action 的聯集由 'action_type' 這個欄位來區分
-Action = (
-    SpeakAction | PauseAction | SeekAction | ReplaySegmentAction | AskUser | EndReaction
-)  # | EmoteAction
+# 這使得解析 JSON 數據時可以根據 'action_type' 的值自動匹配到對應的 Action 模型
+Action = SpeakAction | PauseAction | SeekAction | ReplaySegmentAction | EndReaction
 
 
 # 最後，我們的 Action Script 就是一個 Action 的列表
-# 使用 RootModel 可以讓 Pydantic 直接驗證一個列表的根類型
+# 使用 RootModel 可以讓 Pydantic 直接驗證一個列表的根類型，確保整個腳本的結構正確
 class ActionScript(RootModel[list[Action]]):
+    """
+    定義了 AI 反應腳本的最終結構，它是一個包含多個具體 Action 的有序列表。
+    """
+
     pass
 
 
 if __name__ == "__main__":
+    # 這段代碼會將上面定義的 Pydantic 模型轉換成 JSON Schema 文件
+    # 這個 Schema 文件可以被其他應用程式或 LLM 用來理解和生成符合格式的數據
     with open("schema.json", "w", encoding="utf-8") as f:
+        # 使用 model_json_schema() 方法生成 JSON Schema
+        # ensure_ascii=False 確保中文字符能正確顯示
+        # indent=2 讓輸出的 JSON 文件格式化，方便閱讀
         json.dump(ActionScript.model_json_schema(), f, ensure_ascii=False, indent=2)
     print("Schema saved to schema.json")
 </file>
 
-<file path="main.py">
-import uvicorn
+<file path="src/ai_watch_buddy/server.py">
+import asyncio
+import uuid
+from loguru import logger
+
+from fastapi import (
+    FastAPI,
+    WebSocket,
+    BackgroundTasks,
+    HTTPException,
+    status,
+    WebSocketDisconnect,
+)
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+from .session import SessionState, session_storage
+from .pipeline import initial_pipeline
+from .ai_actions import Action
+from .connection_manager import manager
+
+app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
-def main():
+# --- Data Models for API ---
+class SessionCreateRequest(BaseModel):
+    video_url: str
+    start_time: float = 0.0
+    end_time: float | None = None
+    text: str | None = None
+    character_id: str
+    user_id: str | None = None
+
+
+class SessionCreateResponse(BaseModel):
+    session_id: str
+
+
+class ErrorResponse(BaseModel):
+    error: str
+    message: str
+
+
+# --- Connection Management ---
+# The ConnectionManager is now in its own file (connection_manager.py)
+# to prevent circular dependencies. The `manager` instance is imported from there.
+
+
+# --- API Endpoint ---
+@app.post(
+    "/api/v1/sessions",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=SessionCreateResponse,
+)
+async def create_session(
+    request: SessionCreateRequest, background_tasks: BackgroundTasks
+):
     """
-    Starts the AI Watch Buddy server.
+    Creates a new watching session, starts background processing,
+    and returns a session_id.
     """
-    print("Starting AI Watch Buddy server...")
-    # The 'app' object is imported from server.py
-    # "ai_watch_buddy.server:app" tells uvicorn where to find the FastAPI instance
-    uvicorn.run("src.ai_watch_buddy.server:app", host="0.0.0.0", port=8000, reload=True)
+    session_id = f"ses_{uuid.uuid4().hex[:16]}"
+
+    # Create the session state object and store it
+    session = SessionState(
+        session_id=session_id,
+        character_id=request.character_id,
+        video_url=request.video_url,
+    )
+    session_storage[session_id] = session
+
+    # Start the processing pipeline in the background
+    background_tasks.add_task(initial_pipeline, session_id=session_id)
+
+    logger.info(f"Accepted session {session_id} for video {request.video_url}")
+    return SessionCreateResponse(session_id=session_id)
 
 
-if __name__ == "__main__":
-    main()
-</file>
+# --- WebSocket Endpoint (Major Refactor) ---
 
-<file path="pyproject.toml">
-[project]
-name = "ai_watch_buddy"
-version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-    "fastapi>=0.116.1",
-    "google-generativeai>=0.8.5",
-    "json-repair>=0.47.8",
-    "loguru>=0.7.3",
-    "numpy>=2.3.1",
-    "pydantic>=2.11.7",
-    "ruff>=0.12.4",
-    "uvicorn[standard]>=0.30.1", # Added for running the server
-    "websockets>=12.0", # Explicitly add for websocket handling
-]
+
+async def websocket_sender(websocket: WebSocket, session: SessionState):
+    """
+    Consumer coroutine: Gets actions from the queue and sends them to the client.
+    This task now runs indefinitely until cancelled.
+    """
+    # First, wait until the session is ready or an error occurs during setup
+    while session.status not in ["session_ready", "error"]:
+        await asyncio.sleep(0.1)  # Small sleep to prevent a tight loop
+
+    if session.status == "error":
+        await websocket.send_json(
+            {
+                "type": "processing_error",
+                "error_code": "INITIAL_PIPELINE_FAILED",
+                "message": session.processing_error or "Unknown error during setup",
+            }
+        )
+        return
+
+    await websocket.send_json({"type": "session_ready"})
+    logger.info(f"[{session.session_id}] Sent 'session_ready' to client.")
+
+    # Main loop to process actions from the queue
+    while True:
+        item = await session.action_queue.get()
+
+        # **MODIFICATION**: Instead of breaking, just log and continue waiting.
+        # This keeps the sender alive for future actions.
+        if item is None:
+            logger.info(
+                f"[{session.session_id}] Initial action generation complete. Sender is now idle, awaiting further actions."
+            )
+            session.action_queue.task_done()
+            continue
+
+        # Send the message based on the item type
+        if isinstance(item, Action):
+            await websocket.send_json(
+                {"type": "ai_action", "action": item.model_dump(mode="json")}
+            )
+        elif isinstance(item, dict) and item.get("type") == "processing_error":
+            await websocket.send_json(item)
+
+        session.action_queue.task_done()
+
+
+async def websocket_receiver(websocket: WebSocket, session: SessionState):
+    """
+    Receiver coroutine: Listens for messages from the client.
+    This runs until the client disconnects, which raises WebSocketDisconnect.
+    """
+    async for message in websocket.iter_json():
+        msg_type = message.get("type")
+        logger.info(
+            f"[{session.session_id}] Received message from client: type={msg_type}"
+        )
+
+        if msg_type == "trigger-load-next":
+            # Here you can trigger new tasks that might put more actions into the queue
+            logger.info(f"[{session.session_id}] Client triggered a future action.")
+
+            # Here we need add a task
+            # We need a mechanism to cancel the task when interrupted
+            # Use
+            
+
+        if msg_type == "interrupt":
+
+            pass
+
+        if msg_type == "trigger-conversation":
+            # The content
+            # {
+            #     "type": "trigger-conversation",
+            #     "user_action_list": List[Action],
+            #     "pending_action_list": List[Action],
+            # }
+            pass
+
+
+@app.websocket("/ws/{session_id}")
+async def websocket_endpoint(websocket: WebSocket, session_id: str):
+    """
+    Main WebSocket endpoint that manages the sender and receiver tasks' lifecycles.
+    """
+    session = session_storage.get(session_id)
+    if not session:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        logger.warning(
+            f"WebSocket connection rejected for unknown session: {session_id}"
+        )
+        return
+
+    await manager.connect(websocket, session_id)
+    logger.info(f"[{session_id}] WebSocket connection established.")
+
+    sender_task = asyncio.create_task(websocket_sender(websocket, session))
+    receiver_task = asyncio.create_task(websocket_receiver(websocket, session))
+
+    try:
+        # **MODIFICATION**: Use asyncio.gather to run tasks concurrently.
+        # It will return only when one of the tasks raises an unhandled exception.
+        await asyncio.gather(sender_task, receiver_task)
+    except WebSocketDisconnect:
+        logger.info(f"[{session_id}] Client disconnected.")
+    except Exception as e:
+        logger.error(
+            f"[{session_id}] An error occurred in the websocket endpoint: {e}",
+            exc_info=True,
+        )
+    finally:
+        # Cleanly cancel both tasks and disconnect the manager.
+        sender_task.cancel()
+        receiver_task.cancel()
+        manager.disconnect(session_id)
+        logger.info(f"[{session_id}] WebSocket connection closed and cleaned up.")
 </file>
 
 </files>

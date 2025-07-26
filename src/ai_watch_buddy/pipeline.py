@@ -1,150 +1,244 @@
 import asyncio
+import json
 from pathlib import Path
 from loguru import logger
-from typing import List
+from typing import List, Optional
 
-from .ai_actions import Action, SpeakAction
+from .actions import Action, SpeakAction
 from .tts import tts_instance
 from .session import session_storage
-from .action_generate import generate_actions
 from .fetch_video import download_video_async
+from .action_generate import generate_actions
+
+# TODO: You need to create and import your actual agent implementation.
+# from .agent.video_action_agent_implementation import VideoActionAgentImpl
+from .agent.video_action_agent_interface import VideoActionAgentInterface
 
 
-async def download_video(video_url: str, session_id: str) -> str:
+def get_interruption_timestamp(user_action_list: List[dict]) -> Optional[float]:
+    """Extracts the interruption timestamp from the user action list."""
+    if user_action_list:
+        # The timestamp of the first user action is the definitive point of interruption.
+        return user_action_list[0].get("trigger_timestamp")
+    return None
+
+
+async def run_conversation_pipeline(
+    session_id: str, user_action_list: List[dict], pending_action_list: List[dict]
+) -> None:
     """
-    Downloads the video from the given URL and returns the local file path.
-    """
-    # Create session-specific downloads directory
-    downloads_dir = Path("downloads") / session_id
-
-    # Use the imported download_video_async function
-    local_path = await download_video_async(video_url, downloads_dir)
-
-    logger.info(f"[{session_id}] Video downloaded to: {local_path}")
-    return str(local_path)
-
-async def run_conversation_pipeline(session_id: str, user_action_list: List[Action], pending_action_list: List[Action]) -> None:
-    # user_action_list 会包含: SeekAction, PauseAction, ResumeAction, SpeakAction，也都有他们的 trigger_timestamp
-    # user_action_list 的 SpeakAction 会包含 text 和 audio 其中之一 (user 会发 text 和 audio) 如果是 audio 需要 ASR 成 text
-    # user_action_list 的 SpeakAction 一定是 pause_video = true 的（前端会在 user 开始说时自动暂停)
-    # TODO: 前端添加 Ten VAD, Audio (Mic) input 和 Chatbox 功能，前端在 VAD **真正**激活时自动暂停视频 (说明用户说的话一定会被发送)。
-    # 为什么要暂停？因为 AI 需要时间来回复，当 AI 回复后，用户还可以继续提问。TODO: 但无论如何，AI 回复的文字结束后， pending_action_list 会通过 add_content 发给 AI 让 AI 更新 (user_action_lsit 用户执行的操作和说的话也会给更新 AI 来参考) ，更新的内容流式的得到 action 发给前端。实现一个更新的类，类似 run_action_generation_pipeline，流式将新的 action_list 发送给前端。更新 action_list 也使用 summary_prompt，但需要在当前信息说明更新的任务。更新任务的说明（以及对话任务的说明），不属于 system_prompt 的范畴，应该是 user_message 里被嵌入的。需要写 2 个 prompt分别是更新任务，对话任务。这样更新添加 content 包括对话添加 content，告诉 AI 这个是他的任务（修改 content）@prompt
-
-    pass
-
-async def run_action_generation_pipeline(session_id: str) -> None:
-    """
-    Generates actions for the video and puts them into the session's queue.
-    This function is now a pure "producer".
+    Handles a user interruption by sending a concise "Situation Report" to the agent.
+    The agent's System Prompt contains all the logic for how to handle this report.
     """
     session = session_storage.get(session_id)
-    if not session or not session.local_video_path:
-        logger.error(
-            f"[{session_id}] Cannot run action generation: session or local_video_path not found."
+    if not session or not session.agent:
+        logger.error(f"[{session_id}] Cannot run conversation: session or agent not found.")
+        return
+
+    interruption_timestamp = get_interruption_timestamp(user_action_list)
+    if interruption_timestamp is None:
+        logger.warning(f"[{session_id}] Could not determine interruption timestamp. Defaulting to 0.")
+        interruption_timestamp = 0.0
+
+    # This context_message is a simple, clean data report.
+    # All the complex instructions have been moved to the System Prompt in action_gen.py.
+    context_message = f"""
+## User Interruption Report
+
+- **Interruption Timestamp:** {interruption_timestamp} (The video is PAUSED at this time)
+- **User Actions:**
+{json.dumps(user_action_list, indent=2)}
+
+- **Your Cancelled Actions:**
+{json.dumps(pending_action_list, indent=2)}
+
+Based on this report and your core instructions, generate your new Reaction Script now.
+"""
+
+    session.agent.add_content(role="user", text=context_message)
+
+    # The rest of the logic remains the same.
+    session.action_generation_task = asyncio.create_task(
+        generate_and_queue_actions(
+            session_id, mode="summary", clear_pending_actions=True
         )
-        if session:
-            await session.action_queue.put(
-                {
-                    "type": "processing_error",
-                    "error_code": "PIPELINE_SETUP_FAILED",
-                    "message": "Session or video path not found.",
-                }
-            )
+    )
+    logger.info(
+        f"[{session_id}] Sent interruption report for timestamp {interruption_timestamp}. New generation task created."
+    )
+
+
+async def generate_and_queue_actions(
+    session_id: str, mode: str, clear_pending_actions: bool = True, use_mock: bool = True
+) -> None:
+    """
+    Generic function to generate actions using the session's agent and put them in the queue.
+    
+    Args:
+        session_id: The session identifier
+        mode: The generation mode (e.g., "video", "summary")
+        clear_pending_actions: Whether to clear existing pending actions
+        use_mock: Whether to use mock data instead of the real agent
+    """
+    session = session_storage.get(session_id)
+    if not use_mock and (not session or not session.agent):
+        logger.error(f"[{session_id}] Cannot generate actions: session or agent not found.")
         return
 
     try:
+        if clear_pending_actions:
+            while not session.action_queue.empty():
+                session.action_queue.get_nowait()
+            logger.info(f"[{session_id}] Cleared pending actions from the queue.")
+
         session.status = "generating_actions"
-        logger.info(f"[{session_id}] Starting action generation...")
+        logger.info(f"[{session_id}] Starting action generation with mode '{mode}' (mock={use_mock})...")
 
         actions_generated_count = 0
-        async for action in generate_actions(
-            video_path=session.local_video_path,
-            start_time=0.0,  # 这里的参数可以从 session 中获取
-            character_prompt=f"Character ID: {session.character_id}",
-        ):
-            if isinstance(action, SpeakAction):
-                # 生成音频并填充到 action 中
-                audio_base64 = await tts_instance.generate_audio(action.text)
-                if audio_base64:
-                    action.audio = audio_base64
-                else:
-                    logger.error(
-                        f"[{session_id}] Failed to generate audio for action: {action.id}"
-                    )
-                    continue
-            # 关键改动：将 action 放入队列，而不是直接发送
+        
+        # Choose data source based on use_mock parameter
+        if use_mock:
+            # Use mock data from action_generate.py
+            logger.info(f"[{session_id}] Using mock data for action generation")
+            action_source = generate_actions(
+                video_path="",  # Mock doesn't use these parameters
+                start_time=0.0,
+                character_prompt=""
+            )
+        else:
+            # Use real agent
+            action_source = session.agent.generate(mode=mode)
+        
+        async for action_data in action_source:
+            # Handle both Action objects (from mock) and dict (from agent)
+            if isinstance(action_data, Action):
+                action = action_data
+            else:
+                action = Action.model_validate(action_data)
+
+            # Audio will be generated in the frontend
+            # if isinstance(action, SpeakAction):
+            #     audio_base64 = await tts_instance.generate_audio(action.text)
+            #     if audio_base64:
+            #         action.audio = audio_base64
+            #     else:
+            #         logger.warning(f"[{session_id}] Failed to generate audio for action: {action.id}")
+
             await session.action_queue.put(action)
             actions_generated_count += 1
-            logger.info(
-                f"[{session_id}] Put action into queue: {action.action_type} at {action.trigger_timestamp}s"
-            )
+            logger.info(f"[{session_id}] Queued action: {action.action_type} at {action.trigger_timestamp}s")
 
-        # IMPORTANT: Set status to ready only after the loop is successfully completed.
-        if session.status != "error":
-            session.status = "session_ready"
-            logger.info(
-                f"[{session_id}] Action generation completed. Total actions: {actions_generated_count}. Status set to 'session_ready'."
-            )
+        logger.info(f"[{session_id}] Action generation stream finished. Total new actions: {actions_generated_count}.")
 
+    except asyncio.CancelledError:
+        logger.info(f"[{session_id}] Action generation task was cancelled.")
     except Exception as e:
-        logger.error(
-            f"[{session_id}] Error during action generation: {e}", exc_info=True
-        )
+        logger.error(f"[{session_id}] Error during action generation: {e}", exc_info=True)
         session.status = "error"
         session.processing_error = str(e)
-        # 发生错误时，也向队列放入一个错误信息
         await session.action_queue.put(
-            {
-                "type": "processing_error",
-                "error_code": "ACTION_GENERATION_FAILED",
-                "message": f"Failed to generate actions for the video: {e}",
-            }
+            {"type": "processing_error", "error_code": "ACTION_GENERATION_FAILED", "message": str(e)}
         )
     finally:
-        # 关键一步：发送一个“哨兵”值 (sentinel value)
-        # 这就像是信件的末尾标记，告诉消费者：“没有更多信件了”。
-        # 我们用 None 来作为这个哨兵。
-        if session:
-            await session.action_queue.put(None)
+        await session.action_queue.put(None)
+
+
+async def run_initial_generation(session_id: str, use_mock: bool = True):
+    """
+    Runs initial action generation and summary generation in parallel,
+    then sets session_ready when both are complete.
+    
+    Args:
+        session_id: The session identifier  
+        use_mock: Whether to use mock data instead of the real agent
+    """
+    session = session_storage.get(session_id)
+    if not session:
+        logger.error(f"[{session_id}] Session not found in run_initial_generation")
+        return
+        
+    # Only check for agent if not using mock
+    if not use_mock and not session.agent:
+        logger.error(f"[{session_id}] Agent not found and not using mock")
+        return
+
+    try:
+        logger.info(f"[{session_id}] Starting parallel summary and action generation (mock={use_mock})...")
+        
+        # Create both tasks to run in parallel
+        if use_mock:
+            # For mock mode, create a simple completed task
+            summary_task = asyncio.create_task(asyncio.sleep(0))
+        else:
+            # For real mode, use the agent
+            summary_task = asyncio.create_task(
+                session.agent.get_video_summary(video_path_or_url=session.local_video_path)
+            )
+        
+        action_generation_task = asyncio.create_task(
+            generate_and_queue_actions(session_id, mode="video", clear_pending_actions=False)
+        )
+
+        # Wait for both tasks to complete
+        await asyncio.gather(summary_task, action_generation_task)
+        
+        logger.info(f"[{session_id}] Both summary and action generation completed.")
+        
+        # Only verify summary if not using mock
+        if not use_mock and not session.agent.summary_ready:
+            raise RuntimeError("Agent summary was not ready after summary task completion.")
+        
+        # Set session ready only after both tasks complete successfully
+        if session.status != "error":
+            session.status = "session_ready"
+            logger.info(f"[{session_id}] ✅ Initial pipeline complete. Status set to 'session_ready'.")
+
+    except Exception as e:
+        logger.error(f"[{session_id}] Error during initial generation: {e}", exc_info=True)
+        session.status = "error"
+        session.processing_error = str(e)
+        await session.action_queue.put(
+            {"type": "processing_error", "error_code": "INITIAL_GENERATION_FAILED", "message": str(e)}
+        )
+        await session.action_queue.put(None)
 
 
 async def initial_pipeline(session_id: str) -> None:
     """
     The initial background task that runs when a session is created.
-    It downloads the video and then triggers the action generation.
     """
     session = session_storage.get(session_id)
     if not session:
-        logger.error(f"[{session_id}] Initial pipeline failed: session not found.")
         return
 
     try:
-        # Step 1: Download video
+        # Step 1: Download video (blocking within this pipeline)
         session.status = "downloading_video"
-        local_video_path = str(
-            await download_video_async(session.video_url, target_dir="video_cache")
-        )
+        local_video_path = str(await download_video_async(session.video_url, target_dir="video_cache"))
         session.local_video_path = local_video_path
         session.status = "video_ready"
+        logger.info(f"[{session_id}] Video ready at: {local_video_path}")
 
-        # 2. Start action generation in the background.
-        # DO NOT set status to "session_ready" here.
-        asyncio.create_task(run_action_generation_pipeline(session_id))
-        logger.info(f"[{session_id}] Initial pipeline complete, action generation started.")
+        # Step 2: Initialize the agent
+        # TODO: Replace with your actual implementation.
+        # agent = VideoActionAgentImpl(...)
+        # session.agent = agent
+        logger.info(f"[{session_id}] Agent initialization skipped (using mock mode).")
+
+        # Step 3: Start parallel summary and action generation in the background.
+        session.action_generation_task = asyncio.create_task(run_initial_generation(session_id))
+        logger.info(f"[{session_id}] Summary and action generation started in the background.")
 
     except Exception as e:
-        logger.error(
-            f"[{session_id}] Error during initial pipeline: {e}", exc_info=True
-        )
+        logger.error(f"[{session_id}] Error during initial pipeline setup: {e}", exc_info=True)
         session.status = "error"
         session.processing_error = str(e)
-        # 如果初始流程就失败了，也往队列里放个错误信息和结束标记
         if session:
             await session.action_queue.put(
                 {
                     "type": "processing_error",
                     "error_code": "INITIAL_PIPELINE_FAILED",
-                    "message": f"Failed during the initial setup: {e}",
+                    "message": str(e),
                 }
             )
             await session.action_queue.put(None)

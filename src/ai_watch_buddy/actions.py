@@ -1,6 +1,5 @@
 import json
-from typing import Literal
-import numpy as np
+from typing import Literal, List
 from pydantic import BaseModel, Field, RootModel
 
 
@@ -129,6 +128,19 @@ class ActionScript(RootModel[list[Action]]):
     """
 
     pass
+
+
+class UserInteractionPayload(BaseModel):
+    """
+    Defines the structure of the data payload for a user interaction,
+    such as 'trigger-conversation'.
+    """
+
+    # A list of actions the user just performed.
+    user_action_list: List[Action]
+
+    # A list of AI actions that were pending (not yet executed) when the user interrupted.
+    pending_action_list: List[Action]
 
 
 if __name__ == "__main__":

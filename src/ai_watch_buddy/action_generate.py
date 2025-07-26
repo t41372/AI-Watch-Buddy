@@ -3,7 +3,8 @@ import asyncio
 from collections.abc import AsyncGenerator
 from json_repair import repair_json
 from pydantic import ValidationError, TypeAdapter
-from .ai_actions import Action, ActionScript
+from loguru import logger
+from .actions import Action
 
 # ==============================
 sample_json = """
@@ -183,18 +184,18 @@ async def generate_actions(
         # 首先尝试直接解析
         actions_data = json.loads(full_response)
     except json.JSONDecodeError:
-        print("⚠️警告: JSON 解析失败，尝试修复...")
+        logger.warning("JSON 解析失败，尝试修复...")
         try:
             # 如果失败，使用 json_repair
             repaired_json_str = repair_json(full_response)
             actions_data = json.loads(repaired_json_str)
-            print("✅ JSON 成功修复！")
+            logger.info("JSON 成功修复！")
         except Exception as e:
-            print(f"❌ 错误: 修复后依然无法解析 JSON: {e}")
+            logger.error(f"修复后依然无法解析 JSON: {e}")
             return  # 无法继续，直接返回
 
     if not isinstance(actions_data, list):
-        print(f"❌ 错误: 预期顶层结构是 JSON 数组，但得到的是 {type(actions_data)}")
+        logger.error(f"预期顶层结构是 JSON 数组，但得到的是 {type(actions_data)}")
         return
 
     # 3. 遍历数组，验证并 yield 每个 action
@@ -204,8 +205,8 @@ async def generate_actions(
             validated_action = TypeAdapter(Action).validate_python(action_dict)
             yield validated_action
         except ValidationError as e:
-            print(
-                f"❌ 错误: 第 {i+1} 个 Action 验证失败，已跳过。数据: {action_dict}, 错误: {e}"
+            logger.warning(
+                f"第 {i+1} 个 Action 验证失败，已跳过。数据: {action_dict}, 错误: {e}"
             )
 
 
@@ -217,15 +218,15 @@ if __name__ == "__main__":
         start_time = 0.0
         character_prompt = "A humorous AI character reacting to a video."
 
-        print("--- Streaming Actions ---")
+        logger.info("--- Streaming Actions ---")
         action_count = 0
         async for action in generate_actions(video_path, start_time, character_prompt):
             action_count += 1
-            print(
+            logger.info(
                 f"Action {action_count}: {action.model_dump_json(indent=2)}", flush=True
             )
-            await asyncio.sleep(0.1)
-        print(f"\n--- End of Stream ---")
-        print(f"Total actions received: {action_count}")
+            await asyncio.sleep(0.01)
+        logger.info(f"\n--- End of Stream ---")
+        logger.info(f"Total actions received: {action_count}")
 
     asyncio.run(main())

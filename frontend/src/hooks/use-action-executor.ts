@@ -8,6 +8,11 @@ export interface VideoPlayerControl {
   seek: (time: number) => void;
   getCurrentTime: () => number;
   getDuration: () => number;
+  showPauseOverlay: () => void;
+  hidePauseOverlay: () => void;
+  showSpeakingOverlay: () => void;
+  hideSpeakingOverlay: () => void;
+  animateSeek: (targetTime: number, duration?: number) => Promise<void>;
 }
 
 export interface ActionExecutorOptions {
@@ -113,10 +118,15 @@ export const useActionExecutor = (options: ActionExecutorOptions = {}): UseActio
     const duration = action.duration_seconds || 1.0; // Default to 1 second if not specified
     console.log(`Pausing video for ${duration}s for action: ${action.comment}`);
 
+    // Show pause overlay and pause the video
+    videoPlayerControl.showPauseOverlay();
     videoPlayerControl.pause();
 
     // Wait for the specified duration, then resume
     await new Promise(resolve => setTimeout(resolve, duration * 1000));
+    
+    // Hide overlay and resume
+    videoPlayerControl.hidePauseOverlay();
     videoPlayerControl.resume();
 
     console.log(`Resumed video after ${duration}s pause`);
@@ -137,6 +147,11 @@ export const useActionExecutor = (options: ActionExecutorOptions = {}): UseActio
     // Store the current video time and playing state
     let videoWasPlaying = false;
     let currentVideoTime = 0;
+    
+    // Show speaking overlay
+    if (videoPlayerControl) {
+      videoPlayerControl.showSpeakingOverlay();
+    }
     
     // Pause video if requested
     if (shouldPauseVideo && videoPlayerControl) {
@@ -169,6 +184,11 @@ export const useActionExecutor = (options: ActionExecutorOptions = {}): UseActio
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
+    // Hide speaking overlay
+    if (videoPlayerControl) {
+      videoPlayerControl.hideSpeakingOverlay();
+    }
+
     // Resume video if it was paused and was playing before
     if (shouldPauseVideo && videoPlayerControl && videoWasPlaying) {
       // Ensure we're at the right position (in case something changed)
@@ -199,9 +219,16 @@ export const useActionExecutor = (options: ActionExecutorOptions = {}): UseActio
 
     const duration = videoPlayerControl.getDuration();
     const targetTime = Math.max(0, Math.min(action.target_timestamp, duration));
+    const currentTime = videoPlayerControl.getCurrentTime();
+    
+    // Calculate seek duration based on distance (300ms per 10 seconds, min 500ms, max 2000ms)
+    const distance = Math.abs(targetTime - currentTime);
+    const seekDuration = Math.max(500, Math.min(2000, distance * 30));
 
-    console.log(`Seeking video to ${targetTime}s (requested: ${action.target_timestamp}s)`);
-    videoPlayerControl.seek(targetTime);
+    console.log(`Animating seek from ${currentTime}s to ${targetTime}s over ${seekDuration}ms`);
+    
+    // Use animated seek instead of instant seek
+    await videoPlayerControl.animateSeek(targetTime, seekDuration);
 
     // Handle post-seek behavior
     const postSeekBehavior = action.post_seek_behavior || 'STAY_PAUSED';
@@ -231,8 +258,9 @@ export const useActionExecutor = (options: ActionExecutorOptions = {}): UseActio
 
     console.log(`Replaying segment from ${startTime}s to ${endTime}s (original position: ${originalTime}s)`);
 
-    // Seek to start of segment
-    videoPlayerControl.seek(startTime);
+    // Animate seek to start of segment
+    const seekDuration = Math.max(500, Math.min(1500, Math.abs(originalTime - startTime) * 30));
+    await videoPlayerControl.animateSeek(startTime, seekDuration);
     videoPlayerControl.resume();
 
     // Wait for the segment to play
@@ -243,11 +271,12 @@ export const useActionExecutor = (options: ActionExecutorOptions = {}): UseActio
     const postReplayBehavior = action.post_replay_behavior || 'RESUME_FROM_ORIGINAL';
     if (postReplayBehavior === 'RESUME_FROM_ORIGINAL') {
       console.log(`Returning to original position: ${originalTime}s`);
-      videoPlayerControl.seek(originalTime);
+      const returnDuration = Math.max(500, Math.min(1500, Math.abs(endTime - originalTime) * 30));
+      await videoPlayerControl.animateSeek(originalTime, returnDuration);
       videoPlayerControl.resume();
     } else {
       console.log(`Staying at end of segment: ${endTime}s`);
-      videoPlayerControl.seek(endTime);
+      await videoPlayerControl.animateSeek(endTime, 300);
       videoPlayerControl.pause();
     }
   }, [videoPlayerControl]);

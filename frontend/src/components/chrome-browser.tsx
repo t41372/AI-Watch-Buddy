@@ -130,6 +130,31 @@ export const ChromeBrowser = ({
     },
     getDuration: () => {
       return videoPlayerRef.current?.getDuration() || 0;
+    },
+    showPauseOverlay: () => {
+      if (videoPlayerRef.current?.showPauseOverlay) {
+        videoPlayerRef.current.showPauseOverlay();
+      }
+    },
+    hidePauseOverlay: () => {
+      if (videoPlayerRef.current?.hidePauseOverlay) {
+        videoPlayerRef.current.hidePauseOverlay();
+      }
+    },
+    showSpeakingOverlay: () => {
+      if (videoPlayerRef.current?.showSpeakingOverlay) {
+        videoPlayerRef.current.showSpeakingOverlay();
+      }
+    },
+    hideSpeakingOverlay: () => {
+      if (videoPlayerRef.current?.hideSpeakingOverlay) {
+        videoPlayerRef.current.hideSpeakingOverlay();
+      }
+    },
+    animateSeek: async (targetTime: number, duration?: number) => {
+      if (videoPlayerRef.current?.animateSeek) {
+        return videoPlayerRef.current.animateSeek(targetTime, duration);
+      }
     }
   };
 
