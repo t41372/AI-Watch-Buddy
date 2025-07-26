@@ -83,7 +83,7 @@ interface Live2DConfigState {
 const DEFAULT_MODEL_INFO: ModelInfo = {
   name: "Elaina",
   description: "Default Live2D model - AI Companion",
-  url: "http://127.0.0.1:8000/live2d-models/elaina/LSS.model3.json",
+  url: "https://pub-20f685e618af45a494e0d028f2f68055.r2.dev/elaina/LSS.model3.json",
   kScale: 0.8, // Slightly smaller for companion area
   initialXshift: 20, // Shift slightly right to center in right panel
   initialYshift: -50, // Shift up to account for chat interface at bottom
