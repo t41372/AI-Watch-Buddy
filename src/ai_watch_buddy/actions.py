@@ -60,7 +60,7 @@ class ExpressionAction(BaseAction):
 
     action_type: Literal["EXPRESSION"] = "EXPRESSION"
     emotion_expressions: Emotions = Field(
-        ...,
+        "neutral",
         description="可以选择的表情，你可以选一个。这个表情会显示在 AI 的脸上。",
     )
 

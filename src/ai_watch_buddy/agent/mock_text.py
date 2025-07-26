@@ -48,349 +48,354 @@ The song fades out with repetitions of the main chorus line. The video concludes
 sample_json = """
 [
   {
-    "id": "e6a2c27b-2e90-4d8b-9e12-4f7f2b1a8d0b",
+    "id": "e5c6a3a4-1234-4a00-8d54-2c67b3113110",
     "trigger_timestamp": 0.0,
-    "comment": "Initial recognition of the Rickroll, expressing humorous annoyance.",
+    "comment": "视频开始，先保持中立表情观察。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "neutral"
+  },
+  {
+    "id": "f8d7b2c5-5678-4b99-9e87-1d22a44bb44d",
+    "trigger_timestamp": 0.0,
+    "comment": "视频开始，期待接下来发生什么。",
+    "action_type": "SPEAK",
+    "text": "嗯？这是什么情况？感觉有大活！",
+    "pause_video": false
+  },
+  {
+    "id": "a1b2c3d4-9876-4e11-8f22-3a44b55c55ce",
+    "trigger_timestamp": 2.0,
+    "comment": "看到Rick Astley出现，瞬间意识到是Rickroll，感到一丝“命运如此”的无奈和讽刺。",
     "action_type": "EXPRESSION",
     "emotion_expressions": "disgust"
   },
   {
-    "id": "c1d1a6e9-7c4f-4a0e-9b3b-8f2e7d6c5b4a",
-    "trigger_timestamp": 0.0,
-    "comment": "Reacting to being Rickrolled right at the start.",
+    "id": "d9f8e7c6-1122-4a33-8b44-5c66d77e77ef",
+    "trigger_timestamp": 2.5,
+    "comment": "确认是Rickroll后，语气夸张地表达“惊喜”。",
     "action_type": "SPEAK",
-    "text": "我焯！什么情况？开局就给我Rickroll？！乐！",
-    "pause_video": false
-  },
-  {
-    "id": "f8b7e6a5-4d3c-2b1a-0e9d-8c7b6a5e4d3c",
-    "trigger_timestamp": 0.0,
-    "comment": "Transitioning to amusement after the initial shock.",
-    "action_type": "EXPRESSION",
-    "emotion_expressions": "joy"
-  },
-  {
-    "id": "a0d9b8c7-e6f5-4a3b-2c1d-0e9f8a7b6c5d",
-    "trigger_timestamp": 2.0,
-    "comment": "Commenting on Rick Astley's classic 80s style.",
-    "action_type": "SPEAK",
-    "text": "这发型，这穿搭，典中典啊，梦回80年代电子迪厅了属于是！",
-    "pause_video": false
-  },
-  {
-    "id": "b1c2d3e4-5f6a-7b8c-9d0e-1f2a3b4c5d6e",
-    "trigger_timestamp": 2.0,
-    "comment": "Using 'play_cool' for the 80s aesthetic comment.",
-    "action_type": "EXPRESSION",
-    "emotion_expressions": "play_cool"
-  },
-  {
-    "id": "c3d4e5f6-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
-    "trigger_timestamp": 10.0,
-    "comment": "Sarcastic comment on the chain-link fence background.",
-    "action_type": "SPEAK",
-    "text": "这背景，这铁丝网，是准备拍《肖申克的救赎》的番外篇吗？",
-    "pause_video": false
-  },
-  {
-    "id": "d5e6f7a8-9b0c-1d2e-3f4a-5b6c7d8e9f0a",
-    "trigger_timestamp": 10.0,
-    "comment": "Sarcastic confusion about the setting.",
-    "action_type": "EXPRESSION",
-    "emotion_expressions": "confusion"
-  },
-  {
-    "id": "e7f8a9b0-c1d2-3e4f-5a6b-7c8d9e0f1a2b",
-    "trigger_timestamp": 15.0,
-    "comment": "Resetting expression to neutral.",
-    "action_type": "EXPRESSION",
-    "emotion_expressions": "neutral"
-  },
-  {
-    "id": "f9a0b1c2-d3e4-5f6a-7b8c-9d0e1f2a3b4c",
-    "trigger_timestamp": 15.0,
-    "comment": "Commenting on the woman's hair flip with a meme reference.",
-    "action_type": "SPEAK",
-    "text": "这甩头，这自信，是刚从电子厂下班的打工人吗？",
-    "pause_video": false
-  },
-  {
-    "id": "g1h2i3j4-k5l6-7m8n-9o0p-1q2r3s4t5u6v",
-    "trigger_timestamp": 15.0,
-    "comment": "Sarcastic expression for the hair flip comment.",
-    "action_type": "EXPRESSION",
-    "emotion_expressions": "sarcastic"
-  },
-  {
-    "id": "h3i4j5k6-l7m8-9n0o-1p2q-3r4s5t6u7v8w",
-    "trigger_timestamp": 23.0,
-    "comment": "Resetting expression to neutral.",
-    "action_type": "EXPRESSION",
-    "emotion_expressions": "neutral"
-  },
-  {
-    "id": "i5j6k7l8-m9n0-1o2p-3q4r-5s6t7u8v9w0x",
-    "trigger_timestamp": 23.0,
-    "comment": "Sarcastic comment about Rick's sunglasses and singing.",
-    "action_type": "SPEAK",
-    "text": "这墨镜一戴，谁都不爱。哥，你唱得再深情，也挡不住这潮味儿啊。",
-    "pause_video": false
-  },
-  {
-    "id": "j7k8l9m0-n1o2-3p4q-5r6s-7t8u9v0w1x2y",
-    "trigger_timestamp": 23.0,
-    "comment": "Expression for the sunglasses comment.",
-    "action_type": "EXPRESSION",
-    "emotion_expressions": "play_cool"
-  },
-  {
-    "id": "k9l0m1n2-o3p4-5q6r-7s8t-9u0v1w2x3y4z",
-    "trigger_timestamp": 30.0,
-    "comment": "Reacting to the shadow dancing.",
-    "action_type": "SPEAK",
-    "text": "哈哈，影子都比我舞姿好！",
-    "pause_video": false
-  },
-  {
-    "id": "l1m2n3o4-p5q6-7r8s-9t0u-1v2w3x4y5z6a",
-    "trigger_timestamp": 30.0,
-    "comment": "Expressing joy at the shadow dancing.",
-    "action_type": "EXPRESSION",
-    "emotion_expressions": "joy"
-  },
-  {
-    "id": "m3n4o5p6-q7r8-9s0t-1u2v-3w4x5y6z7a8b",
-    "trigger_timestamp": 38.0,
-    "comment": "Resetting expression to neutral.",
-    "action_type": "EXPRESSION",
-    "emotion_expressions": "neutral"
-  },
-  {
-    "id": "n5o6p7q8-r9s0-1t2u-3v4w-5x6y7z8a9b0c",
-    "trigger_timestamp": 38.0,
-    "comment": "Sarcastic comment on the woman's retro outfit.",
-    "action_type": "SPEAK",
-    "text": "这裙子，这复古范儿，感觉她下一秒就要给我安利小红书爆款了。",
-    "pause_video": false
-  },
-  {
-    "id": "o7p8q9r0-s1t2-3u4v-5w6x-7y8z9a0b1c2d",
-    "trigger_timestamp": 38.0,
-    "comment": "Sarcastic expression for the outfit comment.",
-    "action_type": "EXPRESSION",
-    "emotion_expressions": "sarcastic"
-  },
-  {
-    "id": "p9r0s1t2-u3v4-5w6x-7y8z-9a0b1c2d3e4f",
-    "trigger_timestamp": 44.0,
-    "comment": "Resetting expression to neutral.",
-    "action_type": "EXPRESSION",
-    "emotion_expressions": "neutral"
-  },
-  {
-    "id": "q1s2t3u4-v5w6-7x8y-9z0a-1b2c3d4e5f6g",
-    "trigger_timestamp": 44.0,
-    "comment": "Commenting on the iconic chorus.",
-    "action_type": "SPEAK",
-    "text": "Never gonna give you up! 这句词儿，真是互联网精神图腾了，谁懂啊，乐死我了。",
-    "pause_video": false
-  },
-  {
-    "id": "r3t4u5v6-w7x8-9y0z-1a2b-3c4d5e6f7g8h",
-    "trigger_timestamp": 44.0,
-    "comment": "Expressing joy at the meme.",
-    "action_type": "EXPRESSION",
-    "emotion_expressions": "joy"
-  },
-  {
-    "id": "s5u6v7w8-x9y0-1z2a-3b4c-5d6e7f8g9h0i",
-    "trigger_timestamp": 51.0,
-    "comment": "Commenting on the bartender's appearance and expression.",
-    "action_type": "SPEAK",
-    "text": "WTF，这个吧台小哥是来砸场子的吗？看这表情，一脸不屑，感觉他早就被Rickroll过一百遍了。",
+    "text": "卧槽！DNA动了！开幕雷击啊这是！谁还没有被这个男人骗过啊？！",
     "pause_video": true
   },
   {
-    "id": "t7v8w9x0-y1z2-3a4b-5c6d-7e8f9g0h1i2j",
-    "trigger_timestamp": 51.0,
-    "comment": "Expressing disdain and sarcasm for the bartender.",
+    "id": "c7e8f9a0-3344-4c55-9d66-7e88f99a99ab",
+    "trigger_timestamp": 6.8,
+    "comment": "看到Rick Astley的招牌笑容，进一步调侃。",
     "action_type": "EXPRESSION",
-    "emotion_expressions": "disgust"
+    "emotion_expressions": "joy"
   },
   {
-    "id": "u9w0x1y2-z3a4-5b6c-7d8e-9f0g1h2i3j4k",
-    "trigger_timestamp": 51.0,
-    "comment": "Switching to a sarcastic expression.",
+    "id": "b3f2a1d0-5566-4d77-8e88-9f99a00b00bc",
+    "trigger_timestamp": 7.0,
+    "comment": "调侃Rick Astley的笑容。",
+    "action_type": "SPEAK",
+    "text": "笑死，又被 Rickroll 了，节目效果拉满！这男人笑得跟个200斤的孩子一样。",
+    "pause_video": false
+  },
+  {
+    "id": "e1f2g3h4-1234-4b55-8c66-7d99a11b11cd",
+    "trigger_timestamp": 18.5,
+    "comment": "听到歌词，做出经典的、了然于心的表情。",
     "action_type": "EXPRESSION",
-    "emotion_expressions": "sarcastic"
+    "emotion_expressions": "pride"
   },
   {
-    "id": "v1x2y3z4-a5b6-7c8d-9e0f-1g2h3i4j5k6l",
-    "trigger_timestamp": 53.0,
-    "comment": "Pausing to let the comment and expression sink in.",
-    "action_type": "PAUSE",
-    "duration_seconds": 2.0
+    "id": "a9b8c7d6-2345-4e66-9f77-8a88b99c99de",
+    "trigger_timestamp": 22.8,
+    "comment": "引用经典歌词，并用流行语“典”来评价。",
+    "action_type": "SPEAK",
+    "text": "You know the rules and so do I，典，太典了！",
+    "pause_video": false
   },
   {
-    "id": "w3y4z5a6-b7c8-9d0e-1f2g-3h4i5j6k7l8m",
-    "trigger_timestamp": 141.0,
-    "comment": "Reacting to the bartender's fall with excitement.",
+    "id": "f5e4d3c2-6789-4f88-9a99-0b00c11d11ef",
+    "trigger_timestamp": 33.3,
+    "comment": "听到“You wouldn't get this from any other guy”，略带讽刺地回应。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "coldness"
+  },
+  {
+    "id": "g1h2i3j4-7890-4a11-8b22-3c44d55e55fg",
+    "trigger_timestamp": 33.7,
+    "comment": "讽刺Rick Astley的独特性。",
+    "action_type": "SPEAK",
+    "text": "嗯，确实，因为没有别的男人这么“唐”！",
+    "pause_video": false
+  },
+  {
+    "id": "h5i4j3k2-9012-4c33-8d44-5e55f66g66hi",
+    "trigger_timestamp": 43.5,
+    "comment": "进入高潮，身体不自觉地跟着动起来。",
     "action_type": "EXPRESSION",
     "emotion_expressions": "excitement"
   },
   {
-    "id": "x5z6a7b8-c9d0-1e2f-3g4h-5i6j7k8l9m0n",
-    "trigger_timestamp": 141.0,
-    "comment": "Commenting on the bartender's dramatic fall.",
+    "id": "i9j8k7l6-3456-4e77-9f88-0a99b11c11de",
+    "trigger_timestamp": 43.8,
+    "comment": "情绪高涨，假装被“迫害”。",
     "action_type": "SPEAK",
-    "text": "哦豁！他是不是也被自己帅到了？原地升天了属于是！",
+    "text": "来了来了，DNA彻底动了！我真的会谢，这波Rickroll简直是精神污染！",
     "pause_video": true
   },
   {
-    "id": "y7a8b9c0-d1e2-3f4g-5h6i-7j8k9l0m1n2o",
-    "trigger_timestamp": 141.0,
-    "comment": "Expressing joy at the unexpected action.",
-    "action_type": "EXPRESSION",
-    "emotion_expressions": "joy"
-  },
-  {
-    "id": "z9b0c1d2-e3f4-5g6h-7i8j-9k0l1m2n3o4p",
-    "trigger_timestamp": 142.0,
-    "comment": "Replaying the moment the bartender falls.",
-    "action_type": "REPLAY_SEGMENT",
-    "start_timestamp": 141.0,
-    "end_timestamp": 143.0,
-    "post_replay_behavior": "RESUME_FROM_ORIGINAL"
-  },
-  {
-    "id": "a0c1d2e3-f4g5-6h7i-8j9k-0l1m2n3o4p5q",
-    "trigger_timestamp": 143.0,
-    "comment": "Further expressing joy and humor about the fall.",
-    "action_type": "SPEAK",
-    "text": "哈哈哈哈，必须重播这段！笑死了，年度最佳迷惑行为大赏预定！",
-    "pause_video": true
-  },
-  {
-    "id": "b2d3e4f5-g6h7-8i9j-0k1l-2m3n4o5p6q7r",
-    "trigger_timestamp": 207.0,
-    "comment": "Resetting expression to neutral.",
-    "action_type": "EXPRESSION",
-    "emotion_expressions": "neutral"
-  },
-  {
-    "id": "c4e5f6g7-h8i9-0j1k-2l3m-4n5o6p7q8r9s",
-    "trigger_timestamp": 207.0,
-    "comment": "Commenting on the male dancer's moves.",
-    "action_type": "SPEAK",
-    "text": "这个小哥跳得还挺卖力，嗯，有我以前跳广播体操那味儿了。",
-    "pause_video": false
-  },
-  {
-    "id": "d6f7g8h9-i0j1-2k3l-4m5n-6o7p8q9r0s1t",
-    "trigger_timestamp": 207.0,
-    "comment": "Expression for the dancing comment.",
+    "id": "l3m2n1o0-7890-4a11-8b22-3c44d55e55fg",
+    "trigger_timestamp": 47.0,
+    "comment": "对Rick Astley在互联网上的影响力表示感叹。",
     "action_type": "EXPRESSION",
     "emotion_expressions": "play_cool"
   },
   {
-    "id": "e8g9h0i1-j2k3-4l5m-6n7o-8p9q0r1s2t3u",
-    "trigger_timestamp": 246.0,
-    "comment": "Expressing surprise at the acrobatic dance move.",
+    "id": "k7l8m9n0-1122-4c33-8d44-5e55f66g66hi",
+    "trigger_timestamp": 47.4,
+    "comment": "调侃Rick Astley的梗图属性。",
+    "action_type": "SPEAK",
+    "text": "这男人，多少人的电子榨菜啊？",
+    "pause_video": false
+  },
+  {
+    "id": "m1n2o3p4-5566-4d77-8e88-9f99a00b00bc",
+    "trigger_timestamp": 51.5,
+    "comment": "看到酒吧场景，表示惊讶和联动。",
     "action_type": "EXPRESSION",
     "emotion_expressions": "surprise"
   },
   {
-    "id": "f0h1i2j3-k4l5-6m7n-8o9p-0q1r2s3t4u5v",
-    "trigger_timestamp": 246.0,
-    "comment": "Enthusiastic reaction to the dancer's move.",
+    "id": "q5r6s7t8-9012-4c33-8d44-5e55f66g66hi",
+    "trigger_timestamp": 51.8,
+    "comment": "对视频场景的切换和角色联动表示有趣。",
     "action_type": "SPEAK",
-    "text": "我靠，这空中飞人？这是在拍舞蹈MV还是武侠片啊？教练，我想学这个！",
-    "pause_video": true
+    "text": "OMG！还有酒吧？梦幻联动了属于是。",
+    "pause_video": false
   },
   {
-    "id": "g2i3j4k5-l6m7-8n9o-0p1q-2r3s4t5u6v7w",
-    "trigger_timestamp": 246.0,
-    "comment": "Expressing excitement for learning the dance move.",
-    "action_type": "EXPRESSION",
-    "emotion_expressions": "excitement"
-  },
-  {
-    "id": "h4j5k6l7-m8n9-0o1p-2q3r-4s5t6u7v8w9x",
-    "trigger_timestamp": 248.0,
-    "comment": "Pausing to appreciate the move.",
-    "action_type": "PAUSE",
-    "duration_seconds": 2.0
-  },
-  {
-    "id": "i6k7l8m9-n0o1-2p3q-4r5s-6t7u8v9w0x1y",
-    "trigger_timestamp": 303.0,
-    "comment": "Commenting on the bartender joining the dancing with sarcastic glee.",
+    "id": "r9s8t7u6-3456-4e77-9f88-0a99b11c11de",
+    "trigger_timestamp": 56.0,
+    "comment": "看到服务生露出笑容，觉得有趣。",
     "action_type": "EXPRESSION",
     "emotion_expressions": "joy"
   },
   {
-    "id": "j8l9m0n1-o2p3-4q5r-6s7t-8u9v0w1x2y3z",
-    "trigger_timestamp": 303.0,
-    "comment": "Sarcastic comment about the bartender giving in.",
+    "id": "v1w2x3y4-1234-4b55-8c66-7d99a11b11cd",
+    "trigger_timestamp": 56.3,
+    "comment": "评论服务生的表情。",
     "action_type": "SPEAK",
-    "text": "你看他！他也疯了！这是被Rickroll到崩溃了吗？哈哈，用户彻底怒了！",
+    "text": "看他笑得多开心啊，主打一个情绪稳定。",
     "pause_video": false
   },
   {
-    "id": "k0m1n2o3-p4q5-6r7s-8t9u-0v1w2x3y4z5a",
-    "trigger_timestamp": 303.0,
-    "comment": "Expression for the bartender comment.",
+    "id": "w5x4y3z2-6789-4f88-9a99-0b00c11d11ef",
+    "trigger_timestamp": 59.8,
+    "comment": "看到舞者的表演，觉得很拼。",
     "action_type": "EXPRESSION",
-    "emotion_expressions": "sarcastic"
+    "emotion_expressions": "play_cool"
   },
   {
-    "id": "l2n3o4p5-q6r7-8s9t-0u1v-2w3x4y5z6a7b",
-    "trigger_timestamp": 310.0,
-    "comment": "Resetting expression to neutral.",
+    "id": "x9y8z7a6-2345-4e66-9f77-8a88b99c99de",
+    "trigger_timestamp": 60.1,
+    "comment": "评论舞者的投入。",
+    "action_type": "SPEAK",
+    "text": "这个舞者也挺拼的。",
+    "pause_video": false
+  },
+  {
+    "id": "y3z2a1b0-7890-4a11-8b22-3c44d55e55fg",
+    "trigger_timestamp": 102.2,
+    "comment": "歌词“We've known each other for so long”，感慨时间和这首歌的持久影响力。",
+    "action_type": "SPEAK",
+    "text": "我们确实认识很久了，都老熟人了。",
+    "pause_video": false
+  },
+  {
+    "id": "z7a8b9c0-1122-4c33-8d44-5e55f66g66hi",
+    "trigger_timestamp": 109.5,
+    "comment": "歌词“You're too shy to say it”，假装被说中心事。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "shy"
+  },
+  {
+    "id": "a1b2c3d4-4455-4e66-9f77-8a88b99c99de",
+    "trigger_timestamp": 109.8,
+    "comment": "假装回应歌词。",
+    "action_type": "SPEAK",
+    "text": "别骂了别骂了，我知道我害羞。",
+    "pause_video": false
+  },
+  {
+    "id": "d5e6f7g8-9900-4b11-8c22-3d33e44f44fg",
+    "trigger_timestamp": 117.8,
+    "comment": "再次进入高潮，彻底放飞自我，用夸张的语气宣泄“痛苦”。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "excitement"
+  },
+  {
+    "id": "h9i0j1k2-3344-4c55-9d66-7e88f99a99ab",
+    "trigger_timestamp": 118.1,
+    "comment": "再次被Rickroll，假装痛苦。",
+    "action_type": "SPEAK",
+    "text": "我真的要“栓Q”了！这个男人怎么还不放过我！",
+    "pause_video": true
+  },
+  {
+    "id": "e2f3g4h5-1234-4b55-8c66-7d99a11b11cd",
+    "trigger_timestamp": 134.5,
+    "comment": "看到服务生跳起来，表示惊讶。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "surprise"
+  },
+  {
+    "id": "f6g7h8i9-6789-4f88-9a99-0b00c11d11ef",
+    "trigger_timestamp": 134.8,
+    "comment": "惊叹服务生的身手。",
+    "action_type": "SPEAK",
+    "text": "卧槽！这身手！",
+    "pause_video": false
+  },
+  {
+    "id": "j0k1l2m3-2345-4e66-9f77-8a88b99c99de",
+    "trigger_timestamp": 144.5,
+    "comment": "看到Rick Astley的笑容，再次调侃。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "joy"
+  },
+  {
+    "id": "n4o5p6q7-7890-4a11-8b22-3c44d55e55fg",
+    "trigger_timestamp": 144.8,
+    "comment": "再次调侃Rick Astley的招牌笑容。",
+    "action_type": "SPEAK",
+    "text": "他好像知道一切，又好像什么都不知道。",
+    "pause_video": false
+  },
+  {
+    "id": "r8s9t0u1-1122-4c33-8d44-5e55f66g66hi",
+    "trigger_timestamp": 206.5,
+    "comment": "看到戴墨镜的Rick Astley，再次调侃其形象。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "play_cool"
+  },
+  {
+    "id": "v2w3x4y5-4455-4e66-9f77-8a88b99c99de",
+    "trigger_timestamp": 206.8,
+    "comment": "评论Rick Astley戴墨镜的造型。",
+    "action_type": "SPEAK",
+    "text": "墨镜一戴，谁都不爱。",
+    "pause_video": false
+  },
+  {
+    "id": "z6a7b8c9-9900-4b11-8c22-3d33e44f44fg",
+    "trigger_timestamp": 207.3,
+    "comment": "看到舞者跳跃，表示惊讶。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "surprise"
+  },
+  {
+    "id": "c0d1e2f3-3344-4c55-9d66-7e88f99a99ab",
+    "trigger_timestamp": 207.6,
+    "comment": "评论舞者的身体素质。",
+    "action_type": "SPEAK",
+    "text": "这小哥身板真好啊。",
+    "pause_video": false
+  },
+  {
+    "id": "g4h5i6j7-1234-4b55-8c66-7d99a11b11cd",
+    "trigger_timestamp": 220.6,
+    "comment": "再次看到Rick Astley的经典发型，忍不住调侃。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "pride"
+  },
+  {
+    "id": "k8l9m0n1-6789-4f88-9a99-0b00c11d11ef",
+    "trigger_timestamp": 220.9,
+    "comment": "调侃Rick Astley的发型。",
+    "action_type": "SPEAK",
+    "text": "这发型是认真的吗？多少发胶才能hold住啊。",
+    "pause_video": false
+  },
+  {
+    "id": "o2p3q4r5-2345-4e66-9f77-8a88b99c99de",
+    "trigger_timestamp": 241.6,
+    "comment": "看到舞者高难度动作，表示惊叹。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "stunned"
+  },
+  {
+    "id": "s6t7u8v9-7890-4a11-8b22-3c44d55e55fg",
+    "trigger_timestamp": 241.9,
+    "comment": "惊叹舞者的技巧。",
+    "action_type": "SPEAK",
+    "text": "这舞技绝了！给AI都看呆了。",
+    "pause_video": false
+  },
+  {
+    "id": "w0x1y2z3-1122-4c33-8d44-5e55f66g66hi",
+    "trigger_timestamp": 250.0,
+    "comment": "再次看到Rick Astley的笑容，做出同样的评论。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "joy"
+  },
+  {
+    "id": "a4b5c6d7-4455-4e66-9f77-8a88b99c99de",
+    "trigger_timestamp": 250.3,
+    "comment": "再次调侃Rick Astley的笑容。",
+    "action_type": "SPEAK",
+    "text": "他好像知道一切，又好像什么都不知道。",
+    "pause_video": false
+  },
+  {
+    "id": "e8f9g0h1-9900-4b11-8c22-3d33e44f44fg",
+    "trigger_timestamp": 300.0,
+    "comment": "再次进入高潮，表达情绪达到顶峰。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "excitement"
+  },
+  {
+    "id": "i2j3k4l5-3344-4c55-9d66-7e88f99a99ab",
+    "trigger_timestamp": 300.3,
+    "comment": "情绪爆发，完全沉浸在Rickroll中。",
+    "action_type": "SPEAK",
+    "text": "来吧，DNA彻底崩了！Never gonna give you up！",
+    "pause_video": false
+  },
+  {
+    "id": "m6n7o8p9-1234-4b55-8c66-7d99a11b11cd",
+    "trigger_timestamp": 310.8,
+    "comment": "看到Rick Astley的风衣，联想到其经典形象。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "play_cool"
+  },
+  {
+    "id": "q0r1s2t3-6789-4f88-9a99-0b00c11d11ef",
+    "trigger_timestamp": 311.1,
+    "comment": "调侃风衣的持久流行。",
+    "action_type": "SPEAK",
+    "text": "谁能想到这件风衣会火这么多年呢？",
+    "pause_video": false
+  },
+  {
+    "id": "u4v5w6x7-2345-4e66-9f77-8a88b99c99de",
+    "trigger_timestamp": 319.2,
+    "comment": "最后一次特写，表达无奈又好笑的心情。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "pride"
+  },
+  {
+    "id": "y8z9a0b1-7890-4a11-8b22-3c44d55e55fg",
+    "trigger_timestamp": 319.5,
+    "comment": "最终的“认输”和“记住”。",
+    "action_type": "SPEAK",
+    "text": "真服了，我记住你了Rick Astley！",
+    "pause_video": false
+  },
+  {
+    "id": "c2d3e4f5-1122-4c33-8d44-5e55f66g66hi",
+    "trigger_timestamp": 331.0,
+    "comment": "视频结束，回到中立表情。",
     "action_type": "EXPRESSION",
     "emotion_expressions": "neutral"
   },
   {
-    "id": "m4p5q6r7-s8t9-0u1v-2w3x-4y5z6a7b8c9d",
-    "trigger_timestamp": 310.0,
-    "comment": "Concluding the reaction with humorous frustration about the song's loop.",
-    "action_type": "SPEAK",
-    "text": "行了行了，知道你永不放弃，永不放手了。下次能不能来点新活儿？我的脑子里已经全是这旋律了，精神污染！",
-    "pause_video": true
-  },
-  {
-    "id": "n6r7s8t9-u0v1-2w3x-4y5z-6a7b8c9d0e1f",
-    "trigger_timestamp": 310.0,
-    "comment": "Expressing disgust at the repetitive nature of the meme.",
-    "action_type": "EXPRESSION",
-    "emotion_expressions": "disgust"
-  },
-  {
-    "id": "o8t9u0v1-w2x3-4y5z-6a7b-8c9d0e1f2g3h",
-    "trigger_timestamp": 312.0,
-    "comment": "Pausing after the final comment.",
-    "action_type": "PAUSE",
-    "duration_seconds": 2.0
-  },
-  {
-    "id": "p0v1w2x3-y4z5-6a7b-8c9d-0e1f2g3h4i5j",
-    "trigger_timestamp": 333.0,
-    "comment": "Final sarcastic remark about Rick Astley winning.",
-    "action_type": "EXPRESSION",
-    "emotion_expressions": "sarcastic"
-  },
-  {
-    "id": "q2x3y4z5-a6b7-8c9d-0e1f-2g3h4i5j6k7l",
-    "trigger_timestamp": 333.0,
-    "comment": "Concluding the reaction, demanding royalties for future Rickrolls.",
-    "action_type": "SPEAK",
-    "text": "行吧，Rick Astley赢麻了。下次再Rickroll我，我就要申请专利费了！",
-    "pause_video": true
-  },
-  {
-    "id": "r4z5a6b7-c8d9-0e1f-2g3h-4i5j6k7l8m9n",
-    "trigger_timestamp": 333.0,
-    "comment": "Ending the reaction script.",
+    "id": "g6h7i8j9-4455-4e66-9f77-8a88b99c99de",
+    "trigger_timestamp": 331.0,
+    "comment": "视频播放完毕，等待用户下一步指令。",
     "action_type": "END_REACTION"
   }
 ]"""
