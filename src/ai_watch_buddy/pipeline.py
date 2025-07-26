@@ -77,6 +77,7 @@ async def generate_and_queue_actions(
     session_id: str,
     mode: str,
     clear_pending_actions: bool = True,
+    early_ready: bool = False,
 ) -> None:
     """
     Generic function to generate actions using the session's agent and put them in the queue.
@@ -85,6 +86,7 @@ async def generate_and_queue_actions(
         session_id: The session identifier
         mode: The generation mode (e.g., "video", "summary")
         clear_pending_actions: Whether to clear existing pending actions
+        early_ready: Whether to set session ready after first audio generation
     """
     session = session_storage.get(session_id)
     if not session or not session.agent:
@@ -103,6 +105,7 @@ async def generate_and_queue_actions(
         logger.info(f"[{session_id}] Starting action generation with mode '{mode}'...")
 
         actions_generated_count = 0
+        first_audio_generated = False
 
         action_source = session.agent.produce_action_stream(mode=mode)
 
@@ -125,6 +128,14 @@ async def generate_and_queue_actions(
                 audio_base64 = await tts_instance.generate_audio(action.text)
                 if audio_base64:
                     action.audio = audio_base64
+                    
+                    # Set session ready after first audio generation if early_ready is True
+                    if early_ready and not first_audio_generated and session.status != "error":
+                        first_audio_generated = True
+                        session.status = "session_ready"
+                        logger.info(
+                            f"[{session_id}] ✅ First audio generated successfully. Status set to 'session_ready'."
+                        )
                 else:
                     logger.warning(
                         f"[{session_id}] Failed to generate audio for action: {action.id}"
@@ -160,8 +171,8 @@ async def generate_and_queue_actions(
 
 async def run_initial_generation(session_id: str):
     """
-    Runs initial action generation and summary generation in parallel,
-    then sets session_ready when both are complete.
+    Runs initial action generation and summary generation in parallel.
+    Session ready is set when the first audio is generated (in action generation).
 
     Args:
         session_id: The session identifier
@@ -190,7 +201,7 @@ async def run_initial_generation(session_id: str):
 
         action_generation_task = asyncio.create_task(
             generate_and_queue_actions(
-                session_id, mode="video", clear_pending_actions=False
+                session_id, mode="video", clear_pending_actions=False, early_ready=True
             )
         )
 
@@ -204,12 +215,10 @@ async def run_initial_generation(session_id: str):
                 "Agent summary was not ready after summary task completion."
             )
 
-        # Set session ready only after both tasks complete successfully
-        if session.status != "error":
-            session.status = "session_ready"
-            logger.info(
-                f"[{session_id}] ✅ Initial pipeline complete. Status set to 'session_ready'."
-            )
+        # Session ready is already set by generate_and_queue_actions when first audio is ready
+        logger.info(
+            f"[{session_id}] ✅ Initial pipeline complete. Summary generation finished."
+        )
 
     except Exception as e:
         logger.error(
