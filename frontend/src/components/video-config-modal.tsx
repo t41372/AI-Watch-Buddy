@@ -105,7 +105,7 @@ export const VideoConfigModal = ({ isOpen, videoUrl, onClose, onConfirm }: Video
                 <input
                   type="number"
                   min="0"
-                  value={options.startTime || 0}
+                  value={options?.startTime ?? 0}
                   onChange={(e) => setOptions(prev => ({ ...prev, startTime: Number(e.target.value) }))}
                   className="w-full px-3 py-2 text-[14px] border border-[#dadce0] rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:ring-opacity-20 focus:border-[#1a73e8] transition-colors"
                   placeholder="0"
@@ -119,7 +119,7 @@ export const VideoConfigModal = ({ isOpen, videoUrl, onClose, onConfirm }: Video
                 <input
                   type="number"
                   min="0"
-                  value={options.endTime || ''}
+                  value={options?.endTime ?? ''}
                   onChange={(e) => setOptions(prev => ({ ...prev, endTime: e.target.value ? Number(e.target.value) : undefined }))}
                   className="w-full px-3 py-2 text-[14px] border border-[#dadce0] rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:ring-opacity-20 focus:border-[#1a73e8] transition-colors"
                   placeholder="End of video"
@@ -136,7 +136,7 @@ export const VideoConfigModal = ({ isOpen, videoUrl, onClose, onConfirm }: Video
                 Instructions for your AI companion
               </label>
               <textarea
-                value={options.userRequirements || ''}
+                value={options?.userRequirements ?? ''}
                 onChange={(e) => setOptions(prev => ({ ...prev, userRequirements: e.target.value }))}
                 placeholder="Describe how you'd like your AI companion to interact with this video. For example: 'Act as a movie critic and provide analysis', 'Explain technical concepts for beginners', 'Be enthusiastic and engaging'..."
                 rows={4}

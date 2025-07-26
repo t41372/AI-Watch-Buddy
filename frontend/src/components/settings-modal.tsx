@@ -20,15 +20,35 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
     saveSettings 
   } = useSettings();
   
-  // Local state for temporary changes
-  const [localGeneralSettings, setLocalGeneralSettings] = useState<GeneralSettings>(generalSettings);
-  const [localBackgroundSettings, setLocalBackgroundSettings] = useState<BackgroundSettings>(backgroundSettings);
+  // Default values to prevent undefined issues
+  const defaultGeneralSettings: GeneralSettings = {
+    baseUrl: 'http://127.0.0.1:8000',
+    websocketBaseUrl: 'ws://127.0.0.1:8000/ws'
+  };
+  
+  const defaultBackgroundSettings: BackgroundSettings = {
+    type: 'image',
+    imageUrl: '',
+    imageFile: null,
+    imageScale: 1,
+    imagePositionX: 50,
+    imagePositionY: 50,
+    imageMode: 'cover'
+  };
+  
+  // Local state for temporary changes - ensure defaults are always used
+  const [localGeneralSettings, setLocalGeneralSettings] = useState<GeneralSettings>(
+    { ...defaultGeneralSettings, ...generalSettings }
+  );
+  const [localBackgroundSettings, setLocalBackgroundSettings] = useState<BackgroundSettings>(
+    { ...defaultBackgroundSettings, ...backgroundSettings }
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Update local state when context changes
+  // Update local state when context changes - ensure defaults are always merged
   useEffect(() => {
-    setLocalGeneralSettings(generalSettings);
-    setLocalBackgroundSettings(backgroundSettings);
+    setLocalGeneralSettings({ ...defaultGeneralSettings, ...generalSettings });
+    setLocalBackgroundSettings({ ...defaultBackgroundSettings, ...backgroundSettings });
   }, [generalSettings, backgroundSettings]);
 
   const handleConfirm = () => {
@@ -77,12 +97,12 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
 
   // Generate preview style for image adjustments
   const getImagePreviewStyle = () => {
-    if (!localBackgroundSettings.imageUrl) return {};
+    if (!localBackgroundSettings?.imageUrl) return {};
     
     let backgroundSize = 'cover';
-    let backgroundPosition = `${localBackgroundSettings.imagePositionX}% ${localBackgroundSettings.imagePositionY}%`;
+    let backgroundPosition = `${localBackgroundSettings?.imagePositionX ?? 50}% ${localBackgroundSettings?.imagePositionY ?? 50}%`;
     
-    switch (localBackgroundSettings.imageMode) {
+    switch (localBackgroundSettings?.imageMode) {
       case 'contain':
         backgroundSize = 'contain';
         break;
@@ -91,12 +111,12 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
         break;
       case 'cover':
       default:
-        backgroundSize = `${localBackgroundSettings.imageScale * 100}%`;
+        backgroundSize = `${(localBackgroundSettings?.imageScale ?? 1) * 100}%`;
         break;
     }
 
     return {
-      backgroundImage: `url(${localBackgroundSettings.imageUrl})`,
+      backgroundImage: `url(${localBackgroundSettings?.imageUrl})`,
       backgroundSize,
       backgroundPosition,
       backgroundRepeat: 'no-repeat'
@@ -121,7 +141,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
               </label>
               <input
                 type="url"
-                value={localGeneralSettings.baseUrl || ''}
+                value={localGeneralSettings?.baseUrl ?? ''}
                 onChange={(e) => setLocalGeneralSettings(prev => ({ ...prev, baseUrl: e.target.value }))}
                 placeholder="http://127.0.0.1:8000"
                 className="w-full px-3 py-2 text-[14px] border border-[#dadce0] rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:ring-opacity-20 focus:border-[#1a73e8] transition-colors"
@@ -134,7 +154,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
               </label>
               <input
                 type="url"
-                value={localGeneralSettings.websocketBaseUrl || ''}
+                value={localGeneralSettings?.websocketBaseUrl ?? ''}
                 onChange={(e) => setLocalGeneralSettings(prev => ({ ...prev, websocketBaseUrl: e.target.value }))}
                 placeholder="ws://127.0.0.1:8000/ws"
                 className="w-full px-3 py-2 text-[14px] border border-[#dadce0] rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:ring-opacity-20 focus:border-[#1a73e8] transition-colors"
@@ -162,7 +182,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
               </label>
               <input
                 type="url"
-                value={localBackgroundSettings.imageUrl || ''}
+                value={localBackgroundSettings?.imageUrl ?? ''}
                 onChange={(e) => handleImageUrlChange(e.target.value)}
                 placeholder="https://example.com/image.jpg"
                 className="w-full px-3 py-2 text-[14px] border border-[#dadce0] rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:ring-opacity-20 focus:border-[#1a73e8] transition-colors"
@@ -190,7 +210,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                 </svg>
                 Click to select image file
               </button>
-              {localBackgroundSettings.imageFile && (
+              {localBackgroundSettings?.imageFile && (
                 <p className="mt-2 text-[12px] text-[#5f6368]">
                   Selected: {localBackgroundSettings.imageFile.name}
                 </p>
@@ -198,7 +218,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
             </div>
 
             {/* Image Adjustment Controls */}
-            {localBackgroundSettings.imageUrl && (
+            {localBackgroundSettings?.imageUrl && (
               <div className="space-y-4">
                 {/* Display Mode */}
                 <div>
@@ -209,7 +229,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                     <button
                       onClick={() => setLocalBackgroundSettings(prev => ({ ...prev, imageMode: 'cover' }))}
                       className={`px-3 py-2 text-[12px] border rounded-md transition-colors ${
-                        localBackgroundSettings.imageMode === 'cover'
+                        localBackgroundSettings?.imageMode === 'cover'
                           ? 'border-[#1a73e8] bg-[#e8f0fe] text-[#1a73e8]'
                           : 'border-[#dadce0] hover:bg-[#f8f9fa] text-[#202124]'
                       }`}
@@ -219,7 +239,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                     <button
                       onClick={() => setLocalBackgroundSettings(prev => ({ ...prev, imageMode: 'contain' }))}
                       className={`px-3 py-2 text-[12px] border rounded-md transition-colors ${
-                        localBackgroundSettings.imageMode === 'contain'
+                        localBackgroundSettings?.imageMode === 'contain'
                           ? 'border-[#1a73e8] bg-[#e8f0fe] text-[#1a73e8]'
                           : 'border-[#dadce0] hover:bg-[#f8f9fa] text-[#202124]'
                       }`}
@@ -229,7 +249,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                     <button
                       onClick={() => setLocalBackgroundSettings(prev => ({ ...prev, imageMode: 'fill' }))}
                       className={`px-3 py-2 text-[12px] border rounded-md transition-colors ${
-                        localBackgroundSettings.imageMode === 'fill'
+                        localBackgroundSettings?.imageMode === 'fill'
                           ? 'border-[#1a73e8] bg-[#e8f0fe] text-[#1a73e8]'
                           : 'border-[#dadce0] hover:bg-[#f8f9fa] text-[#202124]'
                       }`}
@@ -240,17 +260,17 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                 </div>
 
                 {/* Scale Control (only for cover mode) */}
-                {localBackgroundSettings.imageMode === 'cover' && (
+                {localBackgroundSettings?.imageMode === 'cover' && (
                   <div>
                     <label className="block text-[13px] font-medium text-[#202124] mb-2">
-                      Scale: {Math.round(localBackgroundSettings.imageScale * 100)}%
+                      Scale: {Math.round((localBackgroundSettings?.imageScale ?? 1) * 100)}%
                     </label>
                     <input
                       type="range"
                       min="0.5"
                       max="3"
                       step="0.1"
-                      value={localBackgroundSettings.imageScale}
+                      value={localBackgroundSettings?.imageScale ?? 1}
                       onChange={(e) => setLocalBackgroundSettings(prev => ({ ...prev, imageScale: parseFloat(e.target.value) }))}
                       className="w-full h-2 bg-[#e8eaed] rounded-lg appearance-none cursor-pointer slider"
                     />
@@ -265,26 +285,26 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[13px] font-medium text-[#202124] mb-2">
-                      Horizontal: {localBackgroundSettings.imagePositionX}%
+                      Horizontal: {localBackgroundSettings?.imagePositionX ?? 50}%
                     </label>
                     <input
                       type="range"
                       min="0"
                       max="100"
-                      value={localBackgroundSettings.imagePositionX}
+                      value={localBackgroundSettings?.imagePositionX ?? 50}
                       onChange={(e) => setLocalBackgroundSettings(prev => ({ ...prev, imagePositionX: parseInt(e.target.value) }))}
                       className="w-full h-2 bg-[#e8eaed] rounded-lg appearance-none cursor-pointer slider"
                     />
                   </div>
                   <div>
                     <label className="block text-[13px] font-medium text-[#202124] mb-2">
-                      Vertical: {localBackgroundSettings.imagePositionY}%
+                      Vertical: {localBackgroundSettings?.imagePositionY ?? 50}%
                     </label>
                     <input
                       type="range"
                       min="0"
                       max="100"
-                      value={localBackgroundSettings.imagePositionY}
+                      value={localBackgroundSettings?.imagePositionY ?? 50}
                       onChange={(e) => setLocalBackgroundSettings(prev => ({ ...prev, imagePositionY: parseInt(e.target.value) }))}
                       className="w-full h-2 bg-[#e8eaed] rounded-lg appearance-none cursor-pointer slider"
                     />
@@ -312,7 +332,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
                     className="w-full h-32 bg-[#f8f9fa] border border-[#e8eaed] rounded-lg overflow-hidden"
                     style={getImagePreviewStyle()}
                   >
-                    {!localBackgroundSettings.imageUrl && (
+                    {!localBackgroundSettings?.imageUrl && (
                       <div className="w-full h-full flex items-center justify-center text-[#5f6368] text-[12px]">
                         Image preview
                       </div>

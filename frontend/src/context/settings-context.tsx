@@ -118,6 +118,15 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
       console.log('Settings loaded successfully');
     } catch (error) {
       console.error('Failed to load settings:', error);
+      // Reset to defaults and clear corrupted localStorage data
+      setGeneralSettings(defaultGeneralSettings);
+      setBackgroundSettings(defaultBackgroundSettings);
+      try {
+        localStorage.removeItem('generalSettings');
+        localStorage.removeItem('backgroundSettings');
+      } catch (storageError) {
+        console.error('Failed to clear corrupted localStorage:', storageError);
+      }
     }
   };
 
