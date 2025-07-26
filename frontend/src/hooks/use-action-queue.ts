@@ -50,8 +50,8 @@ export const useActionQueue = (options: ActionQueueOptions = {}): UseActionQueue
           return a.trigger_timestamp - b.trigger_timestamp;
         }
         // Secondary sort by action type priority for same trigger_timestamp
-        // PAUSE -> SEEK -> REPLAY_SEGMENT -> SPEAK -> END_REACTION
-        const priorityOrder = { 'PAUSE': 0, 'SEEK': 1, 'REPLAY_SEGMENT': 2, 'SPEAK': 3, 'END_REACTION': 4 };
+        // EXPRESSION -> PAUSE -> SEEK -> REPLAY_SEGMENT -> SPEAK -> END_REACTION
+        const priorityOrder = { 'EXPRESSION': 0, 'PAUSE': 1, 'SEEK': 2, 'REPLAY_SEGMENT': 3, 'SPEAK': 4, 'END_REACTION': 5 };
         const aPriority = priorityOrder[a.action_type] ?? 99;
         const bPriority = priorityOrder[b.action_type] ?? 99;
         return aPriority - bPriority;

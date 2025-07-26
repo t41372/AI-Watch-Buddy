@@ -3,7 +3,7 @@ import { WebSocketMessage } from './use-websocket';
 
 // Action types from AI backend - updated to match new schema
 export interface AIAction {
-  action_type: 'SPEAK' | 'PAUSE' | 'SEEK' | 'REPLAY_SEGMENT' | 'END_REACTION';
+  action_type: 'SPEAK' | 'PAUSE' | 'SEEK' | 'REPLAY_SEGMENT' | 'END_REACTION' | 'EXPRESSION';
   id: string;
   trigger_timestamp: number;
   comment: string;
@@ -24,6 +24,9 @@ export interface AIAction {
   start_timestamp?: number; // For REPLAY_SEGMENT actions
   end_timestamp?: number; // For REPLAY_SEGMENT actions
   post_replay_behavior?: 'RESUME_FROM_ORIGINAL' | 'STAY_PAUSED_AT_END'; // For REPLAY_SEGMENT actions
+
+  // EXPRESSION action fields
+  emotion_expressions?: string; // For EXPRESSION actions - emotion name from emotionMap
 }
 
 export interface ProcessingError {
@@ -92,7 +95,8 @@ export const useMessageHandler = (): UseMessageHandlerReturn => {
             post_seek_behavior: actionData.post_seek_behavior,
             start_timestamp: actionData.start_timestamp,
             end_timestamp: actionData.end_timestamp,
-            post_replay_behavior: actionData.post_replay_behavior
+            post_replay_behavior: actionData.post_replay_behavior,
+            emotion_expressions: actionData.emotion_expressions
           };
 
           setReceivedActions(prev => {
@@ -151,7 +155,7 @@ function isValidSingleAction(actionData: any): boolean {
   return (
     actionData &&
     typeof actionData.action_type === 'string' &&
-    ['SPEAK', 'PAUSE', 'SEEK', 'REPLAY_SEGMENT', 'END_REACTION'].includes(actionData.action_type) &&
+    ['SPEAK', 'PAUSE', 'SEEK', 'REPLAY_SEGMENT', 'END_REACTION', 'EXPRESSION'].includes(actionData.action_type) &&
     typeof actionData.id === 'string' &&
     typeof actionData.trigger_timestamp === 'number' &&
     typeof actionData.comment === 'string'

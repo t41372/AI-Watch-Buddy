@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { AIAction } from './use-message-handler';
 import { useAudioTask } from './use-audio-task';
+import { useLive2DExpression } from './use-live2d-expression';
+import { useLive2DConfig } from '@/context/live2d-config-context';
 
 export interface VideoPlayerControl {
   pause: () => void;
@@ -30,85 +32,54 @@ export interface UseActionExecutorReturn {
 export const useActionExecutor = (options: ActionExecutorOptions = {}): UseActionExecutorReturn => {
   const { videoPlayerControl, onActionExecuted, onExecutionError } = options;
   const { addAudioTask, stopCurrentAudioAndLipSync } = useAudioTask();
+  const { setExpression } = useLive2DExpression();
+  const { modelInfo } = useLive2DConfig();
   
   const [isExecuting, setIsExecuting] = useState(false);
 
-  // Execute a single action
-  const executeAction = useCallback(async (action: AIAction): Promise<void> => {
-    console.log(`Executing action: ${action.action_type} at ${action.trigger_timestamp}s`, action);
+  // Individual action executors - defined first so they can be referenced
+  const executeExpressionAction = useCallback(async (action: AIAction): Promise<void> => {
+    if (!action.emotion_expressions) {
+      console.warn('EXPRESSION action missing emotion_expressions');
+      return;
+    }
+
+    console.log(`Setting Live2D expression: ${action.emotion_expressions} (${action.comment})`);
 
     try {
-      switch (action.action_type) {
-        case 'PAUSE':
-          await executePauseAction(action);
-          break;
-
-        case 'SPEAK':
-          await executeSpeakAction(action);
-          break;
-
-        case 'SEEK':
-          await executeSeekAction(action);
-          break;
-
-        case 'REPLAY_SEGMENT':
-          await executeReplaySegmentAction(action);
-          break;
-
-        case 'END_REACTION':
-          await executeEndReactionAction(action);
-          break;
-
-        default:
-          console.warn(`Unknown action type: ${action.action_type}`);
-          break;
+      // Get the Live2D adapter
+      const lappAdapter = (window as any).getLAppAdapter?.();
+      if (!lappAdapter) {
+        console.error('Live2D adapter not available for expression');
+        return;
       }
 
-      console.log(`Successfully executed action: ${action.id}`);
-      // Mark action as executed after successful completion
-      onActionExecuted?.(action);
+      // Map emotion name to expression index using emotionMap
+      const emotionMap = modelInfo?.emotionMap;
+      if (!emotionMap) {
+        console.warn('No emotion map available in model info');
+        return;
+      }
 
+      const expressionIndex = emotionMap[action.emotion_expressions];
+      if (expressionIndex === undefined) {
+        console.warn(`Emotion "${action.emotion_expressions}" not found in emotion map`);
+        return;
+      }
+
+      // Set the expression
+      setExpression(
+        expressionIndex, 
+        lappAdapter, 
+        `Set expression to: ${action.emotion_expressions} (index: ${expressionIndex})`
+      );
+
+      console.log(`Successfully set Live2D expression: ${action.emotion_expressions}`);
     } catch (error) {
-      console.error(`Failed to execute action ${action.id}:`, error);
-      onExecutionError?.(error as Error, action);
-      // Still mark as executed to prevent retry
-      onActionExecuted?.(action);
+      console.error('Failed to execute expression action:', error);
     }
-  }, [videoPlayerControl, onActionExecuted, onExecutionError]);
+  }, [setExpression, modelInfo]);
 
-  // Execute multiple actions (typically with same trigger_time)
-  const executeActions = useCallback(async (actions: AIAction[]): Promise<void> => {
-    if (actions.length === 0) return;
-
-    setIsExecuting(true);
-
-    try {
-      console.log(`Executing ${actions.length} actions in sequence`);
-      
-      // Execute actions in the correct order based on their priority
-      // PAUSE -> SEEK -> REPLAY_SEGMENT -> SPEAK -> END_REACTION
-      const sortedActions = [...actions].sort((a, b) => {
-        const priorityOrder = { 'PAUSE': 0, 'SEEK': 1, 'REPLAY_SEGMENT': 2, 'SPEAK': 3, 'END_REACTION': 4 };
-        const aPriority = priorityOrder[a.action_type] ?? 99;
-        const bPriority = priorityOrder[b.action_type] ?? 99;
-        return aPriority - bPriority;
-      });
-
-      for (const action of sortedActions) {
-        await executeAction(action);
-        
-        // Small delay between actions if needed
-        if (sortedActions.indexOf(action) < sortedActions.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 10));
-        }
-      }
-
-    } finally {
-      setIsExecuting(false);
-    }
-  }, [executeAction]);
-
-  // Individual action executors
   const executePauseAction = useCallback(async (action: AIAction): Promise<void> => {
     if (!videoPlayerControl) {
       console.warn('No video player control available for PAUSE action');
@@ -294,6 +265,87 @@ export const useActionExecutor = (options: ActionExecutorOptions = {}): UseActio
 
     console.log('Reaction sequence ended, waiting for next trigger');
   }, [videoPlayerControl, stopCurrentAudioAndLipSync]);
+
+  // Execute a single action
+  const executeAction = useCallback(async (action: AIAction): Promise<void> => {
+    console.log(`Executing action: ${action.action_type} at ${action.trigger_timestamp}s`, action);
+
+    try {
+      switch (action.action_type) {
+        case 'PAUSE':
+          await executePauseAction(action);
+          break;
+
+        case 'SPEAK':
+          await executeSpeakAction(action);
+          break;
+
+        case 'SEEK':
+          await executeSeekAction(action);
+          break;
+
+        case 'REPLAY_SEGMENT':
+          await executeReplaySegmentAction(action);
+          break;
+
+        case 'END_REACTION':
+          await executeEndReactionAction(action);
+          break;
+
+        case 'EXPRESSION':
+          await executeExpressionAction(action);
+          break;
+
+        default:
+          console.warn(`Unknown action type: ${action.action_type}`);
+          break;
+      }
+
+      console.log(`Successfully executed action: ${action.id}`);
+      // Mark action as executed after successful completion
+      onActionExecuted?.(action);
+
+    } catch (error) {
+      console.error(`Failed to execute action ${action.id}:`, error);
+      onExecutionError?.(error as Error, action);
+      // Still mark as executed to prevent retry
+      onActionExecuted?.(action);
+    }
+  }, [videoPlayerControl, onActionExecuted, onExecutionError, executeExpressionAction, executePauseAction, executeSpeakAction, executeSeekAction, executeReplaySegmentAction, executeEndReactionAction]);
+
+  // Execute multiple actions (typically with same trigger_time)
+  const executeActions = useCallback(async (actions: AIAction[]): Promise<void> => {
+    if (actions.length === 0) return;
+
+    setIsExecuting(true);
+
+    try {
+      console.log(`Executing ${actions.length} actions in sequence`);
+      
+      // Execute actions in the correct order based on their priority
+      // EXPRESSION -> PAUSE -> SEEK -> REPLAY_SEGMENT -> SPEAK -> END_REACTION
+      const sortedActions = [...actions].sort((a, b) => {
+        const priorityOrder = { 'EXPRESSION': 0, 'PAUSE': 1, 'SEEK': 2, 'REPLAY_SEGMENT': 3, 'SPEAK': 4, 'END_REACTION': 5 };
+        const aPriority = priorityOrder[a.action_type] ?? 99;
+        const bPriority = priorityOrder[b.action_type] ?? 99;
+        return aPriority - bPriority;
+      });
+
+      for (const action of sortedActions) {
+        await executeAction(action);
+        
+        // Small delay between actions if needed
+        if (sortedActions.indexOf(action) < sortedActions.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+      }
+
+    } finally {
+      setIsExecuting(false);
+    }
+  }, [executeAction]);
+
+
 
   return {
     executeAction,
