@@ -147,7 +147,24 @@ async def websocket_receiver(websocket: WebSocket, session: SessionState):
         if msg_type == "trigger-load-next":
             # Here you can trigger new tasks that might put more actions into the queue
             logger.info(f"[{session.session_id}] Client triggered a future action.")
-            # Example: asyncio.create_task(load_more_actions(session))
+
+            # Here we need add a task
+            # We need a mechanism to cancel the task when interrupted
+            # Use
+            
+
+        if msg_type == "interrupt":
+
+            pass
+
+        if msg_type == "trigger-conversation":
+            # The content
+            # {
+            #     "type": "trigger-conversation",
+            #     "user_action_list": List[Action],
+            #     "pending_action_list": List[Action],
+            # }
+            pass
 
 
 @app.websocket("/ws/{session_id}")

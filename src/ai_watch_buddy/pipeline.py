@@ -1,6 +1,7 @@
 import asyncio
 from pathlib import Path
 from loguru import logger
+from typing import List
 
 from .ai_actions import Action, SpeakAction
 from .tts import tts_instance
@@ -22,6 +23,14 @@ async def download_video(video_url: str, session_id: str) -> str:
     logger.info(f"[{session_id}] Video downloaded to: {local_path}")
     return str(local_path)
 
+async def run_conversation_pipeline(session_id: str, user_action_list: List[Action], pending_action_list: List[Action]) -> None:
+    # user_action_list 会包含: SeekAction, PauseAction, ResumeAction, SpeakAction，也都有他们的 trigger_timestamp
+    # user_action_list 的 SpeakAction 会包含 text 和 audio 其中之一 (user 会发 text 和 audio) 如果是 audio 需要 ASR 成 text
+    # user_action_list 的 SpeakAction 一定是 pause_video = true 的（前端会在 user 开始说时自动暂停)
+    # TODO: 前端添加 Ten VAD, Audio (Mic) input 和 Chatbox 功能，前端在 VAD **真正**激活时自动暂停视频 (说明用户说的话一定会被发送)。
+    # 为什么要暂停？因为 AI 需要时间来回复，当 AI 回复后，用户还可以继续提问。TODO: 但无论如何，AI 回复的文字结束后， pending_action_list 会通过 add_content 发给 AI 让 AI 更新 (user_action_lsit 用户执行的操作和说的话也会给更新 AI 来参考) ，更新的内容流式的得到 action 发给前端。实现一个更新的类，类似 run_action_generation_pipeline，流式将新的 action_list 发送给前端。更新 action_list 也使用 summary_prompt，但需要在当前信息说明更新的任务。更新任务的说明（以及对话任务的说明），不属于 system_prompt 的范畴，应该是 user_message 里被嵌入的。需要写 2 个 prompt分别是更新任务，对话任务。这样更新添加 content 包括对话添加 content，告诉 AI 这个是他的任务（修改 content）@prompt
+
+    pass
 
 async def run_action_generation_pipeline(session_id: str) -> None:
     """

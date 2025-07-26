@@ -128,7 +128,7 @@ export const useActionQueue = (options: ActionQueueOptions = {}): UseActionQueue
       
       setHasRequestedMore(true);
       sendMessage({
-        type: 'more_actions'
+        type: "trigger-load-next",
       });
     }
   }, [latestTriggerTime, threshold, hasRequestedMore, sendMessage]);
