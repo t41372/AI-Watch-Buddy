@@ -116,12 +116,13 @@ async def websocket_sender(websocket: WebSocket, session: SessionState):
         # 关键：非阻塞地等待队列中的下一项
         item = await session.action_queue.get()
 
-        # 检查是否是哨兵值 (None)
+        # 检查是否是哨兵值 (None)，如果是则跳过处理继续等待
         if item is None:
-            logger.info(
-                f"[{session.session_id}] Sentinel (None) received from queue. Closing sender task."
+            logger.debug(
+                f"[{session.session_id}] Sentinel (None) received from queue. Skipping and continuing to wait."
             )
-            break  # 收到哨兵，退出循环
+            session.action_queue.task_done() # 保持队列状态正确
+            continue
 
         # 根据 item 类型发送消息
         if isinstance(item, Action):

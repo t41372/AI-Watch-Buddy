@@ -151,7 +151,7 @@ async def fake_llm_stream_response() -> AsyncGenerator[str, None]:
     chunk_size = 50
     for i in range(0, len(sample_json), chunk_size):
         yield sample_json[i : i + chunk_size]
-        await asyncio.sleep(0.02)
+        await asyncio.sleep(0.01)
 
 
 async def generate_actions(
@@ -224,7 +224,7 @@ if __name__ == "__main__":
             print(
                 f"Action {action_count}: {action.model_dump_json(indent=2)}", flush=True
             )
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.1)
         print(f"\n--- End of Stream ---")
         print(f"Total actions received: {action_count}")
 

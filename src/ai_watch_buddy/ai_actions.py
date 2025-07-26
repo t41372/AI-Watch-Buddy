@@ -53,7 +53,7 @@ class SpeakAction(BaseAction):
 # 2. 暫停 (Pause) - 用於模擬思考、驚訝等無言的反應
 class PauseAction(BaseAction):
     """
-    讓 AI 進行一次無言的暫停。可以用來模擬思考、驚訝，或在兩個動作之間創造節奏感，讓反應更自然。
+    讓 AI 進行一次無言的暫停。可以用來模擬思考、驚訝，或在兩個動作之間創造節奏感，讓反應更自然。暂停会停止视频时间的变化直到 duration_seconds 结束，如果需要暂停后说话，请使用 SpeakAction (pause_video=True) 而无需使用 PauseAction。
     """
 
     action_type: Literal["PAUSE"] = "PAUSE"
@@ -64,7 +64,7 @@ class PauseAction(BaseAction):
 # 3. 影片控制 (Video Control)
 class SeekAction(BaseAction):
     """
-    控制影片的播放進度，讓 AI 可以跳轉到影片的某個特定時間點，通常是為了回顧或預告某個細節。
+    控制影片的播放進度，讓 AI 可以跳轉到影片的某個特定時間點，通常是為了回顧或預告某個細節。SeekAction 跳转后会继承视频跳转前的播放状态 (暂停 / 播放)
     """
 
     action_type: Literal["SEEK"] = "SEEK"
