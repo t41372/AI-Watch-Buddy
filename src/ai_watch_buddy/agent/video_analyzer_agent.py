@@ -4,10 +4,18 @@ from typing import AsyncGenerator, List, Optional
 import asyncio
 
 from google import genai
-from google.genai.types import File, Content, Part, GenerateContentConfig, FileData, GenerateContentResponse
+from google.genai.types import (
+    File,
+    Content,
+    Part,
+    GenerateContentConfig,
+    FileData,
+    GenerateContentResponse,
+)
 
 from ..actions import Action
-from .text_stream_to_action import str_stream_to_actions
+from .minimax_llm import oai_client
+from .text_stream_to_action import str_stream_to_actions, str_stream_to_actions_openai
 from .video_action_agent_interface import VideoActionAgentInterface
 from ..prompts.action_gen_prompt import action_generation_prompt
 from ..prompts.character_prompts import cute_prompt
@@ -32,7 +40,7 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
             self._client = genai.Client(api_key="hi")
         else:
             self._client = genai.Client(api_key=api_key or os.getenv("GEMINI_API_KEY"))
-            
+
         self._video_file: Optional[File] = None
         self._video_input: Optional[str] = None  # Will store the path or URL
         self._summary: Optional[str] = None
@@ -242,20 +250,21 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
             system_prompt = self.action_prompt
         elif mode == "summary" and self._summary:
             # For summary mode, use text summary
-            contents.append(
-                Content(
-                    role="user",
-                    parts=[
-                        Part.from_text(
-                            text=f"基于以下视频摘要，生成 action:\n{self._summary}"
-                        )
-                    ],
-                )
+            print(">>>> MINIMAX")
+            response = oai_client.chat.completions.create(
+                model="MiniMax-M1",
+                messages=[
+                    {"role": "system", "content": self.action_prompt},
+                    {
+                        "role": "user",
+                        "content": f"基于以下视频摘要，生成 action:\n{self._summary}",
+                    },
+                ],
+                stream=True,
             )
-            # Add conversation history
-            contents.extend(self._contents)
-            # Use action prompt for system instruction
-            system_prompt = self.action_prompt
+            for action in str_stream_to_actions_openai(response):
+                yield action
+            return
         else:
             # This case should not be reached due to initial checks, but as a fallback:
             system_prompt = self.action_prompt
@@ -268,30 +277,31 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
             if MOCK:
                 # Mock 模式：创建假的流来模拟 Gemini API 响应
                 print("MOCK 模式: 使用假的 action stream")
-                
+
                 # 创建一个模拟的流生成器
                 def create_mock_stream():
                     # 将 sample_json 按字符分块发送，模拟流式响应
                     chunk_size = 50  # 每次发送50个字符
                     text = sample_json
-                    
+
                     for i in range(0, len(text), chunk_size):
-                        chunk = text[i:i + chunk_size]
+                        chunk = text[i : i + chunk_size]
                         # 创建模拟的 GenerateContentResponse 对象
                         # 使用一个简单的类来模拟响应结构
-                        mock_response = type('MockGenerateContentResponse', (), {
-                            'text': chunk,
-                            'candidates': None,
-                            'usage_metadata': None
-                        })()
+                        mock_response = type(
+                            "MockGenerateContentResponse",
+                            (),
+                            {"text": chunk, "candidates": None, "usage_metadata": None},
+                        )()
                         yield mock_response
-                
+
                 mock_stream = create_mock_stream()
-                
+
                 # 使用类型转换来匹配预期类型，因为我们的 mock 对象实现了所需的接口
                 from typing import cast, Iterator
+
                 typed_mock_stream = cast(Iterator[GenerateContentResponse], mock_stream)
-                
+
                 # 使用模拟流来生成 actions
                 for action in str_stream_to_actions(typed_mock_stream):
                     yield action
@@ -300,7 +310,7 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
             #!+=======================
             if not self._client:
                 raise RuntimeError("Client not initialized (possibly in MOCK mode)")
-                
+
             llm_stream = self._client.models.generate_content_stream(
                 model="gemini-2.5-flash",
                 contents=contents,
@@ -349,7 +359,11 @@ if __name__ == "__main__":
                 print(
                     f"[Action {action_count}]: {action.action_type} - {action.comment}"
                 )
-                if action.action_type == "SPEAK" and hasattr(action, "text") and action.text:
+                if (
+                    action.action_type == "SPEAK"
+                    and hasattr(action, "text")
+                    and action.text
+                ):
                     print(
                         f"  Text: {action.text[:100]}{'...' if len(action.text) > 100 else ''}"
                     )
@@ -375,7 +389,11 @@ if __name__ == "__main__":
                 print(
                     f"[Action {action_count}]: {action.action_type} - {action.comment}"
                 )
-                if action.action_type == "SPEAK" and hasattr(action, "text") and action.text:
+                if (
+                    action.action_type == "SPEAK"
+                    and hasattr(action, "text")
+                    and action.text
+                ):
                     print(
                         f"  Text: {action.text[:100]}{'...' if len(action.text) > 100 else ''}"
                     )
