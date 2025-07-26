@@ -88,6 +88,10 @@ async def generate_and_queue_actions(
         use_mock: Whether to use mock data instead of the real agent
     """
     session = session_storage.get(session_id)
+    if session is None:
+        logger.critical(
+            f"[{session_id}] Session not found in generate_and_queue_actions"
+        )
     if not use_mock and (not session or not session.agent):
         logger.error(
             f"[{session_id}] Cannot generate actions: session or agent not found."
@@ -118,14 +122,16 @@ async def generate_and_queue_actions(
             )
         else:
             # Use real agent
-            action_source = session.agent.generate(mode=mode)
+            action_source = session.agent.produce_action_stream(mode=mode)
 
-        async for action_data in action_source:
+        async for action in action_source:
             # Handle both Action objects (from mock) and dict (from agent)
-            if isinstance(action_data, Action):
-                action = action_data
-            else:
-                action = Action.model_validate(action_data)
+
+            # 这个回来一定是个 Action 对象，所以不用 validate 了
+            # if isinstance(action_data, Action):
+            #     action = action_data
+            # else:
+            #     action = Action.model_validate(action_data)
 
             # Audio will be generated in the frontend
             # if isinstance(action, SpeakAction):

@@ -22,7 +22,7 @@ async def test_modes():
     
     # Test invalid mode
     try:
-        async for _ in agent.generate("invalid_mode"):
+        async for _ in agent.produce_action_stream("invalid_mode"):
             pass
         print("❌ 无效模式应该抛出异常")
     except ValueError as e:
@@ -30,7 +30,7 @@ async def test_modes():
     
     # Test action_gen mode without video
     try:
-        async for _ in agent.generate("action_gen"):
+        async for _ in agent.produce_action_stream("action_gen"):
             pass
         print("❌ action_gen 模式无视频文件应该抛出异常")
     except RuntimeError as e:
@@ -38,7 +38,7 @@ async def test_modes():
     
     # Test summary mode without summary
     try:
-        async for _ in agent.generate("summary"):
+        async for _ in agent.produce_action_stream("summary"):
             pass
         print("❌ summary 模式无摘要应该抛出异常")
     except RuntimeError as e:
