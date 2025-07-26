@@ -204,7 +204,22 @@ async def websocket_receiver(websocket: WebSocket, session: SessionState):
             try:
                 # Assuming the payload is in message['data']
                 payload = UserInteractionPayload.model_validate(message.get("data", {}))
-                logger.info(f"[{session.session_id}] Client triggered conversation.")
+                logger.info(
+                    f"[{session.session_id}] Client triggered conversation with "
+                    f"{len(payload.user_action_list)} user actions and "
+                    f"{len(payload.pending_action_list)} pending actions."
+                )
+                
+                # Log user actions for debugging
+                for action in payload.user_action_list:
+                    if action.action_type == 'SPEAK':
+                        if hasattr(action, 'text') and action.text:
+                            logger.info(f"[{session.session_id}] User text: {action.text}")
+                        elif hasattr(action, 'audio') and action.audio:
+                            logger.info(f"[{session.session_id}] User audio: {len(action.audio)} chars (base64)")
+                    else:
+                        logger.info(f"[{session.session_id}] User action: {action.action_type}")
+                
                 # No need to store task here, run_conversation_pipeline will do it.
                 asyncio.create_task(
                     run_conversation_pipeline(

@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Live2D } from "../components/live2d";
 import { ChromeBrowser } from "../components/chrome-browser";
+import { ChatRoom } from "../components/chat-room";
 import { VideoConfigModal } from "../components/video-config-modal";
 import { SettingsModal } from "../components/settings-modal";
 import { useSettings } from "@/context/settings-context";
+import { useChat } from "@/context/chat-context";
 import { LAppAdapter } from '@cubismsdksamples/lappadapter';
 import { VideoProcessingOptions } from "@/types/video-player";
 import { useDraggable } from "@/hooks/use-draggable";
@@ -14,6 +16,7 @@ export default function HomePage() {
   console.log('HomePage component is rendering!');
   const [browserPosition, setBrowserPosition] = useState({ x: 100, y: 100 });
   const [live2dPosition, setLive2dPosition] = useState({ x: 800, y: 150 });
+  const [chatPosition, setChatPosition] = useState({ x: 50, y: 100 });
 
   const live2dContainerRef = useRef<HTMLDivElement>(null);
 
@@ -33,6 +36,7 @@ export default function HomePage() {
   }>({});
   
   const { backgroundSettings } = useSettings();
+  const { addMessage } = useChat();
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -46,8 +50,23 @@ export default function HomePage() {
       }
 
       // Settings are now managed by SettingsContext
+      
+      // Add some demo messages to showcase the chat room
+      setTimeout(() => {
+        addMessage({
+          type: 'system',
+          content: 'Chat room initialized. Welcome!'
+        });
+      }, 1000);
+      
+      setTimeout(() => {
+        addMessage({
+          type: 'ai',
+          content: 'Hello! I\'m your AI companion. Ready to watch some videos together? 🎬'
+        });
+      }, 2000);
     }
-  }, []);
+  }, [addMessage]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -205,8 +224,13 @@ export default function HomePage() {
           {...live2dListeners}
         >
           <Live2D />
-
         </div>
+
+        {/* Chat Room - Draggable Discord/Twitch style */}
+        <ChatRoom
+          position={chatPosition}
+          onPositionChange={setChatPosition}
+        />
       </div>
 
       {/* Video Configuration Modal */}

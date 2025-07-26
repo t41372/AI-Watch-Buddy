@@ -37,7 +37,7 @@ class SpeakAction(BaseAction):
     """
 
     action_type: Literal["SPEAK"] = "SPEAK"
-    text: str = Field(..., description="AI 角色要說出的具體內容。")
+    text: str | None = Field(..., description="AI 角色要說出的具體內容。")
     audio: str | None = Field(
         None,
         description="由 TTS (Text-to-Speech) 服務生成的音頻數據的標識符或路徑。此欄位由後端系統填充，LLM 無需填寫。",
