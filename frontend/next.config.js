@@ -7,6 +7,12 @@ const __dirname = path.dirname(__filename);
 
 const nextConfig = {
   reactStrictMode: false,
+  output: 'export', // 启用静态导出
+  distDir: 'dist', // 输出到 dist 目录
+  trailingSlash: true, // 为静态导出添加尾部斜杠
+  images: {
+    unoptimized: true, // 静态导出需要禁用图片优化
+  },
   eslint: {
     // 在构建过程中忽略 ESLint 错误
     ignoreDuringBuilds: true,
