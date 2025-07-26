@@ -1,6 +1,7 @@
 import uuid
 import asyncio
 from loguru import logger
+from pathlib import Path
 
 from fastapi import (
     FastAPI,
@@ -8,9 +9,11 @@ from fastapi import (
     BackgroundTasks,
     status,
     WebSocketDisconnect,
+    HTTPException,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles as StarletteStaticFiles
+from starlette.responses import FileResponse
 from pydantic import BaseModel, ValidationError
 
 from .session import SessionState, session_storage
@@ -74,18 +77,73 @@ class CORSStaticFiles(StarletteStaticFiles):
 
         if path.endswith(".js"):
             response.headers["Content-Type"] = "application/javascript"
+        elif path.endswith(".css"):
+            response.headers["Content-Type"] = "text/css"
+        elif path.endswith(".html"):
+            response.headers["Content-Type"] = "text/html"
 
         return response
 
 
+# Mount static directories
 app.mount(
     "/live2d-models",
     CORSStaticFiles(directory="live2d-models"),
     name="live2d-models",
 )
 
+# Check if static directory exists and mount it
+static_dir = Path("static")
+if static_dir.exists() and static_dir.is_dir():
+    app.mount(
+        "/_next",
+        CORSStaticFiles(directory="static/_next"),
+        name="static-next",
+    )
+    
+    # Mount other static assets
+    if (static_dir / "favicon.ico").exists():
+        @app.get("/favicon.ico")
+        async def favicon():
+            return FileResponse("static/favicon.ico")
+    
+    # Serve other static files for assets, but exclude root HTML files
+    app.mount(
+        "/static",
+        CORSStaticFiles(directory="static"),
+        name="static-assets",
+    )
+    
+    # Serve index.html for root and any unmatched routes (SPA routing)
+    @app.get("/")
+    async def serve_index():
+        index_path = static_dir / "index.html"
+        if index_path.exists():
+            return FileResponse(str(index_path))
+        else:
+            raise HTTPException(status_code=404, detail="Frontend not built. Run 'npm run build:static' in frontend directory.")
+    
+    # Catch-all route for SPA routing (after API routes)
+    @app.get("/{path:path}")
+    async def serve_static_files(path: str):
+        # Don't interfere with API routes
+        if path.startswith("api/") or path.startswith("ws/"):
+            raise HTTPException(status_code=404, detail="API endpoint not found")
+        
+        # Try to serve the specific file
+        file_path = static_dir / path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(str(file_path))
+        
+        # For SPA routing, serve index.html for unmatched routes
+        index_path = static_dir / "index.html"
+        if index_path.exists():
+            return FileResponse(str(index_path))
+        else:
+            raise HTTPException(status_code=404, detail="File not found")
 
-# --- API Endpoint ---
+
+# --- API Endpoints ---
 @app.post(
     "/api/v1/sessions",
     status_code=status.HTTP_202_ACCEPTED,
@@ -193,14 +251,23 @@ async def websocket_receiver(websocket: WebSocket, session: SessionState):
                 f"[{session.session_id}] Client triggered lazy-load for next actions."
             )
             
-            session.agent.add_content(role="user", text="Continue")
-            session.action_generation_task = asyncio.create_task(
-                generate_and_queue_actions(
-                    session.session_id,
-                    mode="video",
-                    clear_pending_actions=True,
+            if session.agent:
+                session.agent.add_content(role="user", text="Continue")
+                session.action_generation_task = asyncio.create_task(
+                    generate_and_queue_actions(
+                        session.session_id,
+                        mode="video",
+                        clear_pending_actions=True,
+                    )
                 )
-            )
+            else:
+                logger.error(f"[{session.session_id}] Agent not initialized, cannot continue.")
+                await websocket.send_json(
+                    {
+                        "type": "error",
+                        "message": "Agent not initialized, cannot continue.",
+                    }
+                )
 
         elif msg_type == "trigger-conversation":
             try:

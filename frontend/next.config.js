@@ -6,6 +6,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const nextConfig = {
+  // 启用静态导出
+  output: 'export',
+  // 禁用图片优化（静态导出不支持）
+  images: {
+    unoptimized: true
+  },
+  // 设置静态导出目录
+  distDir: 'dist',
+  // 禁用服务端功能
+  trailingSlash: true,
+  
   reactStrictMode: false,
   eslint: {
     // 在构建过程中忽略 ESLint 错误
@@ -31,14 +42,7 @@ const nextConfig = {
 
     return config;
   },
-  async rewrites() {
-    return [
-      {
-        source: '/libs/:path*',
-        destination: '/libs/:path*',
-      },
-    ];
-  },
+  // 移除 rewrites，静态导出不支持
 };
 
 export default nextConfig; 
