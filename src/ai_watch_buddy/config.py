@@ -11,42 +11,36 @@ class Config:
     
     def __init__(self):
         """Initialize configuration from environment variables."""
-        # Primary base URL (for OpenAI/MiniMax)
-        self.primary_base_url: str = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
-        
-        # Secondary base URL (for additional services)
-        self.secondary_base_url: str = os.getenv("SECONDARY_BASE_URL", "https://api.secondary.com/v1")
+        # OpenAI compatible API base URL (for OpenAI/MiniMax)
+        self.openai_base_url: str = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
         
         # API Keys
         self.openai_api_key: Optional[str] = os.getenv("OPENAI_API_KEY")
         self.gemini_api_key: Optional[str] = os.getenv("GEMINI_API_KEY")
         self.fish_audio_api_key: Optional[str] = os.getenv("FISH_AUDIO_API_KEY")
         
-    def get_primary_base_url(self) -> str:
-        """Get the primary base URL for main API services."""
-        return self.primary_base_url
+    def get_openai_base_url(self) -> str:
+        """Get the OpenAI compatible API base URL."""
+        return self.openai_base_url
     
-    def get_secondary_base_url(self) -> str:
-        """Get the secondary base URL for additional services."""
-        return self.secondary_base_url
-    
-    def get_base_url_for_service(self, service_type: str = "primary") -> str:
+    def get_api_key_for_service(self, service_type: str) -> Optional[str]:
         """
-        Get the appropriate base URL for a specific service type.
+        Get the appropriate API key for a specific service type.
         
         Args:
-            service_type: Type of service ('primary', 'secondary', 'openai', 'minimax')
+            service_type: Type of service ('openai', 'minimax', 'gemini', 'fish_audio')
             
         Returns:
-            The appropriate base URL for the service
+            The appropriate API key for the service
         """
-        if service_type in ["primary", "openai", "minimax"]:
-            return self.primary_base_url
-        elif service_type == "secondary":
-            return self.secondary_base_url
+        if service_type in ["openai", "minimax"]:
+            return self.openai_api_key
+        elif service_type == "gemini":
+            return self.gemini_api_key
+        elif service_type == "fish_audio":
+            return self.fish_audio_api_key
         else:
-            # Default to primary
-            return self.primary_base_url
+            return None
 
 
 # Global configuration instance
