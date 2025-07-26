@@ -10,6 +10,7 @@ from fastapi import (
     WebSocketDisconnect,
 )
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.staticfiles import StaticFiles as StarletteStaticFiles
 from pydantic import BaseModel, ValidationError
 
 from .session import SessionState, session_storage
@@ -55,6 +56,33 @@ class ErrorResponse(BaseModel):
 # --- Connection Management ---
 # The ConnectionManager is now in its own file (connection_manager.py)
 # to prevent circular dependencies. The `manager` instance is imported from there.
+
+
+class CORSStaticFiles(StarletteStaticFiles):
+    """
+    Static files handler that adds CORS headers to all responses.
+    Needed because Starlette StaticFiles might bypass standard middleware.
+    """
+
+    async def get_response(self, path: str, scope):
+        response = await super().get_response(path, scope)
+
+        # Add CORS headers to all responses
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+
+        if path.endswith(".js"):
+            response.headers["Content-Type"] = "application/javascript"
+
+        return response
+
+
+app.mount(
+    "/live2d-models",
+    CORSStaticFiles(directory="live2d-models"),
+    name="live2d-models",
+)
 
 
 # --- API Endpoint ---
