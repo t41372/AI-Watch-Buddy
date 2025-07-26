@@ -391,7 +391,7 @@ export const ChromeBrowser = ({
             </div>
           </div>
           <div className="text-[13px] text-[#5f6368] font-normal tracking-[0.25px]">
-            Chrome
+            Google Chrome
           </div>
           <div className="w-16"></div>
         </div>

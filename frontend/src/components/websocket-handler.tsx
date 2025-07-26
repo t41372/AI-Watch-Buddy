@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, ReactNode, useMemo } from 'react';
 import { useChat } from '@/context/chat-context';
-import { useSettings, getWebSocketBaseUrl } from '@/context/settings-context';
+import { useSettings, WEBSOCKET_BASE_URL } from '@/context/settings-context';
 import { useLive2DExpression } from '@/hooks/use-live2d-expression';
 import { 
   WebSocketContext, 
@@ -226,7 +226,7 @@ export function WebSocketHandler({ children }: WebSocketHandlerProps) {
 
   // 连接 WebSocket
   const connect = useCallback((sessionId: string) => {
-    const wsUrl = `${getWebSocketBaseUrl()}/${sessionId}`;
+    const wsUrl = `${WEBSOCKET_BASE_URL}/${sessionId}`;
     
     if (!sessionId || wsRef.current?.readyState === WebSocket.OPEN) {
       return; // No sessionId or already connected

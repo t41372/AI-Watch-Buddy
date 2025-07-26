@@ -167,23 +167,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
               )}
             </div>
 
-            {/* Server Settings */}
-            <div>
-              <h3 className="text-[14px] font-medium text-[#202124] mb-4">Server Settings</h3>
-              
-              <div className="space-y-4">
-                <div className="p-4 bg-[#f8f9fa] rounded-lg">
-                  <p className="text-[13px] text-[#5f6368] mb-2">
-                    Server URLs are now configured via environment variables:
-                  </p>
-                  <div className="text-[12px] text-[#5f6368] space-y-1">
-                    <div>API Base URL: {process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'}</div>
-                    <div>WebSocket URL: {process.env.NEXT_PUBLIC_WEBSOCKET_BASE_URL || 'ws://127.0.0.1:8000/ws'}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+           </div>
         );
 
       case 'user':
