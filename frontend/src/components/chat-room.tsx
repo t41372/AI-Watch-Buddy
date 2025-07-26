@@ -5,6 +5,7 @@ import { useChat, ChatMessage } from '@/context/chat-context';
 import { useMicrophone } from '@/context/microphone-context';
 import { useDraggable } from '@/hooks/use-draggable';
 import { useWebSocketContext } from '@/context/websocket-context';
+import { useActionQueue } from '@/hooks/use-action-queue';
 import { MicrophoneIcon } from '@heroicons/react/24/solid';
 import { MicrophoneIcon as MicrophoneOutlineIcon } from '@heroicons/react/24/outline';
 
@@ -103,80 +104,95 @@ function MessageItem({ message }: { message: ChatMessage }) {
 // Microphone button component with VAD integration
 function MicrophoneButton({ 
   onVideoControl,
-  videoCurrentTime 
+  videoCurrentTime,
+  actionQueue,
+  clearQueue 
 }: { 
   onVideoControl?: (action: 'pause' | 'play') => void;
   videoCurrentTime?: number;
+  actionQueue?: any[];
+  clearQueue?: () => void;
 }) {
   const { state, isRecording, toggleRecording, error, setAudioDataCallback } = useMicrophone();
   const { sendMessage, status: wsStatus } = useWebSocketContext();
-  const [isProcessingAudio, setIsProcessingAudio] = useState(false);
 
-  // Setup audio data callback when recording starts
+  // Setup audio data callback - set once on mount
   useEffect(() => {
-    if (isRecording) {
-      console.log('🎯 Setting up audio data callback');
-      
-      setAudioDataCallback((audioData: ArrayBuffer) => {
-        if (wsStatus === 'connected' && !isProcessingAudio) {
-          console.log('🎵 Processing audio input...');
-          setIsProcessingAudio(true);
-          
-          // Pause video when user starts speaking
-          if (onVideoControl) {
-            onVideoControl('pause');
-            console.log('⏸️ Video paused for user input');
-          }
-          
-          // Convert ArrayBuffer to base64 for transmission
-          const uint8Array = new Uint8Array(audioData);
-          
-          // Validate audio data
-          if (audioData.byteLength === 0) {
-            console.warn('Empty audio data received, skipping...');
-            setIsProcessingAudio(false);
-            return;
-          }
-          
-          const base64Audio = btoa(String.fromCharCode.apply(null, Array.from(uint8Array)));
-          
-          // Validate base64 audio
-          if (!base64Audio || base64Audio.length === 0) {
-            console.warn('Failed to generate base64 audio, skipping...');
-            setIsProcessingAudio(false);
-            return;
-          }
-          
-          console.log('📼 Generated audio data:', audioData.byteLength, 'bytes,', base64Audio.length, 'base64 chars');
-          
-          // Create user action with audio data
-          const userAction = {
-            id: `user_speak_${Date.now()}`,
-            action_type: 'SPEAK',
-            trigger_timestamp: videoCurrentTime || 0,  // Use video current time, fallback to 0
-            comment: 'User voice input',
-            audio: base64Audio,
-            pause_video: true,
-          };
-
-          // Send trigger-conversation message
-          sendMessage({
-            type: 'trigger-conversation',
-            data: {
-              user_action_list: [userAction],
-              pending_action_list: [],
-            },
-          });
-
-          console.log('📤 Sent trigger-conversation with user audio input');
-          setIsProcessingAudio(false);
-        }
+    console.log('🎯 Setting up audio data callback');
+    
+    setAudioDataCallback((audioData: ArrayBuffer) => {
+      console.log('🎵 Audio data callback triggered!', {
+        audioSize: audioData.byteLength,
+        wsStatus: wsStatus,
+        timestamp: new Date().toISOString()
       });
-    } else {
-      // Clear callback when not recording
-      setAudioDataCallback(() => {});
-    }
-  }, [isRecording, setAudioDataCallback, wsStatus, isProcessingAudio, sendMessage, onVideoControl, videoCurrentTime]);
+      
+      if (wsStatus === 'connected') {
+        console.log('✅ WebSocket connected - processing audio input...');
+        
+        // Pause video when user starts speaking
+        if (onVideoControl) {
+          onVideoControl('pause');
+          console.log('⏸️ Video paused for user input');
+        }
+        
+        // Convert ArrayBuffer to base64 for transmission
+        const uint8Array = new Uint8Array(audioData);
+        
+        // Validate audio data
+        if (audioData.byteLength === 0) {
+          console.warn('Empty audio data received, skipping...');
+          return;
+        }
+        
+        const base64Audio = btoa(String.fromCharCode.apply(null, Array.from(uint8Array)));
+        
+        // Validate base64 audio
+        if (!base64Audio || base64Audio.length === 0) {
+          console.warn('Failed to generate base64 audio, skipping...');
+          return;
+        }
+        
+        console.log('📼 Generated audio data:', audioData.byteLength, 'bytes,', base64Audio.length, 'base64 chars');
+        
+        // Create user action with audio data
+        const userAction = {
+          id: `user_speak_${Date.now()}`,
+          action_type: 'SPEAK',
+          trigger_timestamp: videoCurrentTime || 0,  // Use video current time, fallback to 0
+          comment: 'User voice input',
+          audio: base64Audio,
+          pause_video: true,
+        };
+
+        // Get current pending actions from action queue
+        const pendingActions = actionQueue ? [...actionQueue] : [];
+
+        // Send trigger-conversation message
+        sendMessage({
+          type: 'trigger-conversation',
+          data: {
+            user_action_list: [userAction],
+            pending_action_list: pendingActions,
+          },
+        });
+
+        // Clear the action queue after sending
+        if (clearQueue) {
+          clearQueue();
+        }
+
+        console.log('📤 Sent trigger-conversation with user audio input');
+        console.log('📦 Sent pending actions:', pendingActions.length);
+      } else {
+        console.warn('❌ WebSocket not connected!', {
+          currentStatus: wsStatus,
+          audioSize: audioData.byteLength,
+          message: 'Audio data ready but cannot send - WebSocket not connected'
+        });
+      }
+    });
+  }, [setAudioDataCallback, wsStatus, sendMessage, onVideoControl, videoCurrentTime, actionQueue, clearQueue]);
 
   const getMicStyle = () => {
     // Only 2 states: recording (green) or off (red)
@@ -237,6 +253,9 @@ export function ChatRoom({ className = '', position, onPositionChange, videoCurr
   // Use global WebSocket connection
   const { sendMessage: sendWebSocketMessage, status: wsStatus, error: wsError } = useWebSocketContext();
 
+  // Use action queue for managing pending actions
+  const { actionQueue, clearQueue } = useActionQueue({ sendMessage: sendWebSocketMessage });
+
   // Draggable functionality
   const { listeners } = useDraggable({
     initialPosition: position || { x: 50, y: 100 },
@@ -260,6 +279,9 @@ export function ChatRoom({ className = '', position, onPositionChange, videoCurr
     // Pause video when user sends a message
     handleVideoControl('pause');
 
+    // Get current pending actions from action queue
+    const pendingActions = [...actionQueue];
+
     // Create user action with text
     const userAction = {
       id: `user_text_${Date.now()}`,
@@ -270,17 +292,21 @@ export function ChatRoom({ className = '', position, onPositionChange, videoCurr
       pause_video: true,
     };
 
-    // Send trigger-conversation message
+    // Send trigger-conversation message with pending actions
     sendWebSocketMessage({
       type: 'trigger-conversation',
       data: {
         user_action_list: [userAction],
-        pending_action_list: [],
+        pending_action_list: pendingActions,
       },
     });
 
+    // Clear the action queue after sending
+    clearQueue();
+
     console.log('📤 Sent trigger-conversation with user text input:', text);
-  }, [sendWebSocketMessage, handleVideoControl, videoCurrentTime]);
+    console.log('📦 Sent pending actions:', pendingActions.length);
+  }, [sendWebSocketMessage, handleVideoControl, videoCurrentTime, actionQueue, clearQueue]);
 
   // Add webkit scrollbar styles
   useEffect(() => {
@@ -419,7 +445,12 @@ export function ChatRoom({ className = '', position, onPositionChange, videoCurr
             className="flex-1 px-3 py-2 bg-gray-800/80 border border-gray-600/50 rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
             maxLength={500}
           />
-          <MicrophoneButton onVideoControl={handleVideoControl} videoCurrentTime={videoCurrentTime} />
+          <MicrophoneButton 
+            onVideoControl={handleVideoControl} 
+            videoCurrentTime={videoCurrentTime} 
+            actionQueue={actionQueue}
+            clearQueue={clearQueue}
+          />
         </form>
         
         {/* Character count */}

@@ -13,7 +13,7 @@ from ..prompts.action_gen_prompt import action_generation_prompt
 from ..prompts.character_prompts import cute_prompt
 from .mock_text import fake_summary, sample_json
 
-MOCK: bool = False
+MOCK: bool = True
 
 
 class VideoAnalyzerAgent(VideoActionAgentInterface):
