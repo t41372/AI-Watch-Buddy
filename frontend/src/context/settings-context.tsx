@@ -31,9 +31,9 @@ interface SettingsContextType {
   loadSettings: () => void;
 }
 
-// Hardcoded URL configuration
-export const API_BASE_URL = 'https://wat.zeabur.app';
-export const WEBSOCKET_BASE_URL = 'wss://wat.zeabur.app/ws';
+// Environment-based URL configuration
+export const getApiBaseUrl = () => process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+export const getWebSocketBaseUrl = () => process.env.NEXT_PUBLIC_WEBSOCKET_BASE_URL || 'ws://127.0.0.1:8000/ws';
 
 const defaultGeneralSettings: GeneralSettings = {
   reduceVideoVolumeOnSpeech: true,
@@ -71,9 +71,9 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   // Load settings from localStorage on mount (only for non-URL settings)
   useEffect(() => {
     loadSettings();
-    console.log("Hardcoded URLs:", {
-      API_BASE_URL,
-      WEBSOCKET_BASE_URL,
+    console.log("Environment variables:", {
+      NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+      NEXT_PUBLIC_WEBSOCKET_BASE_URL: process.env.NEXT_PUBLIC_WEBSOCKET_BASE_URL,
       defaultGeneralSettings,
     });
   }, []);

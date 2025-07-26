@@ -167,7 +167,7 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
               )}
             </div>
 
-           </div>
+          </div>
         );
 
       case 'user':

@@ -3,7 +3,7 @@
 import {
   createContext, useContext, useState, useMemo,
 } from 'react';
-import { useSettings, API_BASE_URL } from './settings-context';
+import { useSettings, getApiBaseUrl } from './settings-context';
 
 /**
  * Model emotion mapping interface
@@ -148,7 +148,7 @@ export function Live2DConfigProvider({ children }: { children: React.ReactNode }
     console.log("Setting model info with default scale:", finalScale);
 
     // Build full URL using baseUrl from environment
-    const baseUrl = API_BASE_URL;
+    const baseUrl = getApiBaseUrl();
     const fullUrl = info.url.startsWith('http') ? info.url : `${baseUrl}${info.url}`;
 
     setModelInfoState({
@@ -172,7 +172,7 @@ export function Live2DConfigProvider({ children }: { children: React.ReactNode }
     () => ({
       modelInfo: modelInfo ? {
         ...modelInfo,
-        url: modelInfo.url.startsWith('http') ? modelInfo.url : `${API_BASE_URL}${modelInfo.url}`,
+        url: modelInfo.url.startsWith('http') ? modelInfo.url : `${getApiBaseUrl()}${modelInfo.url}`,
       } : undefined,
       setModelInfo,
       isLoading,

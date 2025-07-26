@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useSettings, API_BASE_URL } from '@/context/settings-context';
+import { useSettings, getApiBaseUrl } from '@/context/settings-context';
 
 export interface SessionRequest {
   video_url: string;
@@ -44,7 +44,7 @@ export const useSession = (): UseSessionReturn => {
       console.log('Creating session with request:', request);
       console.log('Request JSON:', JSON.stringify(request, null, 2));
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/sessions`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/v1/sessions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
