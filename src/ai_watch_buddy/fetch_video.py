@@ -57,6 +57,6 @@ if __name__ == "__main__":
 
     try:
         path = asyncio.run(download_video_async(args.url, args.dir))
-        print(f"Downloaded to: {path}")
+        logger.info(f"Downloaded to: {path}")
     except Exception as e:
-        print(f"Error: {e}")
+        logger.error(f"Error: {e}")

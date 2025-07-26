@@ -82,10 +82,11 @@ class TTSEngine(TTSInterface):
                     os.unlink(wav_path)
 
         except Exception as e:
-            logger.critical(f"\nError: Unable to generate or convert audio: {e}")
-            logger.critical(
-                "It's possible that edge-tts is blocked in your region or ffmpeg is not installed."
+            logger.error(f"Failed to generate audio with Edge TTS: {e}")
+            logger.debug(
+                f"Error details - text: {text[:50]}..., voice: {voice}"
             )
+            logger.error("Failed to generate audio.")
             return None
 
 
@@ -101,11 +102,11 @@ if __name__ == "__main__":
     text = "Hello, this is a test of the TTS engine."
     audio_base64 = asyncio.run(tts_instance.generate_audio(text))
     if audio_base64:
-        print(
+        logger.info(
             f"Generated audio (base64): {audio_base64[:50]}..."
         )  # Print first 50 chars
         # save to file for testing
         with open("test_audio.txt", "wb") as f:
             f.write(audio_base64.encode("utf-8"))
     else:
-        print("Failed to generate audio.")
+        logger.error("Failed to generate audio.")

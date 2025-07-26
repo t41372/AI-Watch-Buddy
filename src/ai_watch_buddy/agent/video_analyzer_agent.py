@@ -104,12 +104,12 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
         Processes a video from a local path or URL, uploads it if necessary, and generates a summary.
         """
         if MOCK:
-            print("MOCK 模式: 使用假的视频摘要")
+            logger.info("MOCK 模式: 使用假的视频摘要")
             self._video_input = video_path_or_url
             self._summary = fake_summary
             self._summary_ready = True
-            print("视频摘要生成完成 (MOCK)")
-            print(f"摘要内容: {self._summary[:200]}...")
+            logger.info("视频摘要生成完成 (MOCK)")
+            logger.debug(f"摘要内容: {self._summary[:200]}...")
             return
 
         try:
@@ -122,13 +122,13 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
 
             if is_url:
                 # Handle URL input
-                print(f"准备使用 URL 处理视频: {video_path_or_url}")
+                logger.info(f"准备使用 URL 处理视频: {video_path_or_url}")
                 self._video_file = None
                 file_data = FileData(file_uri=video_path_or_url, mime_type="video/mp4")
                 video_part_for_api = Part(file_data=file_data)
             else:
                 # Handle local file upload
-                print(f"正在上传视频文件: {video_path_or_url}")
+                logger.info(f"正在上传视频文件: {video_path_or_url}")
                 uploaded_file = self._client.files.upload(file=video_path_or_url)
 
                 # Wait for processing to complete
@@ -137,7 +137,7 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
                     and uploaded_file.state
                     and uploaded_file.state.name == "PROCESSING"
                 ):
-                    print("[处理中]..", end="", flush=True)
+                    logger.debug("[处理中]..")
                     time.sleep(5)
                     if uploaded_file.name:
                         uploaded_file = self._client.files.get(name=uploaded_file.name)
@@ -174,11 +174,11 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
 
             self._summary = response.text
             self._summary_ready = True
-            print("视频摘要生成完成")
-            print(f"摘要内容: {self._summary}")
+            logger.info("视频摘要生成完成")
+            logger.debug(f"摘要内容: {self._summary}")
 
         except Exception as e:
-            print(f"生成视频摘要时出错: {e}")
+            logger.error(f"生成视频摘要时出错: {e}")
             raise
 
     def add_content(self, role: str, text: str) -> None:
@@ -277,7 +277,7 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
         try:
             if MOCK:
                 # Mock 模式：创建假的流来模拟 Gemini API 响应
-                print("MOCK 模式: 使用假的 action stream")
+                logger.info("MOCK 模式: 使用假的 action stream")
 
                 # 创建一个模拟的流生成器
                 def create_mock_stream():
@@ -323,7 +323,7 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
                 yield action
 
         except Exception as e:
-            print(f"生成内容时出错: {e}")
+            logger.error(f"生成内容时出错: {e}")
             # For error cases, we can't yield anything since the interface expects Action objects
             raise
 
@@ -340,24 +340,24 @@ if __name__ == "__main__":
         # Test with a local video file
         test_video = "/Users/tim/LocalData/coding/2025/Projects/AdventureX/2-AI-WatchBuddy/ai_watch_buddy/video_cache/【官方 MV】Never Gonna Give You Up - Rick Astley.mp4"
 
-        print("测试视频分析Agent...")
+        logger.info("测试视频分析Agent...")
 
         try:
             # Generate summary first
             await agent.get_video_summary(test_video)
-            print(f"摘要生成完成: {agent.summary_ready}")
-            print(f"摘要内容: {agent.summary[:200]}..." if agent.summary else "无摘要")
+            logger.info(f"摘要生成完成: {agent.summary_ready}")
+            logger.debug(f"摘要内容: {agent.summary[:200]}..." if agent.summary else "无摘要")
 
-            print("\n=== 测试 Summary 模式 ===")
+            logger.info("=== 测试 Summary 模式 ===")
             # Add user message
             agent.add_content("user", "请分析这个视频的主要内容")
 
             # Generate response using summary mode
-            print("生成基于摘要的动作:")
+            logger.info("生成基于摘要的动作:")
             action_count = 0
             async for action in agent.produce_action_stream("summary"):
                 action_count += 1
-                print(
+                logger.debug(
                     f"[Action {action_count}]: {action.action_type} - {action.comment}"
                 )
                 if (
@@ -365,29 +365,29 @@ if __name__ == "__main__":
                     and hasattr(action, "text")
                     and action.text
                 ):
-                    print(
+                    logger.debug(
                         f"  Text: {action.text[:100]}{'...' if len(action.text) > 100 else ''}"
                     )
                 elif action.action_type == "PAUSE":
-                    print(f"  Duration: {action.duration_seconds}s")
+                    logger.debug(f"  Duration: {action.duration_seconds}s")
                 elif action.action_type == "SEEK":
-                    print(
+                    logger.debug(
                         f"  Target: {action.target_timestamp}s, Behavior: {action.post_seek_behavior}"
                     )
                 elif action.action_type == "REPLAY_SEGMENT":
-                    print(
+                    logger.debug(
                         f"  Replay: {action.start_timestamp}s - {action.end_timestamp}s"
                     )
 
-            print(f"\n基于摘要生成了 {action_count} 个动作")
+            logger.info(f"基于摘要生成了 {action_count} 个动作")
 
-            print("\n=== 测试 Video 模式 ===")
+            logger.info("=== 测试 Video 模式 ===")
             # Test video mode
-            print("生成基于视频的动作:")
+            logger.info("生成基于视频的动作:")
             action_count = 0
             async for action in agent.produce_action_stream("video"):
                 action_count += 1
-                print(
+                logger.debug(
                     f"[Action {action_count}]: {action.action_type} - {action.comment}"
                 )
                 if (
@@ -395,29 +395,29 @@ if __name__ == "__main__":
                     and hasattr(action, "text")
                     and action.text
                 ):
-                    print(
+                    logger.debug(
                         f"  Text: {action.text[:100]}{'...' if len(action.text) > 100 else ''}"
                     )
                 elif action.action_type == "PAUSE":
-                    print(f"  Duration: {action.duration_seconds}s")
+                    logger.debug(f"  Duration: {action.duration_seconds}s")
                 elif action.action_type == "SEEK":
-                    print(
+                    logger.debug(
                         f"  Target: {action.target_timestamp}s, Behavior: {action.post_seek_behavior}"
                     )
                 elif action.action_type == "REPLAY_SEGMENT":
-                    print(
+                    logger.debug(
                         f"  Replay: {action.start_timestamp}s - {action.end_timestamp}s"
                     )
 
                 # Limit output for demo
                 if action_count >= 5:
-                    print("(限制输出，只显示前5个动作)")
+                    logger.info("(限制输出，只显示前5个动作)")
                     break
 
-            print(f"\n基于视频生成了 {action_count} 个动作")
+            logger.info(f"基于视频生成了 {action_count} 个动作")
 
         except Exception as e:
-            print(f"测试失败: {e}")
+            logger.error(f"测试失败: {e}")
             import traceback
 
             traceback.print_exc()

@@ -5,6 +5,9 @@ from typing import Optional
 import os
 from dotenv import load_dotenv
 
+# Import shared logging configuration
+from .logging_config import get_logger
+
 from .actions import Action, SpeakAction
 from .tts.edge_tts import TTSEngine as EdgeTTSEngine
 from .tts.fish_audio_tts import FishAudioTTSEngine
@@ -15,6 +18,9 @@ from .agent.video_analyzer_agent import VideoAnalyzerAgent
 from .prompts.character_prompts import cute_prompt
 
 load_dotenv()
+
+# Get a logger instance for this module
+logger = get_logger("pipeline")
 
 
 def get_interruption_timestamp(user_action_list: list[Action]) -> Optional[float]:
@@ -120,23 +126,33 @@ async def generate_and_queue_actions(
             #     action = Action.model_validate(action_data)
 
             # Generate audio for SpeakAction
-            if isinstance(action, SpeakAction):
+            if isinstance(action, SpeakAction) and action.text:
                 # Initialize TTS engine based on environment configuration
                 tts_engine = os.getenv("TTS_ENGINE", "fish").lower()
                 
                 if tts_engine == "minimax":
-                    tts_instance = MiniMaxTTSEngine(
-                        api_key=os.getenv("MINIMAX_API_KEY"),
-                        group_id=os.getenv("MINIMAX_GROUP_ID"),
-                        model=os.getenv("MINIMAX_MODEL", "speech-02-turbo"),
-                        voice_id=os.getenv("MINIMAX_VOICE_ID", "male-qn-qingse")
-                    )
+                    api_key = os.getenv("MINIMAX_API_KEY")
+                    group_id = os.getenv("MINIMAX_GROUP_ID")
+                    if api_key and group_id:
+                        tts_instance = MiniMaxTTSEngine(
+                            api_key=api_key,
+                            group_id=group_id,
+                            model=os.getenv("MINIMAX_MODEL", "speech-02-turbo"),
+                            voice_id=os.getenv("MINIMAX_VOICE_ID", "male-qn-qingse")
+                        )
+                    else:
+                        logger.warning("MiniMax API key or group ID not found, skipping TTS")
+                        continue
                 elif tts_engine == "edge":
                     tts_instance = EdgeTTSEngine()
                 else:  # Default to Fish Audio
-                    tts_instance = FishAudioTTSEngine(
-                        api_key=os.getenv("FISH_AUDIO_API_KEY")
-                    )
+                    api_key = os.getenv("FISH_AUDIO_API_KEY")
+                    if api_key:
+                        tts_instance = FishAudioTTSEngine(api_key=api_key)
+                    else:
+                        logger.warning("Fish Audio API key not found, skipping TTS")
+                        continue
+                
                 audio_base64 = await tts_instance.generate_audio(action.text)
                 if audio_base64:
                     action.audio = audio_base64

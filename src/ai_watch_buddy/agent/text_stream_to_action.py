@@ -4,6 +4,7 @@ from json_repair import repair_json
 from pydantic import ValidationError, TypeAdapter
 from google.genai.types import GenerateContentResponse
 from typing import Union
+from loguru import logger
 
 from ..actions import Action
 
@@ -45,7 +46,7 @@ def str_stream_to_actions_openai(
         else:
             text = ""
             
-        print(text, end="", flush=True)
+        logger.trace(text)  # Use trace level for streaming text output
         buffer += text
 
         # 如果还没有找到JSON数组的开始，寻找 '['
@@ -87,8 +88,8 @@ def str_stream_to_actions_openai(
                         yield action
                     except (json.JSONDecodeError, ValidationError) as e:
                         # 如果解析失败，记录错误但继续处理后续内容
-                        print(f"Failed to parse action: {e}")
-                        print(f"Raw JSON: {current_action_buffer}")
+                        logger.warning(f"Failed to parse action: {e}")
+                        logger.debug(f"Raw JSON: {current_action_buffer}")
 
                     current_action_buffer = ""
 
@@ -136,7 +137,7 @@ def str_stream_to_actions(
     for response in llm_stream:
         # Extract text from GenerateContentResponse
         chunk = response.text if response.text else ""
-        print(chunk, end="", flush=True)
+        logger.trace(chunk)  # Use trace level for streaming text output
         buffer += chunk
 
         # 如果还没有找到JSON数组的开始，寻找 '['
@@ -178,8 +179,8 @@ def str_stream_to_actions(
                         yield action
                     except (json.JSONDecodeError, ValidationError) as e:
                         # 如果解析失败，记录错误但继续处理后续内容
-                        print(f"Failed to parse action: {e}")
-                        print(f"Raw JSON: {current_action_buffer}")
+                        logger.warning(f"Failed to parse action: {e}")
+                        logger.debug(f"Raw JSON: {current_action_buffer}")
 
                     current_action_buffer = ""
 

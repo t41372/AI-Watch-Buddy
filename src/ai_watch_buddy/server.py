@@ -1,8 +1,11 @@
 import uuid
 import asyncio
 import os
-from loguru import logger
 from pathlib import Path
+from loguru import logger
+
+# Import shared logging configuration
+from .logging_config import configure_logger
 
 from fastapi import (
     FastAPI,
@@ -16,6 +19,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles as StarletteStaticFiles
 from starlette.responses import FileResponse
 from pydantic import BaseModel, ValidationError
+
+# Configure logger early
+configure_logger()
 
 from .session import SessionState, session_storage
 from .pipeline import (
@@ -285,7 +291,7 @@ async def websocket_receiver(websocket: WebSocket, session: SessionState):
     async for message in websocket.iter_json():
         msg_type = message.get("type")
         logger.info(
-            f"[{session.session_id}] Received message from client: type={msg_type}"
+            f"[{session.session_id}] Received websocket message from client: type={msg_type}"
         )
 
         # Always interrupt any ongoing task before starting a new one.
@@ -352,24 +358,32 @@ async def websocket_receiver(websocket: WebSocket, session: SessionState):
                     logger.error(f"[{session.session_id}] ❌ Mock mode: Invalid payload: {e}")
                     # Continue with mock even if payload is invalid
                 
-                # Create mock SpeakAction
+                # Create mock SpeakAction with audio=None (it's optional)
                 mock_action = SpeakAction(
                     id=f"mock_{uuid.uuid4().hex[:8]}",
                     trigger_timestamp=0.0,
                     comment="Mock conversation response about the bar dancer",
                     text="他是视频中的酒吧舞者，谐音 985，网上无法公开查到他的身份。",
-                    pause_video=False
+                    pause_video=False,
+                    audio=None  # Explicitly set to None
                 ) # Real genereated data for quick testing
                 
                 # Generate TTS for the mock action
                 try:
-                    tts_instance = FishAudioTTSEngine(api_key=os.getenv("FISH_AUDIO_API_KEY"))
-                    audio_base64 = await tts_instance.generate_audio(mock_action.text)
-                    if audio_base64:
-                        mock_action.audio = audio_base64
-                        logger.info(f"[{session.session_id}] 🎵 Mock TTS generated successfully")
+                    api_key = os.getenv("FISH_AUDIO_API_KEY")
+                    if api_key:  # Only proceed if API key is available
+                        tts_instance = FishAudioTTSEngine(api_key=api_key)
+                        if mock_action.text:  # Only proceed if text is available
+                            audio_base64 = await tts_instance.generate_audio(mock_action.text)
+                            if audio_base64:
+                                mock_action.audio = audio_base64
+                                logger.info(f"[{session.session_id}] 🎵 Mock TTS generated successfully")
+                            else:
+                                logger.warning(f"[{session.session_id}] ⚠️ Mock TTS generation failed")
+                        else:
+                            logger.warning(f"[{session.session_id}] ⚠️ Mock action has no text for TTS")
                     else:
-                        logger.warning(f"[{session.session_id}] ⚠️ Mock TTS generation failed")
+                        logger.warning(f"[{session.session_id}] ⚠️ FISH_AUDIO_API_KEY not available for mock TTS")
                 except Exception as e:
                     logger.error(f"[{session.session_id}] ❌ Mock TTS error: {e}")
                 
