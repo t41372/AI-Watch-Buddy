@@ -34,8 +34,8 @@ interface SettingsContextType {
 }
 
 const defaultGeneralSettings: GeneralSettings = {
-  baseUrl: 'http://127.0.0.1:8000',
-  websocketBaseUrl: 'ws://127.0.0.1:8000/ws',
+  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000',
+  websocketBaseUrl: process.env.NEXT_PUBLIC_WEBSOCKET_BASE_URL || 'ws://127.0.0.1:8000/ws',
   reduceVideoVolumeOnSpeech: true,
   videoVolumeReductionPercent: 50
 };

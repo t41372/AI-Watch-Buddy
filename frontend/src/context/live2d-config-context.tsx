@@ -3,6 +3,7 @@
 import {
   createContext, useContext, useState, useMemo,
 } from 'react';
+import { useSettings } from './settings-context';
 
 /**
  * Model emotion mapping interface
@@ -83,7 +84,7 @@ interface Live2DConfigState {
 const DEFAULT_MODEL_INFO: ModelInfo = {
   name: "Elaina",
   description: "Default Live2D model - AI Companion",
-  url: getLive2DModelUrl(),
+  url: "/live2d-models/elaina/LSS.model3.json", // This will be combined with baseUrl from settings
   kScale: 0.8, // Slightly smaller for companion area
   initialXshift: 20, // Shift slightly right to center in right panel
   initialYshift: -50, // Shift up to account for chat interface at bottom
@@ -132,6 +133,7 @@ export const Live2DConfigContext = createContext<Live2DConfigState | null>(null)
  * @param {React.ReactNode} props.children - Child components
  */
 export function Live2DConfigProvider({ children }: { children: React.ReactNode }) {
+  const { generalSettings } = useSettings();
   const [isLoading, setIsLoading] = useState(DEFAULT_CONFIG.isLoading);
   const [modelInfo, setModelInfoState] = useState<ModelInfo | undefined>(DEFAULT_CONFIG.modelInfo);
 
@@ -145,8 +147,13 @@ export function Live2DConfigProvider({ children }: { children: React.ReactNode }
     const finalScale = Number(info.kScale || 0.5) * 2; // Use default scale if kScale is missing
     console.log("Setting model info with default scale:", finalScale);
 
+    // Build full URL using baseUrl from settings
+    const baseUrl = generalSettings.baseUrl;
+    const fullUrl = info.url.startsWith('http') ? info.url : `${baseUrl}${info.url}`;
+
     setModelInfoState({
       ...info,
+      url: fullUrl,
       kScale: finalScale,
       // Preserve other potentially user-modified settings if needed, otherwise use defaults from info
       pointerInteractive:
@@ -160,14 +167,18 @@ export function Live2DConfigProvider({ children }: { children: React.ReactNode }
     });
   };
 
+  // Update model URL when baseUrl changes
   const contextValue = useMemo(
     () => ({
-      modelInfo,
+      modelInfo: modelInfo ? {
+        ...modelInfo,
+        url: modelInfo.url.startsWith('http') ? modelInfo.url : `${generalSettings.baseUrl}${modelInfo.url}`,
+      } : undefined,
       setModelInfo,
       isLoading,
       setIsLoading,
     }),
-    [modelInfo, isLoading, setIsLoading],
+    [modelInfo, isLoading, setIsLoading, generalSettings.baseUrl],
   );
 
   return (
