@@ -3,13 +3,18 @@ import json
 from pathlib import Path
 from loguru import logger
 from typing import List, Optional, Union
+import os
+from dotenv import load_dotenv
 
 from .actions import Action, SpeakAction
-from .tts import tts_instance
+from .tts.edge_tts import TTSEngine
+from .tts.fish_audio_tts import FishAudioTTSEngine
 from .session import session_storage
 from .fetch_video import download_video_async
 from .agent.video_analyzer_agent import VideoAnalyzerAgent
 from .prompts.character_prompts import cute_prompt
+
+load_dotenv()
 
 
 def get_interruption_timestamp(user_action_list: list[Action]) -> Optional[float]:
@@ -103,6 +108,25 @@ async def generate_and_queue_actions(
         action_source = session.agent.produce_action_stream(mode=mode)
 
         async for action in action_source:
+            # Handle both Action objects (from mock) and dict (from agent)
+
+            # 这个回来一定是个 Action 对象，所以不用 validate 了
+            # if isinstance(action_data, Action):
+            #     action = action_data
+            # else:
+            #     action = Action.model_validate(action_data)
+
+            # Generate audio for SpeakAction
+            if isinstance(action, SpeakAction):
+                # Initialize Fish Audio TTS - you'll need to provide your API key
+                tts_instance = FishAudioTTSEngine(api_key=os.getenv("FISH_AUDIO_API_KEY"))
+                # tts_instance = TTSEngine()
+                audio_base64 = await tts_instance.generate_audio(action.text)
+                if audio_base64:
+                    action.audio = audio_base64
+                else:
+                    logger.warning(f"[{session_id}] Failed to generate audio for action: {action.id}")
+
             await session.action_queue.put(action)
             actions_generated_count += 1
             logger.info(

@@ -7,12 +7,13 @@ import tempfile
 
 import edge_tts
 from loguru import logger
+from .tts_interface import TTSInterface
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
 
-class TTSEngine:
+class TTSEngine(TTSInterface):
     def __init__(self):
         pass
 

@@ -7,11 +7,13 @@ requires-python = ">=3.13"
 dependencies = [
     "edge-tts>=7.0.2",
     "fastapi>=0.116.1",
+    "fish-audio-sdk>=2025.6.3",
     "google-genai>=1.27.0",
     "json-repair>=0.47.8",
     "loguru>=0.7.3",
     "numpy>=2.3.1",
     "pydantic>=2.11.7",
+    "python-dotenv>=1.1.1",
     "ruff>=0.12.4",
     "uvicorn[standard]>=0.30.1", # Added for running the server
     "websockets>=12.0", # Explicitly add for websocket handling
