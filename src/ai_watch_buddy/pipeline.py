@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from .actions import Action, SpeakAction
 from .tts.edge_tts import TTSEngine as EdgeTTSEngine
 from .tts.fish_audio_tts import FishAudioTTSEngine
+from .tts.minimax_tts import MiniMaxTTSEngine
 from .session import session_storage
 from .fetch_video import download_video_async
 from .agent.video_analyzer_agent import VideoAnalyzerAgent
@@ -120,11 +121,22 @@ async def generate_and_queue_actions(
 
             # Generate audio for SpeakAction
             if isinstance(action, SpeakAction):
-                # Initialize Fish Audio TTS - you'll need to provide your API key
-                tts_instance = FishAudioTTSEngine(
-                    api_key=os.getenv("FISH_AUDIO_API_KEY")
-                )
-                # tts_instance = EdgeTTSEngine()
+                # Initialize TTS engine based on environment configuration
+                tts_engine = os.getenv("TTS_ENGINE", "fish").lower()
+                
+                if tts_engine == "minimax":
+                    tts_instance = MiniMaxTTSEngine(
+                        api_key=os.getenv("MINIMAX_API_KEY"),
+                        group_id=os.getenv("MINIMAX_GROUP_ID"),
+                        model=os.getenv("MINIMAX_MODEL", "speech-02-turbo"),
+                        voice_id=os.getenv("MINIMAX_VOICE_ID", "male-qn-qingse")
+                    )
+                elif tts_engine == "edge":
+                    tts_instance = EdgeTTSEngine()
+                else:  # Default to Fish Audio
+                    tts_instance = FishAudioTTSEngine(
+                        api_key=os.getenv("FISH_AUDIO_API_KEY")
+                    )
                 audio_base64 = await tts_instance.generate_audio(action.text)
                 if audio_base64:
                     action.audio = audio_base64
