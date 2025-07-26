@@ -1,13 +1,11 @@
-import asyncio
 import json
-from pathlib import Path
+import asyncio
 from loguru import logger
-from typing import List, Optional, Union
+from typing import Optional
 import os
 from dotenv import load_dotenv
 
 from .actions import Action, SpeakAction
-from .tts.edge_tts import TTSEngine
 from .tts.fish_audio_tts import FishAudioTTSEngine
 from .session import session_storage
 from .fetch_video import download_video_async
@@ -119,13 +117,17 @@ async def generate_and_queue_actions(
             # Generate audio for SpeakAction
             if isinstance(action, SpeakAction):
                 # Initialize Fish Audio TTS - you'll need to provide your API key
-                tts_instance = FishAudioTTSEngine(api_key=os.getenv("FISH_AUDIO_API_KEY"))
+                tts_instance = FishAudioTTSEngine(
+                    api_key=os.getenv("FISH_AUDIO_API_KEY")
+                )
                 # tts_instance = TTSEngine()
                 audio_base64 = await tts_instance.generate_audio(action.text)
                 if audio_base64:
                     action.audio = audio_base64
                 else:
-                    logger.warning(f"[{session_id}] Failed to generate audio for action: {action.id}")
+                    logger.warning(
+                        f"[{session_id}] Failed to generate audio for action: {action.id}"
+                    )
 
             await session.action_queue.put(action)
             actions_generated_count += 1
@@ -172,7 +174,9 @@ async def run_initial_generation(session_id: str):
 
     try:
         # Determine the video input for the agent: use local path if available, otherwise use original URL.
-        video_input = session.local_video_path if session.local_video_path else session.video_url
+        video_input = (
+            session.local_video_path if session.local_video_path else session.video_url
+        )
 
         logger.info(
             f"[{session_id}] Starting parallel summary and action generation for: {video_input}"
@@ -180,9 +184,7 @@ async def run_initial_generation(session_id: str):
 
         # Create both tasks to run in parallel
         summary_task = asyncio.create_task(
-            session.agent.get_video_summary(
-                video_path_or_url=video_input
-            )
+            session.agent.get_video_summary(video_path_or_url=video_input)
         )
 
         action_generation_task = asyncio.create_task(
@@ -237,16 +239,22 @@ async def initial_pipeline(session_id: str) -> None:
         is_youtube_url = "youtube.com" in video_url or "youtu.be" in video_url
 
         if is_youtube_url:
-            logger.info(f"[{session_id}] YouTube URL detected, skipping download: {video_url}")
+            logger.info(
+                f"[{session_id}] YouTube URL detected, skipping download: {video_url}"
+            )
             session.local_video_path = None
         else:
             session.status = "downloading_video"
-            logger.info(f"[{session_id}] Non-YouTube URL detected, downloading from: {video_url}")
+            logger.info(
+                f"[{session_id}] Non-YouTube URL detected, downloading from: {video_url}"
+            )
             local_video_path = str(
                 await download_video_async(session.video_url, target_dir="video_cache")
             )
             session.local_video_path = local_video_path
-            logger.info(f"[{session_id}] Video downloaded and ready at: {local_video_path}")
+            logger.info(
+                f"[{session_id}] Video downloaded and ready at: {local_video_path}"
+            )
 
         session.status = "video_ready"
 

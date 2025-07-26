@@ -112,9 +112,7 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
                     print("[处理中]..", end="", flush=True)
                     time.sleep(5)
                     if uploaded_file.name:
-                        uploaded_file = self._client.files.get(
-                            name=uploaded_file.name
-                        )
+                        uploaded_file = self._client.files.get(name=uploaded_file.name)
 
                 if (
                     uploaded_file
@@ -195,14 +193,16 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
         if mode == "video":
             if not self._video_input:
                 raise RuntimeError("Video input not set.")
-                
+
             is_url = self._video_input.startswith(("http://", "https://"))
             if is_url:
                 file_data = FileData(file_uri=self._video_input, mime_type="video/mp4")
                 video_part = Part(file_data=file_data)
             else:
                 if not self._video_file:
-                    raise RuntimeError("Local video file was not properly processed and stored.")
+                    raise RuntimeError(
+                        "Local video file was not properly processed and stored."
+                    )
                 video_part = self._video_file
 
             # For video mode, use original video file or URL

@@ -1,5 +1,6 @@
 from fastapi import WebSocket
 
+
 class ConnectionManager:
     """Manages active WebSocket connections."""
 
@@ -23,4 +24,4 @@ class ConnectionManager:
             await connection.send_text(message)
 
 
-manager = ConnectionManager() 
+manager = ConnectionManager()

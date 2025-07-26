@@ -40,28 +40,30 @@ class FishAudioTTSEngine(TTSInterface):
         self.latency = latency
         self.session = Session(apikey=api_key, base_url=base_url)
 
-    async def generate_audio(self, text: str, voice: Optional[str] = None) -> Optional[str]:
+    async def generate_audio(
+        self, text: str, voice: Optional[str] = None
+    ) -> Optional[str]:
         """
         Generate speech audio and return as base64 string.
-        
+
         Args:
             text: The text to speak
             voice: Optional voice parameter (not used in Fish Audio, uses reference_id instead)
-            
+
         Returns:
             Base64 encoded linear PCM WAV audio data, or None if generation fails
         """
         try:
             # Create temporary files for raw audio and converted PCM audio
-            with tempfile.NamedTemporaryFile(suffix=f".{self.file_extension}", delete=False) as raw_temp_file:
+            with tempfile.NamedTemporaryFile(
+                suffix=f".{self.file_extension}", delete=False
+            ) as raw_temp_file:
                 raw_temp_path = raw_temp_file.name
 
                 # Generate audio using Fish Audio API
                 for chunk in self.session.tts(
                     TTSRequest(
-                        text=text, 
-                        reference_id=self.reference_id, 
-                        latency=self.latency
+                        text=text, reference_id=self.reference_id, latency=self.latency
                     )
                 ):
                     raw_temp_file.write(chunk)
@@ -72,9 +74,20 @@ class FishAudioTTSEngine(TTSInterface):
             try:
                 # Convert to linear PCM WAV using ffmpeg (same as Edge TTS)
                 subprocess.run(
-                    ["ffmpeg", "-i", raw_temp_path, "-acodec", "pcm_s16le", "-ar", "44100", "-ac", "2", pcm_temp_path],
+                    [
+                        "ffmpeg",
+                        "-i",
+                        raw_temp_path,
+                        "-acodec",
+                        "pcm_s16le",
+                        "-ar",
+                        "44100",
+                        "-ac",
+                        "2",
+                        pcm_temp_path,
+                    ],
                     check=True,
-                    capture_output=True
+                    capture_output=True,
                 )
 
                 # Read the converted PCM audio file and encode to base64
