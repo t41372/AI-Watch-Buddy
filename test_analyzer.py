@@ -1,4 +1,4 @@
-from video_analyzer import analyze_video
+from ai_watch_buddy.prompts.video_analyzer import invoke_gemini_vids
 
 # 测试示例
 if __name__ == "__main__":
@@ -107,7 +107,7 @@ if __name__ == "__main__":
 
     # 调用分析函数
     print("开始分析视频...")
-    result = analyze_video(
+    result = invoke_gemini_vids(
         video_path=video_path,
         system_prompt=system_prompt,
         user_prompt=user_prompt,

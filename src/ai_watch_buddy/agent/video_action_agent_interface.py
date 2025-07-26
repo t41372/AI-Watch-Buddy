@@ -4,6 +4,9 @@ from typing import AsyncGenerator, Dict, List, Optional
 from google import genai
 from google.genai.types import File, Content
 
+from ..actions import Action
+
+
 class VideoActionAgentInterface(abc.ABC):
     """
     An interface for a Gemini agent that analyzes a video to produce a summary
@@ -81,12 +84,12 @@ class VideoActionAgentInterface(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    async def generate(self, mode: str) -> AsyncGenerator[Dict, None]:
+    async def produce_action_stream(self, mode: str) -> AsyncGenerator[Action, None]:
         """
         Generates a stream of structured actions from the model.
 
         This method constructs the context based on the specified mode and streams
-        the response. 
+        the response.
         It is designed to yield a dictionary for each complete JSON object received from the model.
 
         Args:
@@ -100,5 +103,4 @@ class VideoActionAgentInterface(abc.ABC):
         """
         # The 'yield' keyword makes this a generator, matching the signature.
         # This is a placeholder and will not be executed in the interface.
-        yield {}
         raise NotImplementedError
