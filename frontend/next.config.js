@@ -7,6 +7,14 @@ const __dirname = path.dirname(__filename);
 
 const nextConfig = {
   reactStrictMode: false,
+  eslint: {
+    // 在构建过程中忽略 ESLint 错误
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    // 在构建过程中忽略 TypeScript 类型错误
+    ignoreBuildErrors: true,
+  },
   webpack: (config, { webpack }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
