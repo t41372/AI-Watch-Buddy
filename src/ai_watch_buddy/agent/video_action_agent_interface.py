@@ -16,8 +16,8 @@ class VideoActionAgentInterface(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def client(self) -> genai.GenerativeModel:
-        """The initialized GenerativeModel client for API communication."""
+    def client(self) -> genai.Client:
+        """The initialized Gemini client for API communication."""
         raise NotImplementedError
 
     @property
