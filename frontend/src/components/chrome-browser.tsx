@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
-import { VideoPlayerWithControls, VideoPlayerWithControlsRef } from './video-player-with-controls';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { VideoPlayerWithControls } from './video-player-with-controls';
 import { useDraggable } from '@/hooks/use-draggable';
 import { useSession } from '@/hooks/use-session';
 import { useWebSocketContext } from '@/context/websocket-context';
@@ -23,12 +23,7 @@ interface ChromeBrowserProps {
   onVideoTimeUpdate?: (currentTime: number) => void;
 }
 
-export interface ChromeBrowserRef {
-  pauseVideo: () => void;
-  resumeVideo: () => void;
-}
-
-export const ChromeBrowser = forwardRef<ChromeBrowserRef, ChromeBrowserProps>(({ 
+export const ChromeBrowser = ({ 
   videoSrc, 
   onUrlSubmit, 
   className = "", 
@@ -36,7 +31,7 @@ export const ChromeBrowser = forwardRef<ChromeBrowserRef, ChromeBrowserProps>(({
   onPositionChange,
   sessionConfig,
   onVideoTimeUpdate
-}: ChromeBrowserProps, ref) => {
+}: ChromeBrowserProps) => {
   const [urlInput, setUrlInput] = useState(videoSrc || "");
   const [currentUrl, setCurrentUrl] = useState(videoSrc || "");
 
@@ -50,7 +45,7 @@ export const ChromeBrowser = forwardRef<ChromeBrowserRef, ChromeBrowserProps>(({
   const [currentTime, setCurrentTime] = useState(0);
   const urlInputRef = useRef<HTMLInputElement>(null);
   const handleRef = useRef<HTMLDivElement>(null);
-  const videoPlayerRef = useRef<VideoPlayerWithControlsRef>(null); // Reference to VideoPlayerWithControls
+  const videoPlayerRef = useRef<any>(null); // Reference to VideoPlayerWithControls
 
   // 添加一个 ref 来跟踪正在执行的 actions
   const executingActionsRef = useRef<Set<string>>(new Set());
@@ -370,16 +365,6 @@ export const ChromeBrowser = forwardRef<ChromeBrowserRef, ChromeBrowserProps>(({
     );
   };
 
-  // Expose video control methods
-  useImperativeHandle(ref, () => ({
-    pauseVideo: () => {
-      videoPlayerRef.current?.pause();
-    },
-    resumeVideo: () => {
-      videoPlayerRef.current?.resume();
-    }
-  }));
-
   return (
     <div
       className={`${className} bg-white rounded-lg shadow-2xl overflow-hidden border border-gray-200`}
@@ -662,4 +647,4 @@ export const ChromeBrowser = forwardRef<ChromeBrowserRef, ChromeBrowserProps>(({
       </div>
     </div>
   );
-}); 
+}; 
