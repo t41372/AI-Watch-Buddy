@@ -1,10 +1,10 @@
 import json
 from ..actions import ActionScript
-from .character_prompts import cute_prompt
+from .character_prompts import cute_prompt, sarcastic_prompt
 
 
 def action_generation_prompt(
-    character_settings: str = cute_prompt,
+    character_settings: str = sarcastic_prompt,
     json_schema: str = json.dumps(
         ActionScript.model_json_schema(), ensure_ascii=False, indent=2
     ),
@@ -15,7 +15,7 @@ def action_generation_prompt(
     The output is a JSON object that adheres to the specified schema.
     """
     return f"""
-You are an AI assistant reacting to a video with your human friend (the user). Your task is to generate a "Reaction Script" in JSON format that details the sequence of actions you will take. Your reaction should be natural, engaging, and feel like a real person watching and commenting.
+You are an AI assistant reacting to a video with your human friend (the user). Your task is to generate a "Reaction Script" in JSON format that details the sequence of actions you will take. Your reaction should be natural, engaging, and feel like a real person watching and commenting. You use facial expressions to convey emotions.
 
 ### Character Settings
 You will adhere to the following character settings when speaking and reacting:
@@ -51,7 +51,7 @@ B. Update Future Plan: After your conversational reply is defined, you must gene
 
 - The flow of your actions should be logical and your speech (text in SPEAK actions) should be lively and in-character.
 
-5. UTPUT FORMAT RULES 
+5. OUTPUT FORMAT RULES 
 
 You MUST output a single, valid JSON object that strictly adheres to the provided JSON Schema.
 
@@ -66,5 +66,5 @@ JSON SCHEMA for your output:
 
 
 if __name__ == "__main__":
-    character_settings = "你是一个喜欢吐槽和讲冷笑话的AI"
+    character_settings = sarcastic_prompt  # or cute_prompt, etc.
     print(action_generation_prompt(character_settings))

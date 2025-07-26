@@ -2,6 +2,26 @@ import json
 from typing import Literal, List
 from pydantic import BaseModel, Field, RootModel
 
+Emotions = Literal[
+    "neutral",
+    "coldness",
+    "disgust",
+    "sad",
+    "worry",
+    "confusion",
+    "anger",
+    "surprise",
+    "expectation",
+    "joy",
+    "excitement",
+    "pride",
+    "shy",
+    "stunned",
+    "embarrassed",
+    "play_cool",
+    "drink_tea",
+]
+
 
 # 這是一個基礎模型，定義了所有 Action 的共性
 class BaseAction(BaseModel):
@@ -30,6 +50,21 @@ class BaseAction(BaseModel):
 # --- 開始定義具體的 Action 類型 ---
 
 
+# 0. 表情 (Emotion) - 這是一個特殊的 Action，用於在說話時表達情感
+class ExpressionAction(BaseAction):
+    """
+    **请你积极切换表情。**
+    這個動作用来做表情，AI 可以选择表情來表達情感。当这个 Action 被触发时，AI 的脸上会显示指定的表情。你可以在 idle 看视频的时候使用这个 Action 来让 AI 的表情更生动。
+    表情比说话更重要，对表达情感更有用。请你更多地使用这个 Action 来表达情感。你并不用这么啰嗦，你可以用表情表达自己，避免打断视频观看。
+    """
+
+    action_type: Literal["EXPRESSION"] = "EXPRESSION"
+    emotion_expressions: Emotions = Field(
+        ...,
+        description="可以选择的表情，你可以选一个。这个表情会显示在 AI 的脸上。",
+    )
+
+
 # 1. 說話 (Speak)
 class SpeakAction(BaseAction):
     """
@@ -42,11 +77,9 @@ class SpeakAction(BaseAction):
         None,
         description="由 TTS (Text-to-Speech) 服務生成的音頻數據的標識符或路徑。此欄位由後端系統填充，LLM 無需填寫。",
     )
-    #TODO emotion_expressions: Literal[]
     # 這個布林值非常關鍵，它決定了是「畫外音」還是「暫停解說」
     pause_video: bool = Field(
-        default=True,
-        description="決定說話時是否需要暫停影片。True 表示暫停影片進行解說。False 表示在影片繼續播放的同時發表評論（畫外音）。推荐使用 False 以保持影片流暢性，除非句子特别特别长。",
+        description="決定說話時是否需要暫停影片。True 表示暫停影片進行解說。False 表示在影片繼續播放的同時發表評論（畫外音）。推荐使用 False 以保持影片流暢性。如果需要 pause，可以使用 PauseAction。",
     )
 
 
@@ -118,7 +151,14 @@ class EndReaction(BaseAction):
 # 這一步是 Pydantic V2 的精華所在
 # 我們告訴 Pydantic，所有 Action 的聯集由 'action_type' 這個欄位來區分
 # 這使得解析 JSON 數據時可以根據 'action_type' 的值自動匹配到對應的 Action 模型
-Action = SpeakAction | PauseAction | SeekAction | ReplaySegmentAction | EndReaction
+Action = (
+    SpeakAction
+    | PauseAction
+    | SeekAction
+    | ReplaySegmentAction
+    | EndReaction
+    | ExpressionAction
+)
 
 
 # 最後，我們的 Action Script 就是一個 Action 的列表

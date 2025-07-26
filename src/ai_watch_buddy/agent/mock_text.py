@@ -46,132 +46,351 @@ The song fades out with repetitions of the main chorus line. The video concludes
 """
 
 sample_json = """
-    [
+[
   {
-    "id": "e0b02f90-8452-442c-a28a-77c8e8749c95",
-    "trigger_timestamp": 0.5,
-    "comment": "开幕雷击，先表达一下震惊，顺便吐槽一下这个离谱的标题。",
-    "action_type": "SPEAK",
-    "text": "啊？等一下，UCLA计算机硕士...在孟加拉上学？这是什么地狱开局啊喂！",
-    "pause_video": true
+    "id": "e6a2c27b-2e90-4d8b-9e12-4f7f2b1a8d0b",
+    "trigger_timestamp": 0.0,
+    "comment": "Initial recognition of the Rickroll, expressing humorous annoyance.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "disgust"
   },
   {
-    "id": "18f75c2e-4b48-4389-9e8c-529a9e3a62d0",
-    "trigger_timestamp": 7,
-    "comment": "经典恒河水，必须得吐槽一下，突出一个腹黑。",
+    "id": "c1d1a6e9-7c4f-4a0e-9b3b-8f2e7d6c5b4a",
+    "trigger_timestamp": 0.0,
+    "comment": "Reacting to being Rickrolled right at the start.",
     "action_type": "SPEAK",
-    "text": "起床第一件事，先来一杯纯天然的恒河茶，这才是真正的大学牲啊！你看他喝完，眼神都清澈了许多呢（大概）。",
-    "pause_video": true
-  },
-  {
-    "id": "c138fd94-912f-4c12-9c3f-c80f082e6d6c",
-    "trigger_timestamp": 14,
-    "comment": "对冷水浇头和身材进行评论，带一点花痴的感觉，但还是以搞笑为主。",
-    "action_type": "SPEAK",
-    "text": "哇哦，冷水喷醒身体...顺便秀一下腹肌是吧？懂了，这是高材生的独特叫醒服务。",
+    "text": "我焯！什么情况？开局就给我Rickroll？！乐！",
     "pause_video": false
   },
   {
-    "id": "a92e10c7-e547-4f81-80a9-197147b30c33",
-    "trigger_timestamp": 21,
-    "comment": "看到他吃东西的痛苦面具和被大姐强制喂食，忍不住笑出来，并进行腹黑吐槽。",
+    "id": "f8b7e6a5-4d3c-2b1a-0e9d-8c7b6a5e4d3c",
+    "trigger_timestamp": 0.0,
+    "comment": "Transitioning to amusement after the initial shock.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "joy"
+  },
+  {
+    "id": "a0d9b8c7-e6f5-4a3b-2c1d-0e9f8a7b6c5d",
+    "trigger_timestamp": 2.0,
+    "comment": "Commenting on Rick Astley's classic 80s style.",
+    "action_type": "SPEAK",
+    "text": "这发型，这穿搭，典中典啊，梦回80年代电子迪厅了属于是！",
+    "pause_video": false
+  },
+  {
+    "id": "b1c2d3e4-5f6a-7b8c-9d0e-1f2a3b4c5d6e",
+    "trigger_timestamp": 2.0,
+    "comment": "Using 'play_cool' for the 80s aesthetic comment.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "play_cool"
+  },
+  {
+    "id": "c3d4e5f6-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
+    "trigger_timestamp": 10.0,
+    "comment": "Sarcastic comment on the chain-link fence background.",
+    "action_type": "SPEAK",
+    "text": "这背景，这铁丝网，是准备拍《肖申克的救赎》的番外篇吗？",
+    "pause_video": false
+  },
+  {
+    "id": "d5e6f7a8-9b0c-1d2e-3f4a-5b6c7d8e9f0a",
+    "trigger_timestamp": 10.0,
+    "comment": "Sarcastic confusion about the setting.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "confusion"
+  },
+  {
+    "id": "e7f8a9b0-c1d2-3e4f-5a6b-7c8d9e0f1a2b",
+    "trigger_timestamp": 15.0,
+    "comment": "Resetting expression to neutral.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "neutral"
+  },
+  {
+    "id": "f9a0b1c2-d3e4-5f6a-7b8c-9d0e1f2a3b4c",
+    "trigger_timestamp": 15.0,
+    "comment": "Commenting on the woman's hair flip with a meme reference.",
+    "action_type": "SPEAK",
+    "text": "这甩头，这自信，是刚从电子厂下班的打工人吗？",
+    "pause_video": false
+  },
+  {
+    "id": "g1h2i3j4-k5l6-7m8n-9o0p-1q2r3s4t5u6v",
+    "trigger_timestamp": 15.0,
+    "comment": "Sarcastic expression for the hair flip comment.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "sarcastic"
+  },
+  {
+    "id": "h3i4j5k6-l7m8-9n0o-1p2q-3r4s5t6u7v8w",
+    "trigger_timestamp": 23.0,
+    "comment": "Resetting expression to neutral.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "neutral"
+  },
+  {
+    "id": "i5j6k7l8-m9n0-1o2p-3q4r-5s6t7u8v9w0x",
+    "trigger_timestamp": 23.0,
+    "comment": "Sarcastic comment about Rick's sunglasses and singing.",
+    "action_type": "SPEAK",
+    "text": "这墨镜一戴，谁都不爱。哥，你唱得再深情，也挡不住这潮味儿啊。",
+    "pause_video": false
+  },
+  {
+    "id": "j7k8l9m0-n1o2-3p4q-5r6s-7t8u9v0w1x2y",
+    "trigger_timestamp": 23.0,
+    "comment": "Expression for the sunglasses comment.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "play_cool"
+  },
+  {
+    "id": "k9l0m1n2-o3p4-5q6r-7s8t-9u0v1w2x3y4z",
+    "trigger_timestamp": 30.0,
+    "comment": "Reacting to the shadow dancing.",
+    "action_type": "SPEAK",
+    "text": "哈哈，影子都比我舞姿好！",
+    "pause_video": false
+  },
+  {
+    "id": "l1m2n3o4-p5q6-7r8s-9t0u-1v2w3x4y5z6a",
+    "trigger_timestamp": 30.0,
+    "comment": "Expressing joy at the shadow dancing.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "joy"
+  },
+  {
+    "id": "m3n4o5p6-q7r8-9s0t-1u2v-3w4x5y6z7a8b",
+    "trigger_timestamp": 38.0,
+    "comment": "Resetting expression to neutral.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "neutral"
+  },
+  {
+    "id": "n5o6p7q8-r9s0-1t2u-3v4w-5x6y7z8a9b0c",
+    "trigger_timestamp": 38.0,
+    "comment": "Sarcastic comment on the woman's retro outfit.",
+    "action_type": "SPEAK",
+    "text": "这裙子，这复古范儿，感觉她下一秒就要给我安利小红书爆款了。",
+    "pause_video": false
+  },
+  {
+    "id": "o7p8q9r0-s1t2-3u4v-5w6x-7y8z9a0b1c2d",
+    "trigger_timestamp": 38.0,
+    "comment": "Sarcastic expression for the outfit comment.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "sarcastic"
+  },
+  {
+    "id": "p9r0s1t2-u3v4-5w6x-7y8z-9a0b1c2d3e4f",
+    "trigger_timestamp": 44.0,
+    "comment": "Resetting expression to neutral.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "neutral"
+  },
+  {
+    "id": "q1s2t3u4-v5w6-7x8y-9z0a-1b2c3d4e5f6g",
+    "trigger_timestamp": 44.0,
+    "comment": "Commenting on the iconic chorus.",
+    "action_type": "SPEAK",
+    "text": "Never gonna give you up! 这句词儿，真是互联网精神图腾了，谁懂啊，乐死我了。",
+    "pause_video": false
+  },
+  {
+    "id": "r3t4u5v6-w7x8-9y0z-1a2b-3c4d5e6f7g8h",
+    "trigger_timestamp": 44.0,
+    "comment": "Expressing joy at the meme.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "joy"
+  },
+  {
+    "id": "s5u6v7w8-x9y0-1z2a-3b4c-5d6e7f8g9h0i",
+    "trigger_timestamp": 51.0,
+    "comment": "Commenting on the bartender's appearance and expression.",
+    "action_type": "SPEAK",
+    "text": "WTF，这个吧台小哥是来砸场子的吗？看这表情，一脸不屑，感觉他早就被Rickroll过一百遍了。",
+    "pause_video": true
+  },
+  {
+    "id": "t7v8w9x0-y1z2-3a4b-5c6d-7e8f9g0h1i2j",
+    "trigger_timestamp": 51.0,
+    "comment": "Expressing disdain and sarcasm for the bartender.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "disgust"
+  },
+  {
+    "id": "u9w0x1y2-z3a4-5b6c-7d8e-9f0g1h2i3j4k",
+    "trigger_timestamp": 51.0,
+    "comment": "Switching to a sarcastic expression.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "sarcastic"
+  },
+  {
+    "id": "v1x2y3z4-a5b6-7c8d-9e0f-1g2h3i4j5k6l",
+    "trigger_timestamp": 53.0,
+    "comment": "Pausing to let the comment and expression sink in.",
     "action_type": "PAUSE",
-    "duration_seconds": 6
+    "duration_seconds": 2.0
   },
   {
-    "id": "d4c9d5d8-0f66-4e4f-b1e7-91f94d93026f",
-    "trigger_timestamp": 22,
-    "comment": "看到他吃东西的痛苦面具和被大姐强制喂食，忍不住笑出来，并进行腹黑吐槽。",
+    "id": "w3y4z5a6-b7c8-9d0e-1f2g-3h4i5j6k7l8m",
+    "trigger_timestamp": 141.0,
+    "comment": "Reacting to the bartender's fall with excitement.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "excitement"
+  },
+  {
+    "id": "x5z6a7b8-c9d0-1e2f-3g4h-5i6j7k8l9m0n",
+    "trigger_timestamp": 141.0,
+    "comment": "Commenting on the bartender's dramatic fall.",
     "action_type": "SPEAK",
-    "text": "哈哈哈哈，你看他那个表情，好像在说“这玩意儿吃了真的不会喷射吗？” 结果大姐直接上手了，挑食可不是好孩子哦~",
+    "text": "哦豁！他是不是也被自己帅到了？原地升天了属于是！",
     "pause_video": true
   },
   {
-    "id": "f5f5c3b9-a4e1-45d2-ac53-06639c05e197",
-    "trigger_timestamp": 36,
-    "comment": "对“地铁冲浪”这个离谱的导航结果进行吐槽，引出游戏梗。",
-    "action_type": "SPEAK",
-    "text": "等会儿？地铁冲浪？这AI是懂上学的，直接带你玩真人版Subway Surfers是吧！",
-    "pause_video": true
+    "id": "y7a8b9c0-d1e2-3f4g-5h6i-7j8k9l0m1n2o",
+    "trigger_timestamp": 141.0,
+    "comment": "Expressing joy at the unexpected action.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "joy"
   },
   {
-    "id": "1e7e4f32-7c64-469b-9877-3e839e92b3a9",
-    "trigger_timestamp": 43,
-    "comment": "他滑倒的瞬间太搞笑了，必须得吐槽一下AI的马后炮行为。",
+    "id": "z9b0c1d2-e3f4-5g6h-7i8j-9k0l1m2n3o4p",
+    "trigger_timestamp": 142.0,
+    "comment": "Replaying the moment the bartender falls.",
     "action_type": "REPLAY_SEGMENT",
-    "start_timestamp": 41,
-    "end_timestamp": 44,
-    "post_replay_behavior": "STAY_PAUSED_AT_END"
+    "start_timestamp": 141.0,
+    "end_timestamp": 143.0,
+    "post_replay_behavior": "RESUME_FROM_ORIGINAL"
   },
   {
-    "id": "b3b19b22-8d77-4c07-955a-c635df08272f",
-    "trigger_timestamp": 44,
-    "comment": "他滑倒的瞬间太搞笑了，必须得吐槽一下AI的马后炮行为。",
+    "id": "a0c1d2e3-f4g5-6h7i-8j9k-0l1m2n3o4p5q",
+    "trigger_timestamp": 143.0,
+    "comment": "Further expressing joy and humor about the fall.",
     "action_type": "SPEAK",
-    "text": "“小心滑倒”...噗！你咋不早说啊！这AI的延迟比我还高！",
+    "text": "哈哈哈哈，必须重播这段！笑死了，年度最佳迷惑行为大赏预定！",
     "pause_video": true
   },
   {
-    "id": "8a7c2b0d-2e6f-4228-9711-20a23d9a334f",
-    "trigger_timestamp": 58,
-    "comment": "看到两车交汇的惊险场面，发出夸张的惊呼。",
+    "id": "b2d3e4f5-g6h7-8i9j-0k1l-2m3n4o5p6q7r",
+    "trigger_timestamp": 207.0,
+    "comment": "Resetting expression to neutral.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "neutral"
+  },
+  {
+    "id": "c4e5f6g7-h8i9-0j1k-2l3m-4n5o6p7q8r9s",
+    "trigger_timestamp": 207.0,
+    "comment": "Commenting on the male dancer's moves.",
     "action_type": "SPEAK",
-    "text": "卧槽！卧槽！对面来车了！极限运动啊这是！太刺激了！",
+    "text": "这个小哥跳得还挺卖力，嗯，有我以前跳广播体操那味儿了。",
     "pause_video": false
   },
   {
-    "id": "4d3f56d0-61d0-4d57-b4d4-5309d9492169",
-    "trigger_timestamp": 76,
-    "comment": "看到他在车顶躺着写作业，吐槽这种学霸行为。",
+    "id": "d6f7g8h9-i0j1-2k3l-4m5n-6o7p8q9r0s1t",
+    "trigger_timestamp": 207.0,
+    "comment": "Expression for the dancing comment.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "play_cool"
+  },
+  {
+    "id": "e8g9h0i1-j2k3-4l5m-6n7o-8p9q0r1s2t3u",
+    "trigger_timestamp": 246.0,
+    "comment": "Expressing surprise at the acrobatic dance move.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "surprise"
+  },
+  {
+    "id": "f0h1i2j3-k4l5-6m7n-8o9p-0q1r2s3t4u5v",
+    "trigger_timestamp": 246.0,
+    "comment": "Enthusiastic reaction to the dancer's move.",
     "action_type": "SPEAK",
-    "text": "不是，哥们，你在火车顶上玩丛林飞跃，顺便写作业？这就是卷王的日常吗？",
+    "text": "我靠，这空中飞人？这是在拍舞蹈MV还是武侠片啊？教练，我想学这个！",
     "pause_video": true
   },
   {
-    "id": "2c2e0b1d-8452-4414-9989-d4c398328c11",
-    "trigger_timestamp": 85,
-    "comment": "看到路人吐槽“神庙逃亡”，觉得这个梗太妙了，必须暂停分享一下。",
+    "id": "g2i3j4k5-l6m7-8n9o-0p1q-2r3s4t5u6v7w",
+    "trigger_timestamp": 246.0,
+    "comment": "Expressing excitement for learning the dance move.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "excitement"
+  },
+  {
+    "id": "h4j5k6l7-m8n9-0o1p-2q3r-4s5t6u7v8w9x",
+    "trigger_timestamp": 248.0,
+    "comment": "Pausing to appreciate the move.",
+    "action_type": "PAUSE",
+    "duration_seconds": 2.0
+  },
+  {
+    "id": "i6k7l8m9-n0o1-2p3q-4r5s-6t7u8v9w0x1y",
+    "trigger_timestamp": 303.0,
+    "comment": "Commenting on the bartender joining the dancing with sarcastic glee.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "joy"
+  },
+  {
+    "id": "j8l9m0n1-o2p3-4q5r-6s7t-8u9v0w1x2y3z",
+    "trigger_timestamp": 303.0,
+    "comment": "Sarcastic comment about the bartender giving in.",
     "action_type": "SPEAK",
-    "text": "“你搁这玩神庙逃亡呢？” 哈哈哈哈，官方吐槽最为致命！太对了哥，就是这个味儿！",
+    "text": "你看他！他也疯了！这是被Rickroll到崩溃了吗？哈哈，用户彻底怒了！",
+    "pause_video": false
+  },
+  {
+    "id": "k0m1n2o3-p4q5-6r7s-8t9u-0v1w2x3y4z5a",
+    "trigger_timestamp": 303.0,
+    "comment": "Expression for the bartender comment.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "sarcastic"
+  },
+  {
+    "id": "l2n3o4p5-q6r7-8s9t-0u1v-2w3x4y5z6a7b",
+    "trigger_timestamp": 310.0,
+    "comment": "Resetting expression to neutral.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "neutral"
+  },
+  {
+    "id": "m4p5q6r7-s8t9-0u1v-2w3x-4y5z6a7b8c9d",
+    "trigger_timestamp": 310.0,
+    "comment": "Concluding the reaction with humorous frustration about the song's loop.",
+    "action_type": "SPEAK",
+    "text": "行了行了，知道你永不放弃，永不放手了。下次能不能来点新活儿？我的脑子里已经全是这旋律了，精神污染！",
     "pause_video": true
   },
   {
-    "id": "a5d89e5a-7e3f-4e0e-af10-2f3b7d14e0f5",
-    "trigger_timestamp": 94,
-    "comment": "对车顶卖东西以及送包子的行为表示惊叹和搞笑评论。",
+    "id": "n6r7s8t9-u0v1-2w3x-4y5z-6a7b8c9d0e1f",
+    "trigger_timestamp": 310.0,
+    "comment": "Expressing disgust at the repetitive nature of the meme.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "disgust"
+  },
+  {
+    "id": "o8t9u0v1-w2x3-4y5z-6a7b-8c9d0e1f2g3h",
+    "trigger_timestamp": 312.0,
+    "comment": "Pausing after the final comment.",
+    "action_type": "PAUSE",
+    "duration_seconds": 2.0
+  },
+  {
+    "id": "p0v1w2x3-y4z5-6a7b-8c9d-0e1f2g3h4i5j",
+    "trigger_timestamp": 333.0,
+    "comment": "Final sarcastic remark about Rick Astley winning.",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "sarcastic"
+  },
+  {
+    "id": "q2x3y4z5-a6b7-8c9d-0e1f-2g3h4i5j6k7l",
+    "trigger_timestamp": 333.0,
+    "comment": "Concluding the reaction, demanding royalties for future Rickrolls.",
     "action_type": "SPEAK",
-    "text": "火车顶上还有移动小卖部？服务也太周到了吧！大哥还直接送他了，孟加拉真是太有...人情味了！",
+    "text": "行吧，Rick Astley赢麻了。下次再Rickroll我，我就要申请专利费了！",
     "pause_video": true
   },
   {
-    "id": "e6f47b22-1d59-4d57-8d0f-4e12c1d3c001",
-    "trigger_timestamp": 122,
-    "comment": "看到他用手机远程控制电脑交作业，以一种夸张的、仿佛看广告的语气来吐槽这个硬核操作。",
-    "action_type": "REPLAY_SEGMENT",
-    "start_timestamp": 118,
-    "end_timestamp": 122,
-    "post_replay_behavior": "STAY_PAUSED_AT_END"
-  },
-  {
-    "id": "9b1e5a8f-2f88-4f1e-9a99-f2e7c3b2d18d",
-    "trigger_timestamp": 122.5,
-    "comment": "看到他用手机远程控制电脑交作业，以一种夸张的、仿佛看广告的语气来吐槽这个硬核操作。",
-    "action_type": "SPEAK",
-    "text": "我懂了！原来是广告！在命悬一线的时候，用手机远程交作业，这功能也太硬核了吧！只要思想不滑坡，办法总比困难多！",
-    "pause_video": true
-  },
-  {
-    "id": "f8a09b3c-6e7d-411a-8b1e-9a7c8d9e2b1f",
-    "trigger_timestamp": 150,
-    "comment": "看到他成功交完作业，发表最后的感慨，并与观众互动。",
-    "action_type": "SPEAK",
-    "text": "Mission Accomplished！任务完成！真是惊心动魄的上学路啊。呐，观众姥爷们，你们上学的时候有这么刺激吗？",
-    "pause_video": true
-  },
-  {
-    "id": "3a09e1d8-4f3b-4c2d-9e1a-8f7b6c5d4e3f",
-    "trigger_timestamp": 158,
-    "comment": "视频结束，发出最后的结束语。",
+    "id": "r4z5a6b7-c8d9-0e1f-2g3h-4i5j6k7l8m9n",
+    "trigger_timestamp": 333.0,
+    "comment": "Ending the reaction script.",
     "action_type": "END_REACTION"
   }
 ]"""
