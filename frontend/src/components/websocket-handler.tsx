@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, ReactNode, useMemo } from 'react';
 import { useChat } from '@/context/chat-context';
 import { useLive2DExpression } from '@/hooks/use-live2d-expression';
+import { useSettings } from '@/context/settings-context';
 import { 
   WebSocketContext, 
   WebSocketStatus, 
@@ -17,7 +18,8 @@ interface WebSocketHandlerProps {
   url?: string;
 }
 
-export function WebSocketHandler({ children, url = 'ws://127.0.0.1:8000/ws' }: WebSocketHandlerProps) {
+export function WebSocketHandler({ children, url }: WebSocketHandlerProps) {
+  const { generalSettings } = useSettings();
   // WebSocket 连接状态
   const [status, setStatus] = useState<WebSocketStatus>('disconnected');
   const [error, setError] = useState<string | null>(null);
@@ -225,7 +227,8 @@ export function WebSocketHandler({ children, url = 'ws://127.0.0.1:8000/ws' }: W
 
   // 连接 WebSocket
   const connect = useCallback((sessionId: string) => {
-    const wsUrl = `${url}/${sessionId}`;
+    const baseWsUrl = url || generalSettings.websocketBaseUrl;
+    const wsUrl = `${baseWsUrl}/${sessionId}`;
     
     if (!sessionId || wsRef.current?.readyState === WebSocket.OPEN) {
       return; // No sessionId or already connected
@@ -280,7 +283,7 @@ export function WebSocketHandler({ children, url = 'ws://127.0.0.1:8000/ws' }: W
       setStatus('error');
       setError('Failed to create connection');
     }
-  }, [url, handleMessage]);
+  }, [url, generalSettings.websocketBaseUrl, handleMessage]);
 
   // 断开连接
   const disconnect = useCallback(() => {

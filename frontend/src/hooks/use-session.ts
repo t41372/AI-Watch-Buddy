@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useSettings } from '@/context/settings-context';
+import { getServiceUrl } from '@/utils/url';
 
 export interface SessionRequest {
   video_url: string;
@@ -44,7 +45,8 @@ export const useSession = (): UseSessionReturn => {
       console.log('Creating session with request:', request);
       console.log('Request JSON:', JSON.stringify(request, null, 2));
 
-      const response = await fetch(`${generalSettings.baseUrl}/api/v1/sessions`, {
+      const sessionUrl = getServiceUrl(generalSettings.primaryBaseUrl, generalSettings.secondaryBaseUrl, 'session');
+      const response = await fetch(`${sessionUrl}/api/v1/sessions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,7 +109,7 @@ export const useSession = (): UseSessionReturn => {
       setStatus('error');
       return null;
     }
-  }, []);
+  }, [generalSettings.primaryBaseUrl, generalSettings.secondaryBaseUrl]);
 
   // Reset session state
   const resetSession = useCallback(() => {
