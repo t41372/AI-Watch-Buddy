@@ -22,7 +22,7 @@ from ..prompts.action_gen_prompt import action_generation_prompt
 from ..prompts.character_prompts import cute_prompt
 from .mock_text import fake_summary, sample_json
 
-MOCK: bool = True
+MOCK: bool = False
 
 
 class VideoAnalyzerAgent(VideoActionAgentInterface):
@@ -250,20 +250,29 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
             # Use action prompt for system instruction
             system_prompt = self.action_prompt
         elif mode == "summary" and self._summary:
-            # For summary mode, use text summary
-            logger.critical(">>>> MINIMAX")
-            response = oai_client.chat.completions.create(
-                model="MiniMax-M1",
-                messages=[
-                    {"role": "system", "content": self.action_prompt},
-                    {
-                        "role": "user",
-                        "content": self._summary,
-                    }
-                ].extend(self.contents),
-                stream=True,
+            # For summary mode, use text summary            
+            # 构建 Gemini 格式的内容
+            summary_contents = [
+                Content(
+                    role="user",
+                    parts=[Part.from_text(text=self._summary)],
+                )
+            ]
+            
+            # 添加对话历史
+            summary_contents.extend(self.contents)
+            
+            config = GenerateContentConfig(
+                system_instruction=[Part.from_text(text=self.action_prompt)],
             )
-            for action in str_stream_to_actions_openai(response):
+            
+            llm_stream = self._client.models.generate_content_stream(
+                model="gemini-2.5-flash",
+                contents=summary_contents,
+                config=config,
+            )
+            
+            for action in str_stream_to_actions(llm_stream):
                 yield action
             return
         else:
