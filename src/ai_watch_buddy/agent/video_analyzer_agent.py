@@ -2,6 +2,7 @@ import os
 import time
 from typing import AsyncGenerator, List, Optional
 import asyncio
+from loguru import logger
 
 from google import genai
 from google.genai.types import (
@@ -250,7 +251,7 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
             system_prompt = self.action_prompt
         elif mode == "summary" and self._summary:
             # For summary mode, use text summary
-            print(">>>> MINIMAX")
+            logger.critical(">>>> MINIMAX")
             response = oai_client.chat.completions.create(
                 model="MiniMax-M1",
                 messages=[

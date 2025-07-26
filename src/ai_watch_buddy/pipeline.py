@@ -201,7 +201,7 @@ async def run_initial_generation(session_id: str):
 
         action_generation_task = asyncio.create_task(
             generate_and_queue_actions(
-                session_id, mode="summary", clear_pending_actions=False, early_ready=False
+                session_id, mode="video", clear_pending_actions=False, early_ready=False
             )
         )
 
