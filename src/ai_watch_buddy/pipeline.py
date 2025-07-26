@@ -121,10 +121,10 @@ async def generate_and_queue_actions(
             # Generate audio for SpeakAction
             if isinstance(action, SpeakAction):
                 # Initialize Fish Audio TTS - you'll need to provide your API key
-                # tts_instance = FishAudioTTSEngine(
-                #     api_key=os.getenv("FISH_AUDIO_API_KEY")
-                # )
-                tts_instance = EdgeTTSEngine()
+                tts_instance = FishAudioTTSEngine(
+                    api_key=os.getenv("FISH_AUDIO_API_KEY")
+                )
+                # tts_instance = EdgeTTSEngine()
                 audio_base64 = await tts_instance.generate_audio(action.text)
                 if audio_base64:
                     action.audio = audio_base64

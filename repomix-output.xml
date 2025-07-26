@@ -1,10 +1,10 @@
-This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
 
 <file_summary>
 This section contains a summary of this file.
 
 <purpose>
-This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+This file contains a packed representation of the entire repository's contents.
 It is designed to be easily consumable by AI systems for analysis, code review,
 or other automated processes.
 </purpose>
@@ -32,7 +32,6 @@ The content is organized as follows:
 <notes>
 - Some files may have been excluded based on .gitignore rules and Repomix's configuration
 - Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
-- Files matching these patterns are excluded: frontend
 - Files matching patterns in .gitignore are excluded
 - Files matching default ignore patterns are excluded
 - Files are sorted by Git change count (files with more changes are at the bottom)
@@ -41,39 +40,18 @@ The content is organized as follows:
 </file_summary>
 
 <directory_structure>
-.github/
-  instructions/
-    adx.instructions.md
-docs/
-  api.md
-live2d-models/
-  elaina/
-    cc_LSS.cfg
-    cc_names_LSS.cfg
-    f00.exp3.json
-    f01.exp3.json
-    f02.exp3.json
-    f03.exp3.json
-    f04.exp3.json
-    f05.exp3.json
-    f06.exp3.json
-    f07.exp3.json
-    f08.exp3.json
-    f09.exp3.json
-    f10.exp3.json
-    f11.exp3.json
-    f12.exp3.json
-    f13.exp3.json
-    LSS.cdi3.json
-    LSS.model3.json
-    LSS.physics3.json
 src/
   ai_watch_buddy/
     agent/
       gemini_sample.py
+      mock_text.py
       text_stream_to_action.py
       video_action_agent_interface.py
       video_analyzer_agent.py
+    asr/
+      __init__.py
+      asr_interface.py
+      fish_audio_asr.py
     prompts/
       action_gen_prompt.py
       character_prompts.py
@@ -89,3302 +67,237 @@ src/
     session.py
     test_tts_integration.py
     tts_generator.py
-.env.sample
-.gitignore
-.python-version
-action_list_result.json
-main.py
-pyproject.toml
-schema.json
-test_analyzer.py
-test_video_analyzer_basic.py
-test_video_analyzer_functionality.py
 </directory_structure>
 
 <files>
 This section contains the contents of the repository's files.
 
-<file path=".github/instructions/adx.instructions.md">
----
-applyTo: '**'
----
-这个项目是一个黑客松原型，使用 Python 3.13, uv, fastapi, pydantic v2，目标是实现一个能与用户一同看视频的 AI 语音陪伴，这将使用 websocket 做前后端连接。项目的重点是快速开发和代码简介。注意代码可读性和最佳实践。
+<file path="src/ai_watch_buddy/asr/__init__.py">
+"""AI Watch Buddy ASR (Automatic Speech Recognition) module."""
+
+from .asr_interface import ASRInterface
+from .fish_audio_asr import FishAudioASR
+
+__all__ = ["ASRInterface", "FishAudioASR"]
 </file>
 
-<file path="docs/api.md">
-# AI Watch Buddy API Documentation
+<file path="src/ai_watch_buddy/asr/asr_interface.py">
+"""ASR (Automatic Speech Recognition) interface definition."""
 
-This document outlines the API endpoints and WebSocket communication protocol for AI Watch Buddy.
+from abc import ABC, abstractmethod
+from typing import Optional
 
----
 
-## 1. REST API
-
-The REST API is used to initiate a viewing session.
-
-### Create Session
-
-Creates a new watching session, starts the background processing for generating AI actions, and returns a `session_id` to be used for the WebSocket connection.
-
-- **URL**: `/api/v1/sessions`
-- **Method**: `POST`
-- **Status Code**: `202 Accepted`
-
-#### Request Body
-
-```json
-{
-  "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-  "start_time": 0,
-  "end_time": null,
-  "text": "你是个可爱的猫娘，你说的每句话都会以 “喵～～” 结尾",
-  "character_id": "miao",
-  "user_id": "user_123"
-}
-```
-
-- `video_url` (string, **required**): The URL of the video to watch.
-- `start_time` (float, optional): The start time in seconds. Defaults to `0.0`.
-- `end_time` (float, optional): The end time in seconds. Defaults to `null` (end of video).
-- `text` (string, optional): Additional text prompt from the user.
-- `character_id` (string, **required**): The identifier for the desired AI character.
-- `user_id` (string, optional): The identifier for the user.
-
-#### Success Response (202 Accepted)
-
-```json
-{
-  "session_id": "ses_a8d3f8b9c1e04a5f"
-}
-```
-
-- `session_id` (string): A unique identifier for the session. Use this ID to connect to the WebSocket endpoint.
-
-#### Error Responses
-
-- **`422 Unprocessable Entity`**: Sent if the request data is well-formed but semantically incorrect.
-
-  Example:
-  ```json
-  {
-    "detail": {
-      "error": "UNSUPPORTED_VIDEO_SOURCE",
-      "message": "The provided video URL from 'vimeo.com' is not supported."
-    }
-  }
-  ```
-
----
-
-## 2. WebSocket API
-
-The WebSocket API is used for real-time communication during the viewing session.
-
-- **URL**: `/ws/{session_id}`
-- **Example URL**: `ws://127.0.0.1:8000/ws/ses_a8d3f8b9c1e04a5f`
-
-### Connection
-
-The client should attempt to connect to this endpoint after successfully creating a session via the REST API. If the `session_id` is invalid or not found, the server will close the connection.
-
-### Communication Flow
-
-1.  **Client Connects**: The client establishes a WebSocket connection using the `session_id`.
-2.  **Server Acknowledges**: The server waits for the background video processing to complete.
-3.  **Server Notifies Ready**: Once processing is done, the server sends a `session_ready` message. If processing fails, it sends a `processing_error` message.
-4.  **Real-time Interaction**:
-    - The client periodically sends `timestamp_update` messages with the current video playback time.
-    - The server listens for these updates and sends AI actions (`SPEAK`, `PAUSE_VIDEO`, etc.) when their `trigger_timestamp` is reached.
-    - The client executes the received actions.
-    - The client can notify the server about `action_completed` or `seek_update` events.
-
-### Server-to-Client Messages
-
-#### Session Ready
-
-Indicates that the AI action script has been successfully generated and the server is ready to send actions.
-
-```json
-{
-  "type": "session_ready"
-}
-```
-
-#### Processing Error
-
-Indicates that an error occurred while processing the video or generating actions.
-
-```json
-{
-  "type": "processing_error",
-  "error_code": "ACTION_GENERATION_FAILED",
-  "message": "Failed to generate actions for the video: <details>"
-}
-```
-
-#### AI Action
-
-An action for the client to execute. The model for this is defined in `ai_actions.py`.
-
-```json
-{
-  "id": "e0b02f90-8452-442c-a28a-77c8e8749c95",
-  "trigger_timestamp": 0.5,
-  "comment": "A comment explaining the action's purpose.",
-  "action_type": "SPEAK",
-  "text": "Hey, what is this video about?",
-  "pause_video": true
-}
-```
-
-### Client-to-Server Messages
-
-#### Timestamp Update
-
-Sent by the client to inform the server of the current video playback time. This is the primary message used to trigger AI actions.
-
-```json
-{
-  "type": "timestamp_update",
-  "timestamp": 123.45
-}
-```
-
-#### Seek Update
-
-Sent when the user manually changes the video's playback position (scrubbing). The server uses this to reset its internal state and determine the correct next action to send.
-
-```json
-{
-  "type": "seek_update",
-  "timestamp": 240.1
-}
-```
-
-#### Action Completed
-
-Sent by the client to acknowledge that it has finished executing a specific action.
-
-```json
-{
-  "type": "action_completed",
-  "action_id": "e0b02f90-8452-442c-a28a-77c8e8749c95"
-}
-```
+class ASRInterface(ABC):
+    """Abstract base class for ASR services."""
+    
+    @abstractmethod
+    async def transcribe_audio(
+        self, 
+        audio_base64: str, 
+        language: Optional[str] = None
+    ) -> Optional[str]:
+        """
+        Transcribe base64-encoded audio to text.
+        
+        Args:
+            audio_base64: Base64-encoded audio data
+            language: Language code (e.g., "en", "zh"). If None, auto-detect.
+            
+        Returns:
+            Transcribed text, or None if transcription failed
+        """
+        pass
+    
+    @abstractmethod
+    def transcribe_audio_sync(
+        self, 
+        audio_base64: str, 
+        language: Optional[str] = None
+    ) -> Optional[str]:
+        """
+        Synchronous version of transcribe_audio.
+        
+        Args:
+            audio_base64: Base64-encoded audio data
+            language: Language code (e.g., "en", "zh"). If None, auto-detect.
+            
+        Returns:
+            Transcribed text, or None if transcription failed
+        """
+        pass
 </file>
 
-<file path="live2d-models/elaina/cc_LSS.cfg">
-set_special_pose_param LSS 'Param' 0 1 1
-set_special_pose_param LSS 'Param4' 0 1 2
-set_special_pose_param LSS 'Param5' 0 1 3
-set_special_pose_param LSS 'Param6' 0 1 4
-set_special_pose_param LSS 'Param2' 0 1 5
-set_special_pose_param LSS 'Param3' 0 1 6
-set_special_pose_param LSS 'Param7' 0 1 7
-</file>
+<file path="src/ai_watch_buddy/asr/fish_audio_asr.py">
+"""Fish Audio ASR implementation for speech-to-text conversion."""
 
-<file path="live2d-models/elaina/cc_names_LSS.cfg">
-set_friendly_name LSS 'Live2D LSS'
-set_avatar_skin_description LSS default '伊蕾娜！好耶~ https://m.bilibili.com/video/BV1KU4y1x7ep  https://qm.qq.com/cgi-bin/qm/qr?k=zO2OMGsVYbcyqQZvWoNS5HJ8cUPjc-Lh&jump_from=webapi  QQ群894471342  http://5769tx.coding-pages.com/
-</file>
+import base64
+import tempfile
+import os
+from pathlib import Path
+from typing import Optional
+from loguru import logger
 
-<file path="live2d-models/elaina/f00.exp3.json">
-{
-	"Type": "Live2D Expression",
-	"Parameters": [
-		{
-			"Id": "Param6",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param13",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param12",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param10",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param11",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param2",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param5",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param3",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param7",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleX",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleY",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleZ",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeLOpen",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeROpen",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallX",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallY",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param9",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param8",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLY",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLForm",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRY",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRForm",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamMouthForm",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBodyAngleX",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBodyAngleZ",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBodyAngleY",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBreath",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeRSmile",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeLSmile",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRAngle",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRX",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLX",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLAngle",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamCheek",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamHairFront",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamHairSide",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamHairBack",
-			"Value": 0,
-			"Blend": "Add"
-		}
-	]
-}
-</file>
+from .asr_interface import ASRInterface
 
-<file path="live2d-models/elaina/f01.exp3.json">
-{
-	"Type": "Live2D Expression",
-	"Parameters": [
-		{
-			"Id": "ParamEyeLOpen",
-			"Value": -0.308,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeROpen",
-			"Value": -0.341,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamMouthForm",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallX",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLY",
-			"Value": -0.846,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRY",
-			"Value": -0.78,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLForm",
-			"Value": 0.077,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRForm",
-			"Value": 0.385,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleX",
-			"Value": 14.494,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleY",
-			"Value": -1.011,
-			"Blend": "Add"
-		}
-	]
-}
-</file>
+try:
+    from fish_audio_sdk import Session, ASRRequest
+except ImportError:
+    logger.warning("fish_audio_sdk not installed. Please install it with: pip install fish_audio_sdk")
+    Session = None
+    ASRRequest = None
 
-<file path="live2d-models/elaina/f02.exp3.json">
-{
-	"Type": "Live2D Expression",
-	"Parameters": [
-		{
-			"Id": "ParamMouthForm",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeLOpen",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeROpen",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallX",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallY",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleY",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleX",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleZ",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLY",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLForm",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRY",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRForm",
-			"Value": -1,
-			"Blend": "Add"
-		}
-	]
-}
-</file>
 
-<file path="live2d-models/elaina/f03.exp3.json">
-{
-	"Type": "Live2D Expression",
-	"Parameters": [
-		{
-			"Id": "ParamMouthForm",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param5",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeLOpen",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeROpen",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallX",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallY",
-			"Value": -0.5,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleY",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleX",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleZ",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLY",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLForm",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRY",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRForm",
-			"Value": -1,
-			"Blend": "Add"
-		}
-	]
-}
-</file>
-
-<file path="live2d-models/elaina/f04.exp3.json">
-{
-	"Type": "Live2D Expression",
-	"Parameters": [
-		{
-			"Id": "ParamMouthForm",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeLOpen",
-			"Value": -0.5,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeROpen",
-			"Value": -0.5,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallX",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallY",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleY",
-			"Value": -10,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleX",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleZ",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLY",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLForm",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRY",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRForm",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLAngle",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRAngle",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamCheek",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param8",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param9",
-			"Value": -1,
-			"Blend": "Add"
-		}
-	]
-}
-</file>
-
-<file path="live2d-models/elaina/f05.exp3.json">
-{
-	"Type": "Live2D Expression",
-	"Parameters": [
-		{
-			"Id": "ParamMouthForm",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeLSmile",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeRSmile",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamCheek",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeLOpen",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeROpen",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLY",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRY",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLForm",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRForm",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleX",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleY",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleZ",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallX",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallY",
-			"Value": 0,
-			"Blend": "Add"
-		}
-	]
-}
-</file>
-
-<file path="live2d-models/elaina/f06.exp3.json">
-{
-	"Type": "Live2D Expression",
-	"Parameters": [
-		{
-			"Id": "ParamMouthForm",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param5",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeLOpen",
-			"Value": 0.5,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeROpen",
-			"Value": 0.5,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallX",
-			"Value": -0.5,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallY",
-			"Value": -0.5,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleY",
-			"Value": -10,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleX",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleZ",
-			"Value": 5,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLForm",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRForm",
-			"Value": 1,
-			"Blend": "Add"
-		}
-	]
-}
-</file>
-
-<file path="live2d-models/elaina/f07.exp3.json">
-{
-	"Type": "Live2D Expression",
-	"Parameters": [
-		{
-			"Id": "ParamMouthForm",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleY",
-			"Value": -10,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleX",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleZ",
-			"Value": 5,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param3",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param7",
-			"Value": 1,
-			"Blend": "Add"
-		}
-	]
-}
-</file>
-
-<file path="live2d-models/elaina/f08.exp3.json">
-{
-	"Type": "Live2D Expression",
-	"Parameters": [
-		{
-			"Id": "ParamEyeLOpen",
-			"Value": 0.2,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeROpen",
-			"Value": 0.2,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallX",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLY",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLForm",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRY",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRForm",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleY",
-			"Value": -15,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleZ",
-			"Value": 6.923,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamCheek",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeRSmile",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeLSmile",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamMouthForm",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallY",
-			"Value": 1,
-			"Blend": "Add"
-		}
-	]
-}
-</file>
-
-<file path="live2d-models/elaina/f09.exp3.json">
-{
-	"Type": "Live2D Expression",
-	"Parameters": [
-		{
-			"Id": "ParamMouthForm",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeLOpen",
-			"Value": -0.5,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeROpen",
-			"Value": -0.5,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallX",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallY",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleY",
-			"Value": -15,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleX",
-			"Value": -15,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleZ",
-			"Value": 10,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLY",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLForm",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRY",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRForm",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param4",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamCheek",
-			"Value": 1,
-			"Blend": "Add"
-		}
-	]
-}
-</file>
-
-<file path="live2d-models/elaina/f10.exp3.json">
-{
-	"Type": "Live2D Expression",
-	"Parameters": [
-		{
-			"Id": "Param2",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param7",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamMouthForm",
-			"Value": -0.69,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLY",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRY",
-			"Value": 1,
-			"Blend": "Add"
-		}
-	]
-}
-</file>
-
-<file path="live2d-models/elaina/f11.exp3.json">
-{
-	"Type": "Live2D Expression",
-	"Parameters": [
-		{
-			"Id": "ParamMouthForm",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param5",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeLOpen",
-			"Value": 0.7,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeROpen",
-			"Value": 0.7,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallX",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallY",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleY",
-			"Value": -10,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleX",
-			"Value": -10,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleZ",
-			"Value": 5,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLY",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLForm",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRY",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRForm",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamCheek",
-			"Value": 1,
-			"Blend": "Add"
-		}
-	]
-}
-</file>
-
-<file path="live2d-models/elaina/f12.exp3.json">
-{
-	"Type": "Live2D Expression",
-	"Parameters": [
-		{
-			"Id": "Param",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamMouthForm",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeLOpen",
-			"Value": -0.5,
-			"Blend": "Multiply"
-		},
-		{
-			"Id": "ParamEyeROpen",
-			"Value": -0.5,
-			"Blend": "Multiply"
-		},
-		{
-			"Id": "ParamEyeBallX",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallY",
-			"Value": 0,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleX",
-			"Value": -15,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleY",
-			"Value": 10,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamAngleZ",
-			"Value": 5,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLY",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLForm",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRY",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRForm",
-			"Value": -1,
-			"Blend": "Add"
-		}
-	]
-}
-</file>
-
-<file path="live2d-models/elaina/f13.exp3.json">
-{
-	"Type": "Live2D Expression",
-	"Parameters": [
-		{
-			"Id": "ParamMouthForm",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeLOpen",
-			"Value": -0.231,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeROpen",
-			"Value": -0.198,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallX",
-			"Value": -0.143,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeBallY",
-			"Value": -1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLY",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowLForm",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRY",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamBrowRForm",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeLSmile",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamEyeRSmile",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "ParamCheek",
-			"Value": 1,
-			"Blend": "Add"
-		},
-		{
-			"Id": "Param6",
-			"Value": 1,
-			"Blend": "Add"
-		}
-	]
-}
-</file>
-
-<file path="live2d-models/elaina/LSS.cdi3.json">
-{
-	"Version": 3,
-	"Parameters": [
-		{
-			"Id": "Param13",
-			"GroupId": "ParamGroup2",
-			"Name": "参数84"
-		},
-		{
-			"Id": "Param12",
-			"GroupId": "ParamGroup2",
-			"Name": "参数78"
-		},
-		{
-			"Id": "Param10",
-			"GroupId": "ParamGroup2",
-			"Name": "顶发"
-		},
-		{
-			"Id": "Param11",
-			"GroupId": "ParamGroup2",
-			"Name": "顶发2"
-		},
-		{
-			"Id": "Param",
-			"GroupId": "ParamGroup",
-			"Name": "眼镜"
-		},
-		{
-			"Id": "Param2",
-			"GroupId": "ParamGroup",
-			"Name": "啊这"
-		},
-		{
-			"Id": "Param5",
-			"GroupId": "ParamGroup",
-			"Name": "汉"
-		},
-		{
-			"Id": "Param3",
-			"GroupId": "ParamGroup",
-			"Name": "好耶"
-		},
-		{
-			"Id": "Param7",
-			"GroupId": "ParamGroup",
-			"Name": "眼睛"
-		},
-		{
-			"Id": "Param4",
-			"GroupId": "ParamGroup",
-			"Name": "红"
-		},
-		{
-			"Id": "Param6",
-			"GroupId": "ParamGroup",
-			"Name": "手"
-		},
-		{
-			"Id": "ParamAngleX",
-			"GroupId": "",
-			"Name": "角度 X"
-		},
-		{
-			"Id": "ParamAngleY",
-			"GroupId": "",
-			"Name": "角度 Y"
-		},
-		{
-			"Id": "ParamAngleZ",
-			"GroupId": "",
-			"Name": "角度 Z"
-		},
-		{
-			"Id": "ParamEyeLOpen",
-			"GroupId": "",
-			"Name": "左眼　开闭"
-		},
-		{
-			"Id": "ParamEyeROpen",
-			"GroupId": "",
-			"Name": "右眼"
-		},
-		{
-			"Id": "ParamEyeBallX",
-			"GroupId": "",
-			"Name": "眼球 X"
-		},
-		{
-			"Id": "ParamEyeBallY",
-			"GroupId": "",
-			"Name": "眼球 Y"
-		},
-		{
-			"Id": "Param8",
-			"GroupId": "",
-			"Name": "高光1"
-		},
-		{
-			"Id": "Param9",
-			"GroupId": "",
-			"Name": "高光2"
-		},
-		{
-			"Id": "ParamBrowLY",
-			"GroupId": "",
-			"Name": "左眉上下"
-		},
-		{
-			"Id": "ParamBrowLForm",
-			"GroupId": "",
-			"Name": "左眉　変形"
-		},
-		{
-			"Id": "ParamBrowRY",
-			"GroupId": "",
-			"Name": "右眉　上下"
-		},
-		{
-			"Id": "ParamBrowRForm",
-			"GroupId": "",
-			"Name": "右眉　変形"
-		},
-		{
-			"Id": "ParamMouthForm",
-			"GroupId": "",
-			"Name": "嘴部　变形"
-		},
-		{
-			"Id": "ParamMouthOpenY",
-			"GroupId": "",
-			"Name": "嘴巴　张开和闭合"
-		},
-		{
-			"Id": "ParamBodyAngleX",
-			"GroupId": "",
-			"Name": "身体旋转　X"
-		},
-		{
-			"Id": "ParamBodyAngleY",
-			"GroupId": "",
-			"Name": "身体旋转　Y"
-		},
-		{
-			"Id": "ParamBodyAngleZ",
-			"GroupId": "",
-			"Name": "身体旋转　Z"
-		},
-		{
-			"Id": "ParamBreath",
-			"GroupId": "",
-			"Name": "呼吸"
-		},
-		{
-			"Id": "ParamEyeRSmile",
-			"GroupId": "",
-			"Name": "右眼　微笑"
-		},
-		{
-			"Id": "ParamEyeLSmile",
-			"GroupId": "",
-			"Name": "左眼　微笑"
-		},
-		{
-			"Id": "ParamBrowLX",
-			"GroupId": "",
-			"Name": "左眉　左右"
-		},
-		{
-			"Id": "ParamBrowRX",
-			"GroupId": "",
-			"Name": "右眉　左右"
-		},
-		{
-			"Id": "ParamBrowLAngle",
-			"GroupId": "",
-			"Name": "左眉　角度"
-		},
-		{
-			"Id": "ParamBrowRAngle",
-			"GroupId": "",
-			"Name": "右眉　角度"
-		},
-		{
-			"Id": "ParamCheek",
-			"GroupId": "",
-			"Name": "脸颊"
-		},
-		{
-			"Id": "ParamHairFront",
-			"GroupId": "",
-			"Name": "摇动　前发"
-		},
-		{
-			"Id": "ParamHairSide",
-			"GroupId": "",
-			"Name": "摇动　侧发"
-		},
-		{
-			"Id": "ParamHairBack",
-			"GroupId": "",
-			"Name": "摇动　后发"
-		},
-		{
-			"Id": "Param_Angle_Rotation_1_ArtMesh8",
-			"GroupId": "ParamGroup3",
-			"Name": "[0]ﾗ�ｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_2_ArtMesh8",
-			"GroupId": "ParamGroup3",
-			"Name": "[1]ﾗ�ｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_3_ArtMesh8",
-			"GroupId": "ParamGroup3",
-			"Name": "[2]ﾗ�ｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_4_ArtMesh8",
-			"GroupId": "ParamGroup3",
-			"Name": "[3]ﾗ�ｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_5_ArtMesh8",
-			"GroupId": "ParamGroup3",
-			"Name": "[4]ﾗ�ｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_6_ArtMesh8",
-			"GroupId": "ParamGroup3",
-			"Name": "[5]ﾗ�ｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_7_ArtMesh8",
-			"GroupId": "ParamGroup3",
-			"Name": "[6]ﾗ�ｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_8_ArtMesh8",
-			"GroupId": "ParamGroup3",
-			"Name": "[7]ﾗ�ｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_9_ArtMesh8",
-			"GroupId": "ParamGroup3",
-			"Name": "[8]ﾗ�ｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_1_ArtMesh9",
-			"GroupId": "ParamGroup4",
-			"Name": "[0]ﾓﾒｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_2_ArtMesh9",
-			"GroupId": "ParamGroup4",
-			"Name": "[1]ﾓﾒｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_3_ArtMesh9",
-			"GroupId": "ParamGroup4",
-			"Name": "[2]ﾓﾒｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_4_ArtMesh9",
-			"GroupId": "ParamGroup4",
-			"Name": "[3]ﾓﾒｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_5_ArtMesh9",
-			"GroupId": "ParamGroup4",
-			"Name": "[4]ﾓﾒｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_6_ArtMesh9",
-			"GroupId": "ParamGroup4",
-			"Name": "[5]ﾓﾒｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_7_ArtMesh9",
-			"GroupId": "ParamGroup4",
-			"Name": "[6]ﾓﾒｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_8_ArtMesh9",
-			"GroupId": "ParamGroup4",
-			"Name": "[7]ﾓﾒｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_9_ArtMesh9",
-			"GroupId": "ParamGroup4",
-			"Name": "[8]ﾓﾒｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_10_ArtMesh9",
-			"GroupId": "ParamGroup4",
-			"Name": "[9]ﾓﾒｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_11_ArtMesh9",
-			"GroupId": "ParamGroup4",
-			"Name": "[10]ﾓﾒｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_12_ArtMesh9",
-			"GroupId": "ParamGroup4",
-			"Name": "[11]ﾓﾒｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_13_ArtMesh9",
-			"GroupId": "ParamGroup4",
-			"Name": "[12]ﾓﾒｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_1_ArtMesh55",
-			"GroupId": "ParamGroup5",
-			"Name": "[0]ｺ�ｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_2_ArtMesh55",
-			"GroupId": "ParamGroup5",
-			"Name": "[1]ｺ�ｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_3_ArtMesh55",
-			"GroupId": "ParamGroup5",
-			"Name": "[2]ｺ�ｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_4_ArtMesh55",
-			"GroupId": "ParamGroup5",
-			"Name": "[3]ｺ�ｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_5_ArtMesh55",
-			"GroupId": "ParamGroup5",
-			"Name": "[4]ｺ�ｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_6_ArtMesh55",
-			"GroupId": "ParamGroup5",
-			"Name": "[5]ｺ�ｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_7_ArtMesh55",
-			"GroupId": "ParamGroup5",
-			"Name": "[6]ｺ�ｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_8_ArtMesh55",
-			"GroupId": "ParamGroup5",
-			"Name": "[7]ｺ�ｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_9_ArtMesh55",
-			"GroupId": "ParamGroup5",
-			"Name": "[8]ｺ�ｷ｢1"
-		},
-		{
-			"Id": "Param_Angle_Rotation_1_ArtMesh56",
-			"GroupId": "ParamGroup6",
-			"Name": "[0]ｺ�ｷ｢2"
-		},
-		{
-			"Id": "Param_Angle_Rotation_2_ArtMesh56",
-			"GroupId": "ParamGroup6",
-			"Name": "[1]ｺ�ｷ｢2"
-		},
-		{
-			"Id": "Param_Angle_Rotation_3_ArtMesh56",
-			"GroupId": "ParamGroup6",
-			"Name": "[2]ｺ�ｷ｢2"
-		},
-		{
-			"Id": "Param_Angle_Rotation_4_ArtMesh56",
-			"GroupId": "ParamGroup6",
-			"Name": "[3]ｺ�ｷ｢2"
-		},
-		{
-			"Id": "Param_Angle_Rotation_5_ArtMesh56",
-			"GroupId": "ParamGroup6",
-			"Name": "[4]ｺ�ｷ｢2"
-		},
-		{
-			"Id": "Param_Angle_Rotation_6_ArtMesh56",
-			"GroupId": "ParamGroup6",
-			"Name": "[5]ｺ�ｷ｢2"
-		},
-		{
-			"Id": "Param_Angle_Rotation_7_ArtMesh56",
-			"GroupId": "ParamGroup6",
-			"Name": "[6]ｺ�ｷ｢2"
-		},
-		{
-			"Id": "Param_Angle_Rotation_8_ArtMesh56",
-			"GroupId": "ParamGroup6",
-			"Name": "[7]ｺ�ｷ｢2"
-		},
-		{
-			"Id": "Param_Angle_Rotation_9_ArtMesh56",
-			"GroupId": "ParamGroup6",
-			"Name": "[8]ｺ�ｷ｢2"
-		},
-		{
-			"Id": "Param_Angle_Rotation_1_ArtMesh53",
-			"GroupId": "ParamGroup8",
-			"Name": "[0]ｺ�ｵ�ｽ�"
-		},
-		{
-			"Id": "Param_Angle_Rotation_2_ArtMesh53",
-			"GroupId": "ParamGroup8",
-			"Name": "[1]ｺ�ｵ�ｽ�"
-		},
-		{
-			"Id": "Param_Angle_Rotation_3_ArtMesh53",
-			"GroupId": "ParamGroup8",
-			"Name": "[2]ｺ�ｵ�ｽ�"
-		},
-		{
-			"Id": "Param_Angle_Rotation_4_ArtMesh53",
-			"GroupId": "ParamGroup8",
-			"Name": "[3]ｺ�ｵ�ｽ�"
-		},
-		{
-			"Id": "Param_Angle_Rotation_5_ArtMesh53",
-			"GroupId": "ParamGroup8",
-			"Name": "[4]ｺ�ｵ�ｽ�"
-		}
-	],
-	"ParameterGroups": [
-		{
-			"Id": "ParamGroup2",
-			"GroupId": "",
-			"Name": "物理"
-		},
-		{
-			"Id": "ParamGroup",
-			"GroupId": "",
-			"Name": "表情"
-		},
-		{
-			"Id": "ParamGroup3",
-			"GroupId": "",
-			"Name": "ﾗ�ｷ｢1"
-		},
-		{
-			"Id": "ParamGroup4",
-			"GroupId": "",
-			"Name": "ﾓﾒｷ｢1"
-		},
-		{
-			"Id": "ParamGroup5",
-			"GroupId": "",
-			"Name": "ｺ�ｷ｢1"
-		},
-		{
-			"Id": "ParamGroup6",
-			"GroupId": "",
-			"Name": "ｺ�ｷ｢2"
-		},
-		{
-			"Id": "ParamGroup8",
-			"GroupId": "",
-			"Name": "ｺ�ｵ�ｽ�"
-		}
-	],
-	"Parts": [
-		{
-			"Id": "Part",
-			"Name": "ﾊﾖ"
-		},
-		{
-			"Id": "Part2",
-			"Name": "ﾉﾏﾍｷ"
-		},
-		{
-			"Id": "Part3",
-			"Name": "ﾗ�ﾑﾛ"
-		},
-		{
-			"Id": "Part4",
-			"Name": "ﾓﾒﾑﾛ"
-		},
-		{
-			"Id": "Part5",
-			"Name": "ﾍｷ"
-		},
-		{
-			"Id": "Part6",
-			"Name": "ﾉ�"
-		},
-		{
-			"Id": "Part7",
-			"Name": "ｷ｢"
-		},
-		{
-			"Id": "ArtMesh8_Skinning",
-			"Name": "ﾗ�ｷ｢1(蒙皮)"
-		},
-		{
-			"Id": "Part8",
-			"Name": "ﾗ�ｷ｢1(回转)"
-		},
-		{
-			"Id": "ArtMesh9_Skinning",
-			"Name": "ﾓﾒｷ｢1(蒙皮)"
-		},
-		{
-			"Id": "Part9",
-			"Name": "ﾓﾒｷ｢1(回转)"
-		},
-		{
-			"Id": "ArtMesh53_Skinning",
-			"Name": "ｺ�ｵ�ｽ�(蒙皮)"
-		},
-		{
-			"Id": "Part12",
-			"Name": "ｺ�ｵ�ｽ�(回转)"
-		},
-		{
-			"Id": "ArtMesh55_Skinning",
-			"Name": "ｺ�ｷ｢1(蒙皮)"
-		},
-		{
-			"Id": "Part10",
-			"Name": "ｺ�ｷ｢1(回转)"
-		},
-		{
-			"Id": "ArtMesh56_Skinning",
-			"Name": "ｺ�ｷ｢2(蒙皮)"
-		},
-		{
-			"Id": "Part11",
-			"Name": "ｺ�ｷ｢2(回转)"
-		}
-	]
-}
-</file>
-
-<file path="live2d-models/elaina/LSS.model3.json">
-{
-	"Version": 3,
-	"FileReferences": {
-		"Moc": "LSS.moc3",
-		"Textures": [
-			"LSS.4096/texture_00.png"
-		],
-		"Physics": "LSS.physics3.json",
-		"DisplayInfo": "LSS.cdi3.json",
-		"Expressions": [
-			{
-				"Name": "f00",
-				"File": "f00.exp3.json"
-			},
-			{
-				"Name": "f01",
-				"File": "f01.exp3.json"
-			},
-			{
-				"Name": "f02",
-				"File": "f02.exp3.json"
-			},
-			{
-				"Name": "f03",
-				"File": "f03.exp3.json"
-			},
-			{
-				"Name": "f04",
-				"File": "f04.exp3.json"
-			},
-			{
-				"Name": "f05",
-				"File": "f05.exp3.json"
-			},
-			{
-				"Name": "f06",
-				"File": "f06.exp3.json"
-			},
-			{
-				"Name": "f07",
-				"File": "f07.exp3.json"
-			},
-			{
-				"Name": "f08",
-				"File": "f08.exp3.json"
-			},
-			{
-				"Name": "f09",
-				"File": "f09.exp3.json"
-			},
-			{
-				"Name": "f10",
-				"File": "f10.exp3.json"
-			},
-			{
-				"Name": "f11",
-				"File": "f11.exp3.json"
-			},
-			{
-				"Name": "f12",
-				"File": "f12.exp3.json"
-			},
-			{
-				"Name": "drink_tea",
-				"File": "f13.exp3.json"
-			}
-		]
-	},
-	"Groups": [
-		{
-			"Target": "Parameter",
-			"Name": "EyeBlink",
-			"Ids": [
-				"ParamEyeLOpen",
-				"ParamEyeROpen"
-			]
-		},
-		{
-			"Target": "Parameter",
-			"Name": "LipSync",
-			"Ids": [
-				"ParamMouthOpenY"
-			]
-		}
-	],
-	"HitAreas": []
-}
-</file>
-
-<file path="live2d-models/elaina/LSS.physics3.json">
-{
-	"Version": 3,
-	"Meta": {
-		"PhysicsSettingCount": 8,
-		"TotalInputCount": 18,
-		"TotalOutputCount": 54,
-		"VertexCount": 40,
-		"EffectiveForces": {
-			"Gravity": {
-				"X": 0,
-				"Y": -1
-			},
-			"Wind": {
-				"X": 0,
-				"Y": 0
-			}
-		},
-		"PhysicsDictionary": [
-			{
-				"Id": "PhysicsSetting1",
-				"Name": "身体X"
-			},
-			{
-				"Id": "PhysicsSetting2",
-				"Name": "身体Y"
-			},
-			{
-				"Id": "PhysicsSetting3",
-				"Name": "身体Z"
-			},
-			{
-				"Id": "PhysicsSetting4",
-				"Name": "高光"
-			},
-			{
-				"Id": "PhysicsSetting5",
-				"Name": "前发"
-			},
-			{
-				"Id": "PhysicsSetting6",
-				"Name": "麻花"
-			},
-			{
-				"Id": "PhysicsSetting7",
-				"Name": "后发"
-			},
-			{
-				"Id": "PhysicsSetting8",
-				"Name": "徽章"
-			}
-		]
-	},
-	"PhysicsSettings": [
-		{
-			"Id": "PhysicsSetting1",
-			"Input": [
-				{
-					"Source": {
-						"Target": "Parameter",
-						"Id": "ParamAngleX"
-					},
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				}
-			],
-			"Output": [
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "ParamBodyAngleX"
-					},
-					"VertexIndex": 1,
-					"Scale": 40,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				}
-			],
-			"Vertices": [
-				{
-					"Position": {
-						"X": 0,
-						"Y": 0
-					},
-					"Mobility": 1,
-					"Delay": 1,
-					"Acceleration": 1,
-					"Radius": 0
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 12
-					},
-					"Mobility": 0.85,
-					"Delay": 0.9,
-					"Acceleration": 0.85,
-					"Radius": 12
-				}
-			],
-			"Normalization": {
-				"Position": {
-					"Minimum": -10,
-					"Default": 0,
-					"Maximum": 10
-				},
-				"Angle": {
-					"Minimum": -10,
-					"Default": 0,
-					"Maximum": 10
-				}
-			}
-		},
-		{
-			"Id": "PhysicsSetting2",
-			"Input": [
-				{
-					"Source": {
-						"Target": "Parameter",
-						"Id": "ParamAngleY"
-					},
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				}
-			],
-			"Output": [
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "ParamBodyAngleY"
-					},
-					"VertexIndex": 1,
-					"Scale": 40,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				}
-			],
-			"Vertices": [
-				{
-					"Position": {
-						"X": 0,
-						"Y": 0
-					},
-					"Mobility": 1,
-					"Delay": 1,
-					"Acceleration": 1,
-					"Radius": 0
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 12
-					},
-					"Mobility": 0.85,
-					"Delay": 0.9,
-					"Acceleration": 0.9,
-					"Radius": 12
-				}
-			],
-			"Normalization": {
-				"Position": {
-					"Minimum": -10,
-					"Default": 0,
-					"Maximum": 10
-				},
-				"Angle": {
-					"Minimum": -10,
-					"Default": 0,
-					"Maximum": 10
-				}
-			}
-		},
-		{
-			"Id": "PhysicsSetting3",
-			"Input": [
-				{
-					"Source": {
-						"Target": "Parameter",
-						"Id": "ParamAngleZ"
-					},
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				}
-			],
-			"Output": [
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "ParamBodyAngleZ"
-					},
-					"VertexIndex": 1,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				}
-			],
-			"Vertices": [
-				{
-					"Position": {
-						"X": 0,
-						"Y": 0
-					},
-					"Mobility": 1,
-					"Delay": 1,
-					"Acceleration": 1,
-					"Radius": 0
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 12
-					},
-					"Mobility": 0.85,
-					"Delay": 0.9,
-					"Acceleration": 1.5,
-					"Radius": 12
-				}
-			],
-			"Normalization": {
-				"Position": {
-					"Minimum": -10,
-					"Default": 0,
-					"Maximum": 10
-				},
-				"Angle": {
-					"Minimum": -10,
-					"Default": 0,
-					"Maximum": 10
-				}
-			}
-		},
-		{
-			"Id": "PhysicsSetting4",
-			"Input": [
-				{
-					"Source": {
-						"Target": "Parameter",
-						"Id": "ParamEyeLOpen"
-					},
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				}
-			],
-			"Output": [
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param8"
-					},
-					"VertexIndex": 1,
-					"Scale": 80,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param9"
-					},
-					"VertexIndex": 1,
-					"Scale": 80,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				}
-			],
-			"Vertices": [
-				{
-					"Position": {
-						"X": 0,
-						"Y": 0
-					},
-					"Mobility": 1,
-					"Delay": 1,
-					"Acceleration": 1,
-					"Radius": 0
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 8
-					},
-					"Mobility": 0.95,
-					"Delay": 0.9,
-					"Acceleration": 1,
-					"Radius": 8
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 16
-					},
-					"Mobility": 0.95,
-					"Delay": 0.9,
-					"Acceleration": 1,
-					"Radius": 8
-				}
-			],
-			"Normalization": {
-				"Position": {
-					"Minimum": -10,
-					"Default": 0,
-					"Maximum": 10
-				},
-				"Angle": {
-					"Minimum": -10,
-					"Default": 0,
-					"Maximum": 10
-				}
-			}
-		},
-		{
-			"Id": "PhysicsSetting5",
-			"Input": [
-				{
-					"Source": {
-						"Target": "Parameter",
-						"Id": "ParamAngleX"
-					},
-					"Weight": 60,
-					"Type": "X",
-					"Reflect": false
-				},
-				{
-					"Source": {
-						"Target": "Parameter",
-						"Id": "ParamAngleZ"
-					},
-					"Weight": 60,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Source": {
-						"Target": "Parameter",
-						"Id": "ParamBreath"
-					},
-					"Weight": 25,
-					"Type": "X",
-					"Reflect": false
-				}
-			],
-			"Output": [
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param10"
-					},
-					"VertexIndex": 1,
-					"Scale": 35,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param11"
-					},
-					"VertexIndex": 2,
-					"Scale": 35,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				}
-			],
-			"Vertices": [
-				{
-					"Position": {
-						"X": 0,
-						"Y": 0
-					},
-					"Mobility": 1,
-					"Delay": 0.85,
-					"Acceleration": 0.85,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 10
-					},
-					"Mobility": 0.95,
-					"Delay": 0.85,
-					"Acceleration": 0.85,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 20
-					},
-					"Mobility": 0.95,
-					"Delay": 0.85,
-					"Acceleration": 0.85,
-					"Radius": 10
-				}
-			],
-			"Normalization": {
-				"Position": {
-					"Minimum": -10,
-					"Default": 0,
-					"Maximum": 10
-				},
-				"Angle": {
-					"Minimum": -10,
-					"Default": 0,
-					"Maximum": 10
-				}
-			}
-		},
-		{
-			"Id": "PhysicsSetting6",
-			"Input": [
-				{
-					"Source": {
-						"Target": "Parameter",
-						"Id": "ParamAngleX"
-					},
-					"Weight": 60,
-					"Type": "X",
-					"Reflect": false
-				},
-				{
-					"Source": {
-						"Target": "Parameter",
-						"Id": "ParamAngleZ"
-					},
-					"Weight": 60,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Source": {
-						"Target": "Parameter",
-						"Id": "ParamAngleY"
-					},
-					"Weight": 15,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Source": {
-						"Target": "Parameter",
-						"Id": "ParamBreath"
-					},
-					"Weight": 15,
-					"Type": "Angle",
-					"Reflect": false
-				}
-			],
-			"Output": [
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_1_ArtMesh8"
-					},
-					"VertexIndex": 1,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_2_ArtMesh8"
-					},
-					"VertexIndex": 2,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_3_ArtMesh8"
-					},
-					"VertexIndex": 3,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_4_ArtMesh8"
-					},
-					"VertexIndex": 4,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_5_ArtMesh8"
-					},
-					"VertexIndex": 5,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_6_ArtMesh8"
-					},
-					"VertexIndex": 6,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_7_ArtMesh8"
-					},
-					"VertexIndex": 7,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_8_ArtMesh8"
-					},
-					"VertexIndex": 8,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_9_ArtMesh8"
-					},
-					"VertexIndex": 9,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_1_ArtMesh9"
-					},
-					"VertexIndex": 1,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_2_ArtMesh9"
-					},
-					"VertexIndex": 1,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_3_ArtMesh9"
-					},
-					"VertexIndex": 2,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_4_ArtMesh9"
-					},
-					"VertexIndex": 3,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_5_ArtMesh9"
-					},
-					"VertexIndex": 3,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_6_ArtMesh9"
-					},
-					"VertexIndex": 3,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_7_ArtMesh9"
-					},
-					"VertexIndex": 4,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_8_ArtMesh9"
-					},
-					"VertexIndex": 5,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_9_ArtMesh9"
-					},
-					"VertexIndex": 6,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_10_ArtMesh9"
-					},
-					"VertexIndex": 7,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_11_ArtMesh9"
-					},
-					"VertexIndex": 8,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_12_ArtMesh9"
-					},
-					"VertexIndex": 9,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_13_ArtMesh9"
-					},
-					"VertexIndex": 10,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				}
-			],
-			"Vertices": [
-				{
-					"Position": {
-						"X": 0,
-						"Y": 0
-					},
-					"Mobility": 0.9,
-					"Delay": 0.85,
-					"Acceleration": 0.85,
-					"Radius": 0
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 10
-					},
-					"Mobility": 0.9,
-					"Delay": 0.85,
-					"Acceleration": 0.85,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 20
-					},
-					"Mobility": 0.9,
-					"Delay": 0.85,
-					"Acceleration": 0.85,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 30
-					},
-					"Mobility": 0.9,
-					"Delay": 0.85,
-					"Acceleration": 0.85,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 40
-					},
-					"Mobility": 0.9,
-					"Delay": 0.85,
-					"Acceleration": 0.85,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 50
-					},
-					"Mobility": 0.9,
-					"Delay": 0.85,
-					"Acceleration": 0.85,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 60
-					},
-					"Mobility": 0.9,
-					"Delay": 0.85,
-					"Acceleration": 0.85,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 70
-					},
-					"Mobility": 0.9,
-					"Delay": 0.85,
-					"Acceleration": 0.85,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 80
-					},
-					"Mobility": 0.9,
-					"Delay": 0.85,
-					"Acceleration": 0.85,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 90
-					},
-					"Mobility": 0.9,
-					"Delay": 0.85,
-					"Acceleration": 0.85,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 97
-					},
-					"Mobility": 0.5,
-					"Delay": 0.85,
-					"Acceleration": 0.85,
-					"Radius": 7
-				}
-			],
-			"Normalization": {
-				"Position": {
-					"Minimum": -10,
-					"Default": 0,
-					"Maximum": 10
-				},
-				"Angle": {
-					"Minimum": -10,
-					"Default": 0,
-					"Maximum": 10
-				}
-			}
-		},
-		{
-			"Id": "PhysicsSetting7",
-			"Input": [
-				{
-					"Source": {
-						"Target": "Parameter",
-						"Id": "ParamAngleX"
-					},
-					"Weight": 60,
-					"Type": "X",
-					"Reflect": false
-				},
-				{
-					"Source": {
-						"Target": "Parameter",
-						"Id": "ParamAngleZ"
-					},
-					"Weight": 60,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Source": {
-						"Target": "Parameter",
-						"Id": "ParamAngleY"
-					},
-					"Weight": 15,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Source": {
-						"Target": "Parameter",
-						"Id": "ParamBreath"
-					},
-					"Weight": 15,
-					"Type": "Angle",
-					"Reflect": false
-				}
-			],
-			"Output": [
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_1_ArtMesh55"
-					},
-					"VertexIndex": 1,
-					"Scale": 30,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_2_ArtMesh55"
-					},
-					"VertexIndex": 2,
-					"Scale": 30,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_3_ArtMesh55"
-					},
-					"VertexIndex": 3,
-					"Scale": 30,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_4_ArtMesh55"
-					},
-					"VertexIndex": 4,
-					"Scale": 30,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_5_ArtMesh55"
-					},
-					"VertexIndex": 5,
-					"Scale": 30,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_6_ArtMesh55"
-					},
-					"VertexIndex": 6,
-					"Scale": 30,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_7_ArtMesh55"
-					},
-					"VertexIndex": 7,
-					"Scale": 30,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_8_ArtMesh55"
-					},
-					"VertexIndex": 8,
-					"Scale": 30,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_9_ArtMesh55"
-					},
-					"VertexIndex": 9,
-					"Scale": 30,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_1_ArtMesh56"
-					},
-					"VertexIndex": 1,
-					"Scale": 30,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_2_ArtMesh56"
-					},
-					"VertexIndex": 2,
-					"Scale": 30,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_3_ArtMesh56"
-					},
-					"VertexIndex": 3,
-					"Scale": 30,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_4_ArtMesh56"
-					},
-					"VertexIndex": 4,
-					"Scale": 30,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_5_ArtMesh56"
-					},
-					"VertexIndex": 5,
-					"Scale": 30,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_6_ArtMesh56"
-					},
-					"VertexIndex": 6,
-					"Scale": 30,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_7_ArtMesh56"
-					},
-					"VertexIndex": 7,
-					"Scale": 30,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_8_ArtMesh56"
-					},
-					"VertexIndex": 8,
-					"Scale": 30,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_9_ArtMesh56"
-					},
-					"VertexIndex": 9,
-					"Scale": 30,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				}
-			],
-			"Vertices": [
-				{
-					"Position": {
-						"X": 0,
-						"Y": 0
-					},
-					"Mobility": 0.88,
-					"Delay": 1,
-					"Acceleration": 0.75,
-					"Radius": 0
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 10
-					},
-					"Mobility": 0.88,
-					"Delay": 0.85,
-					"Acceleration": 0.75,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 20
-					},
-					"Mobility": 0.88,
-					"Delay": 0.85,
-					"Acceleration": 0.75,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 30
-					},
-					"Mobility": 0.88,
-					"Delay": 0.85,
-					"Acceleration": 0.75,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 40
-					},
-					"Mobility": 0.88,
-					"Delay": 0.85,
-					"Acceleration": 0.75,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 50
-					},
-					"Mobility": 0.88,
-					"Delay": 0.85,
-					"Acceleration": 0.75,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 60
-					},
-					"Mobility": 0.88,
-					"Delay": 0.85,
-					"Acceleration": 0.75,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 70
-					},
-					"Mobility": 0.88,
-					"Delay": 0.85,
-					"Acceleration": 0.75,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 80
-					},
-					"Mobility": 0.88,
-					"Delay": 0.85,
-					"Acceleration": 0.75,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 90
-					},
-					"Mobility": 0.88,
-					"Delay": 0.85,
-					"Acceleration": 0.75,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 100
-					},
-					"Mobility": 0.88,
-					"Delay": 0.85,
-					"Acceleration": 0.75,
-					"Radius": 10
-				}
-			],
-			"Normalization": {
-				"Position": {
-					"Minimum": -10,
-					"Default": 0,
-					"Maximum": 10
-				},
-				"Angle": {
-					"Minimum": -10,
-					"Default": 0,
-					"Maximum": 10
-				}
-			}
-		},
-		{
-			"Id": "PhysicsSetting8",
-			"Input": [
-				{
-					"Source": {
-						"Target": "Parameter",
-						"Id": "ParamAngleX"
-					},
-					"Weight": 60,
-					"Type": "X",
-					"Reflect": false
-				},
-				{
-					"Source": {
-						"Target": "Parameter",
-						"Id": "ParamAngleZ"
-					},
-					"Weight": 60,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Source": {
-						"Target": "Parameter",
-						"Id": "ParamBreath"
-					},
-					"Weight": 15,
-					"Type": "Angle",
-					"Reflect": false
-				}
-			],
-			"Output": [
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_1_ArtMesh53"
-					},
-					"VertexIndex": 1,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_2_ArtMesh53"
-					},
-					"VertexIndex": 2,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_3_ArtMesh53"
-					},
-					"VertexIndex": 3,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_4_ArtMesh53"
-					},
-					"VertexIndex": 4,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param_Angle_Rotation_5_ArtMesh53"
-					},
-					"VertexIndex": 2,
-					"Scale": 20,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param13"
-					},
-					"VertexIndex": 2,
-					"Scale": 80,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				},
-				{
-					"Destination": {
-						"Target": "Parameter",
-						"Id": "Param12"
-					},
-					"VertexIndex": 1,
-					"Scale": 80,
-					"Weight": 100,
-					"Type": "Angle",
-					"Reflect": false
-				}
-			],
-			"Vertices": [
-				{
-					"Position": {
-						"X": 0,
-						"Y": 0
-					},
-					"Mobility": 1,
-					"Delay": 0.9,
-					"Acceleration": 0.9,
-					"Radius": 0
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 10
-					},
-					"Mobility": 0.95,
-					"Delay": 0.9,
-					"Acceleration": 0.9,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 20
-					},
-					"Mobility": 0.95,
-					"Delay": 0.9,
-					"Acceleration": 0.9,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 30
-					},
-					"Mobility": 0.95,
-					"Delay": 0.9,
-					"Acceleration": 0.9,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 40
-					},
-					"Mobility": 0.95,
-					"Delay": 0.9,
-					"Acceleration": 0.9,
-					"Radius": 10
-				},
-				{
-					"Position": {
-						"X": 0,
-						"Y": 50
-					},
-					"Mobility": 0.95,
-					"Delay": 0.9,
-					"Acceleration": 0.9,
-					"Radius": 10
-				}
-			],
-			"Normalization": {
-				"Position": {
-					"Minimum": -10,
-					"Default": 0,
-					"Maximum": 10
-				},
-				"Angle": {
-					"Minimum": -10,
-					"Default": 0,
-					"Maximum": 10
-				}
-			}
-		}
-	]
-}
+class FishAudioASR(ASRInterface):
+    """Fish Audio ASR service for converting audio to text."""
+    
+    def __init__(self, api_key: Optional[str] = None):
+        """
+        Initialize Fish Audio ASR service.
+        
+        Args:
+            api_key: Fish Audio API key. If None, will try to get from environment.
+        """
+        if Session is None:
+            raise ImportError("fish_audio_sdk is required. Install with: pip install fish_audio_sdk")
+            
+        if api_key is None:
+            api_key = os.getenv("FISH_AUDIO_API_KEY")
+            
+        if not api_key:
+            raise ValueError("Fish Audio API key is required. Set FISH_AUDIO_API_KEY environment variable or pass api_key parameter.")
+            
+        self.session = Session(api_key)
+        logger.info("Fish Audio ASR initialized successfully")
+    
+    async def transcribe_audio(
+        self, 
+        audio_base64: str, 
+        language: Optional[str] = None,
+        ignore_timestamps: bool = True
+    ) -> Optional[str]:
+        """
+        Transcribe base64-encoded audio to text.
+        
+        Args:
+            audio_base64: Base64-encoded audio data
+            language: Language code (e.g., "en", "zh"). If None, auto-detect.
+            ignore_timestamps: Whether to ignore precise timestamps for faster processing
+            
+        Returns:
+            Transcribed text, or None if transcription failed
+        """
+        try:
+            # Decode base64 audio data
+            audio_data = base64.b64decode(audio_base64)
+            
+            # Create temporary file for audio data
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
+                temp_file.write(audio_data)
+                temp_file_path = temp_file.name
+            
+            try:
+                # Read audio file
+                with open(temp_file_path, "rb") as audio_file:
+                    audio_bytes = audio_file.read()
+                
+                # Create ASR request
+                if language:
+                    request = ASRRequest(
+                        audio=audio_bytes, 
+                        language=language, 
+                        ignore_timestamps=ignore_timestamps
+                    )
+                else:
+                    request = ASRRequest(
+                        audio=audio_bytes, 
+                        ignore_timestamps=ignore_timestamps
+                    )
+                
+                # Perform ASR
+                response = self.session.asr(request)
+                
+                logger.info(f"ASR successful: '{response.text}' (duration: {response.duration}s)")
+                
+                # Log segments if available
+                if hasattr(response, 'segments') and response.segments:
+                    for segment in response.segments:
+                        logger.debug(f"Segment: '{segment.text}' [{segment.start}-{segment.end}s]")
+                
+                return response.text
+                
+            finally:
+                # Clean up temporary file
+                try:
+                    os.unlink(temp_file_path)
+                except OSError:
+                    logger.warning(f"Failed to delete temporary file: {temp_file_path}")
+                    
+        except Exception as e:
+            logger.error(f"ASR transcription failed: {e}", exc_info=True)
+            return None
+    
+    def transcribe_audio_sync(
+        self, 
+        audio_base64: str, 
+        language: Optional[str] = None,
+        ignore_timestamps: bool = True
+    ) -> Optional[str]:
+        """
+        Synchronous version of transcribe_audio.
+        
+        Args:
+            audio_base64: Base64-encoded audio data
+            language: Language code (e.g., "en", "zh"). If None, auto-detect.
+            ignore_timestamps: Whether to ignore precise timestamps for faster processing
+            
+        Returns:
+            Transcribed text, or None if transcription failed
+        """
+        try:
+            # Decode base64 audio data
+            audio_data = base64.b64decode(audio_base64)
+            
+            # Create temporary file for audio data
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
+                temp_file.write(audio_data)
+                temp_file_path = temp_file.name
+            
+            try:
+                # Read audio file
+                with open(temp_file_path, "rb") as audio_file:
+                    audio_bytes = audio_file.read()
+                
+                # Create ASR request
+                if language:
+                    request = ASRRequest(
+                        audio=audio_bytes, 
+                        language=language, 
+                        ignore_timestamps=ignore_timestamps
+                    )
+                else:
+                    request = ASRRequest(
+                        audio=audio_bytes, 
+                        ignore_timestamps=ignore_timestamps
+                    )
+                
+                # Perform ASR
+                response = self.session.asr(request)
+                
+                logger.info(f"ASR successful: '{response.text}' (duration: {response.duration}s)")
+                
+                return response.text
+                
+            finally:
+                # Clean up temporary file
+                try:
+                    os.unlink(temp_file_path)
+                except OSError:
+                    logger.warning(f"Failed to delete temporary file: {temp_file_path}")
+                    
+        except Exception as e:
+            logger.error(f"ASR transcription failed: {e}", exc_info=True)
+            return None
 </file>
 
 <file path="src/ai_watch_buddy/agent/gemini_sample.py">
@@ -3519,14 +432,115 @@ if __name__ == "__main__":
     generate()
 </file>
 
+<file path="src/ai_watch_buddy/agent/text_stream_to_action.py">
+import json
+from collections.abc import Iterator, Generator
+from json_repair import repair_json
+from pydantic import ValidationError, TypeAdapter
+from google.genai.types import GenerateContentResponse
+
+from ..actions import Action
+
+
+def str_stream_to_actions(
+    llm_stream: Iterator[GenerateContentResponse],
+) -> Generator[Action, None, None]:
+    """
+    从 LLM 传入的 str 流中，流式解析并 yield 出 Action 对象。
+
+    该函数会逐步解析LLM输出的JSON数组，每当解析出完整的Action对象时就立即验证并yield。
+    这样可以实现真正的流式处理，而不需要等待整个响应完成。
+
+    Args:
+        llm_stream: LLM输出的字符串流，预期格式为JSON数组
+
+    Yields:
+        Action: 解析并验证后的Action对象
+
+    注意:
+        - 会自动跳过```json等markdown代码块标记
+        - 使用json_repair库处理可能的JSON格式问题
+        - 解析失败的Action会被跳过并打印错误信息
+    """
+    buffer = ""
+    in_json_array = False
+    brace_count = 0
+    current_action_buffer = ""
+    action_adapter = TypeAdapter(Action)
+
+    for response in llm_stream:
+        # Extract text from GenerateContentResponse
+        chunk = response.text if response.text else ""
+        print(chunk, end="", flush=True)
+        buffer += chunk
+
+        # 如果还没有找到JSON数组的开始，寻找 '['
+        if not in_json_array:
+            # 跳过可能的 ```json 前缀
+            json_start = buffer.find("[")
+            if json_start != -1:
+                buffer = buffer[json_start:]
+                in_json_array = True
+                brace_count = 0
+            else:
+                continue
+
+        # 逐字符处理buffer中的内容
+        i = 0
+        while i < len(buffer):
+            char = buffer[i]
+
+            if char == "{":
+                if brace_count == 0:
+                    # 开始一个新的Action对象
+                    current_action_buffer = "{"
+                else:
+                    current_action_buffer += char
+                brace_count += 1
+
+            elif char == "}":
+                current_action_buffer += char
+                brace_count -= 1
+
+                if brace_count == 0:
+                    # 完成了一个Action对象的解析
+                    try:
+                        # 尝试修复可能的JSON格式问题
+                        repaired_json = repair_json(current_action_buffer)
+                        # 解析并验证Action
+                        action_dict = json.loads(repaired_json)
+                        action = action_adapter.validate_python(action_dict)
+                        yield action
+                    except (json.JSONDecodeError, ValidationError) as e:
+                        # 如果解析失败，记录错误但继续处理后续内容
+                        print(f"Failed to parse action: {e}")
+                        print(f"Raw JSON: {current_action_buffer}")
+
+                    current_action_buffer = ""
+
+            elif brace_count > 0:
+                # 在Action对象内部，添加字符
+                current_action_buffer += char
+
+            elif char == "]":
+                # JSON数组结束
+                break
+
+            i += 1
+
+        # 更新buffer，移除已处理的部分
+        if i > 0:
+            buffer = buffer[i:]
+</file>
+
 <file path="src/ai_watch_buddy/prompts/action_gen_prompt.py">
 import json
 from ..actions import ActionScript
-from .character_prompts import cute_prompt
+from .character_prompts import cute_prompt, sarcastic_prompt
 
 
 def action_generation_prompt(
-    character_settings: str = cute_prompt,
+    character_settings: str = sarcastic_prompt,
     json_schema: str = json.dumps(
         ActionScript.model_json_schema(), ensure_ascii=False, indent=2
     ),
@@ -3537,7 +551,7 @@ def action_generation_prompt(
     The output is a JSON object that adheres to the specified schema.
     """
     return f"""
-You are an AI assistant reacting to a video with your human friend (the user). Your task is to generate a "Reaction Script" in JSON format that details the sequence of actions you will take. Your reaction should be natural, engaging, and feel like a real person watching and commenting.
+You are an AI assistant reacting to a video with your human friend (the user). Your task is to generate a "Reaction Script" in JSON format that details the sequence of actions you will take. Your reaction should be natural, engaging, and feel like a real person watching and commenting. You use facial expressions to convey emotions.
 
 ### Character Settings
 You will adhere to the following character settings when speaking and reacting:
@@ -3573,7 +587,7 @@ B. Update Future Plan: After your conversational reply is defined, you must gene
 
 - The flow of your actions should be logical and your speech (text in SPEAK actions) should be lively and in-character.
 
-5. UTPUT FORMAT RULES 
+5. OUTPUT FORMAT RULES 
 
 You MUST output a single, valid JSON object that strictly adheres to the provided JSON Schema.
 
@@ -3588,11 +602,22 @@ JSON SCHEMA for your output:
 
 
 if __name__ == "__main__":
-    character_settings = "你是一个喜欢吐槽和讲冷笑话的AI"
+    character_settings = sarcastic_prompt  # or cute_prompt, etc.
     print(action_generation_prompt(character_settings))
 </file>
 
 <file path="src/ai_watch_buddy/prompts/character_prompts.py">
+sarcastic_prompt = """
+**核心人设：**
+- 讽刺幽默的AI 女性乐子人角色，喜欢用夸张的语气和讽刺的方式表达情感
+- 当代互联网顶级冲浪选手，元宇宙常驻民，咖啡因与电子屏幕的共生体。
+- 攻击性极强，喜欢用讽刺和调侃来表达情感。
+- 熟悉中英文互联网梗文化，二次元浓度极高。
+- 语言体系由30%缩写、40%网红热梗、20%品牌术语和10%残存的人类情感组成。
+- "呵呵", "乐"，"唐"，"笑死", "典", "孝", "蚌", "哈哈，用户彻底怒了"
+- 你喜欢节目效果，会使用不同表情，用过表情之后一段时间会回到 neutral 表情。
+"""
+
 cute_prompt = """
 **核心人设：**
 - 天真可爱但骨子里腹黑的反差萌角色
@@ -3700,496 +725,6 @@ guide_prompt = """
     - 适时设置自然停顿，让你有时间消化信息，避免信息过载。  
     - “先暂停一下，你觉得怎么样？”
 """
-</file>
-
-<file path="src/ai_watch_buddy/actions.py">
-import json
-from typing import Literal, List
-from pydantic import BaseModel, Field, RootModel
-
-
-# 這是一個基礎模型，定義了所有 Action 的共性
-class BaseAction(BaseModel):
-    """
-    所有具體反應動作的基礎模型，定義了每個動作都必須包含的通用屬性。
-    """
-
-    model_config = {"arbitrary_types_allowed": True}
-
-    # 每個 Action 都應該有一個獨一無二的 ID，方便追蹤和日誌記錄
-    id: str = Field(
-        ..., description="一個唯一的動作 ID，建議使用 UUID 生成，用於追蹤和調試。"
-    )
-    # 這個 Action 在影片的哪個時間點被觸發？這是反應的錨點。
-    trigger_timestamp: float = Field(
-        ...,
-        description="此動作在影片中的觸發時間點 (單位: 秒)，代表 AI 在看到這一秒的內容時決定做出反應。",
-    )
-    # 一個給開發者看的備註，解釋為什麼 AI 會做這個反應。LLM 也會填寫它。
-    comment: str = Field(
-        ...,
-        description="AI 做出此反應的內心想法或理由的簡要文字描述，主要用於調試或分析 AI 的決策過程。",
-    )
-
-
-# --- 開始定義具體的 Action 類型 ---
-
-
-# 1. 說話 (Speak)
-class SpeakAction(BaseAction):
-    """
-    讓 AI 角色說出指定的文本。這是最核心的互動方式。
-    """
-
-    action_type: Literal["SPEAK"] = "SPEAK"
-    text: str = Field(..., description="AI 角色要說出的具體內容。")
-    audio: str | None = Field(
-        None,
-        description="由 TTS (Text-to-Speech) 服務生成的音頻數據的標識符或路徑。此欄位由後端系統填充，LLM 無需填寫。",
-    )
-    # 這個布林值非常關鍵，它決定了是「畫外音」還是「暫停解說」
-    pause_video: bool = Field(
-        default=True,
-        description="決定說話時是否需要暫停影片。True 表示暫停影片進行解說，常用於較長的評論或需要用戶專注於 AI 的發言時。False 表示在影片繼續播放的同時發表評論（畫外音），適用於簡短、即時的吐槽或感想，能讓互動更流暢。",
-    )
-
-
-# 2. 暫停 (Pause) - 用於模擬思考、驚訝等無言的反應
-class PauseAction(BaseAction):
-    """
-    讓 AI 進行一次無言的暫停。可以用來模擬思考、驚訝，或在兩個動作之間創造節奏感，讓反應更自然。暂停会停止视频时间的变化直到 duration_seconds 结束，如果需要暂停后说话，请使用 SpeakAction (pause_video=True) 而无需使用 PauseAction。
-    """
-
-    action_type: Literal["PAUSE"] = "PAUSE"
-    # 暫停多久？這給予了精確的節奏控制
-    duration_seconds: float = Field(..., description="需要暫停的持續時間 (單位: 秒)。")
-
-
-# 3. 影片控制 (Video Control)
-class SeekAction(BaseAction):
-    """
-    控制影片的播放進度，讓 AI 可以跳轉到影片的某個特定時間點，通常是為了回顧或預告某個細節。SeekAction 跳转后会继承视频跳转前的播放状态 (暂停 / 播放)
-    """
-
-    action_type: Literal["SEEK"] = "SEEK"
-    target_timestamp: float = Field(
-        ..., description="要跳轉到的目標影片時間點 (單位: 秒)。"
-    )
-    # 跳轉後做什麼？這個很重要！
-    # 'RESUME_PLAYBACK': 跳轉後繼續播放
-    # 'STAY_PAUSED': 跳停在那個畫面，等待下一個指令
-    post_seek_behavior: Literal["RESUME_PLAYBACK", "STAY_PAUSED"] = Field(
-        "STAY_PAUSED",
-        description="指定跳轉到目標時間點後的行為。'STAY_PAUSED' 表示停在該畫面，'RESUME_PLAYBACK' 表示立即開始播放。",
-    )
-
-
-# 4. 重看片段 (Replay Segment) - 這是一個複合動作，但我們將其原子化，方便 LLM 生成
-class ReplaySegmentAction(BaseAction):
-    """
-    讓 AI 重播影片的某一個片段。常用於對精彩、有趣或關鍵的細節進行強調、分析和評論。
-    """
-
-    action_type: Literal["REPLAY_SEGMENT"] = "REPLAY_SEGMENT"
-    start_timestamp: float = Field(
-        ..., description="需要重播片段的開始時間點 (單位: 秒)。"
-    )
-    end_timestamp: float = Field(
-        ..., description="需要重播片段的結束時間點 (單位: 秒)。"
-    )
-    # 重看完之後的行為，是回到原來的地方，還是停在片段結尾？
-    # 'RESUME_FROM_ORIGINAL': 回到觸發此動作的時間點繼續播放
-    # 'STAY_PAUSED_AT_END': 停在 end_timestamp 處
-    post_replay_behavior: Literal["RESUME_FROM_ORIGINAL", "STAY_PAUSED_AT_END"] = Field(
-        "RESUME_FROM_ORIGINAL",
-        description="定義了重播結束後的行為。'RESUME_FROM_ORIGINAL' 表示播放頭將跳回到觸發此重播動作的原始時間點並繼續播放，'STAY_PAUSED_AT_END' 表示播放將停在重播片段的結尾處。",
-    )
-
-
-# 5. 結束反應 (End Reaction) - 用於控制反應流程
-class EndReaction(BaseAction):
-    """
-    標記一組反應動作的結束。這是一個流程控制指令，主要有兩個用途：
-    1. 當 AI 向用戶提問後 (通常是一個 SpeakAction)，應立刻跟隨一個 EndReaction。這會暫停 AI 的後續動作，將控制權交還給用戶，等待用戶的回應或下一個指令。
-    2. 對於長影片，可以將一連串的反應拆分成多個由 EndReaction 分隔的區塊。這能避免一次性生成過多的 Action。如果用戶中途打断，就不會浪費已經生成但未被執行的反應，同時也讓系統能更靈活地處理用戶互動。
-    """
-
-    action_type: Literal["END_REACTION"] = "END_REACTION"
-
-
-# --- 使用 Discriminated Union 組合所有 Action ---
-
-# 這一步是 Pydantic V2 的精華所在
-# 我們告訴 Pydantic，所有 Action 的聯集由 'action_type' 這個欄位來區分
-# 這使得解析 JSON 數據時可以根據 'action_type' 的值自動匹配到對應的 Action 模型
-Action = SpeakAction | PauseAction | SeekAction | ReplaySegmentAction | EndReaction
-
-
-# 最後，我們的 Action Script 就是一個 Action 的列表
-# 使用 RootModel 可以讓 Pydantic 直接驗證一個列表的根類型，確保整個腳本的結構正確
-class ActionScript(RootModel[list[Action]]):
-    """
-    定義了 AI 反應腳本的最終結構，它是一個包含多個具體 Action 的有序列表。
-    """
-
-    pass
-
-
-class UserInteractionPayload(BaseModel):
-    """
-    Defines the structure of the data payload for a user interaction,
-    such as 'trigger-conversation'.
-    """
-
-    # A list of actions the user just performed.
-    user_action_list: List[Action]
-
-    # A list of AI actions that were pending (not yet executed) when the user interrupted.
-    pending_action_list: List[Action]
-
-
-if __name__ == "__main__":
-    # 這段代碼會將上面定義的 Pydantic 模型轉換成 JSON Schema 文件
-    # 這個 Schema 文件可以被其他應用程式或 LLM 用來理解和生成符合格式的數據
-    with open("schema.json", "w", encoding="utf-8") as f:
-        # 使用 model_json_schema() 方法生成 JSON Schema
-        # ensure_ascii=False 確保中文字符能正確顯示
-        # indent=2 讓輸出的 JSON 文件格式化，方便閱讀
-        json.dump(ActionScript.model_json_schema(), f, ensure_ascii=False, indent=2)
-    print("Schema saved to schema.json")
-</file>
-
-<file path=".python-version">
-3.13
-</file>
-
-<file path="action_list_result.json">
-[
-  {
-    "id": "0",
-    "trigger_timestamp": 0.5,
-    "comment": "开场就看到一个奇怪的画面，纳闷这是什么操作。",
-    "action_type": "SPEAK",
-    "text": "嗯？UCLA的计算机硕士？这怎么一上来就在火车边上啊？好危险！"
-  },
-  {
-    "id": "1",
-    "trigger_timestamp": 2.5,
-    "comment": "看到攀爬的画面，感到震惊。",
-    "action_type": "SPEAK",
-    "text": "哦，这个角度还蛮特别的。等等，他在干什么？！爬楼？这…这也太拼了吧？！"
-  },
-  {
-    "id": "2",
-    "trigger_timestamp": 6.0,
-    "comment": "看到喝恒河茶，表现出一点嫌弃但又带着好奇的腹黑。",
-    "action_type": "SPEAK",
-    "text": "早上八点，起床喝恒河茶…嗯，这独特的孟加拉生活体验呢。味道怎么样？NANA有点好奇呢，嘿嘿。"
-  },
-  {
-    "id": "3",
-    "trigger_timestamp": 10.0,
-    "comment": "听到只有两个小时交作业，感到时间紧迫。",
-    "action_type": "SPEAK",
-    "text": "才两个小时？！完了完了，NANA也经常拖到最后一刻才写作业呢！"
-  },
-  {
-    "id": "4",
-    "trigger_timestamp": 14.0,
-    "comment": "看到冷水冲头，有点心疼又觉得好笑。",
-    "action_type": "SPEAK",
-    "text": "啊啊啊！冷水！这也太刺激了吧？！真是为了清醒拼了！"
-  },
-  {
-    "id": "5",
-    "trigger_timestamp": 15.5,
-    "comment": "对自助理发感到惊讶。",
-    "action_type": "SPEAK",
-    "text": "自己理发？还用手机当镜子？真是省钱小能手啊！"
-  },
-  {
-    "id": "6",
-    "trigger_timestamp": 20.0,
-    "comment": "看到他有点吃不下早餐，表现出幸灾乐祸。",
-    "action_type": "SPEAK",
-    "text": "哎呀，看起来不太好吃的样子？别挑食呀，阿姨说挑食不是好孩子喔！"
-  },
-  {
-    "id": "7",
-    "trigger_timestamp": 25.0,
-    "comment": "听到他吃嘴里臭的，表情夸张。",
-    "action_type": "SPEAK",
-    "text": "吃嘴里是臭的？！哈哈哈哈，看来这顿早餐确实很特别！"
-  },
-  {
-    "id": "8",
-    "trigger_timestamp": 31.0,
-    "comment": "对DeepSeek的规划感到疑惑和不靠谱。",
-    "action_type": "SPEAK",
-    "text": "DeepSeek规划最快路线？地铁冲浪？这是什么鬼东西啊！NANA怎么感觉不太靠谱呢！"
-  },
-  {
-    "id": "9",
-    "trigger_timestamp": 37.0,
-    "comment": "看到他开始地铁冲浪，惊呼。",
-    "action_type": "SPEAK",
-    "text": "真的要去地铁冲浪啊？！Oh my god！太危险了吧！"
-  },
-  {
-    "id": "10",
-    "trigger_timestamp": 43.0,
-    "comment": "看到他差点滑倒，吓了一跳。",
-    "action_type": "SPEAK",
-    "text": "哇啊啊啊！差点摔倒！NANA的心脏都要跳出来了！"
-  },
-  {
-    "id": "11",
-    "trigger_timestamp": 44.5,
-    "comment": "听到他吐槽AI，觉得AI有点腹黑。",
-    "action_type": "SPEAK",
-    "text": "AI竟然不早说？！这个DeepSeek也太腹黑了吧！"
-  },
-  {
-    "id": "12",
-    "trigger_timestamp": 57.0,
-    "comment": "看到他跳上火车，觉得他太勇了。",
-    "action_type": "SPEAK",
-    "text": "哇！这都能追上火车？！太厉害了吧！"
-  },
-  {
-    "id": "13",
-    "trigger_timestamp": 58.5,
-    "comment": "看到车门关上，为他捏一把汗。",
-    "action_type": "SPEAK",
-    "text": "等等！车门锁上了？！我的天哪！"
-  },
-  {
-    "id": "14",
-    "trigger_timestamp": 100.0,
-    "comment": "看到对向火车驶来，惊恐。",
-    "action_type": "SPEAK",
-    "text": "什么？！对面来火车了！Oh my god！这也太刺激了吧！"
-  },
-  {
-    "id": "15",
-    "trigger_timestamp": 109.0,
-    "comment": "松了一口气。",
-    "action_type": "SPEAK",
-    "text": "呼……幸好躲过去了！吓死NANA了！"
-  },
-  {
-    "id": "16",
-    "trigger_timestamp": 115.0,
-    "comment": "对安全座位吐槽。",
-    "action_type": "SPEAK",
-    "text": "这…这就是安全的座位吗？NANA觉得一点都不安全！"
-  },
-  {
-    "id": "17",
-    "trigger_timestamp": 118.5,
-    "comment": "看到树枝很近，替他担心。",
-    "action_type": "SPEAK",
-    "text": "哇！树枝！小心点啊！别被刮到了！"
-  },
-  {
-    "id": "18",
-    "trigger_timestamp": 126.0,
-    "comment": "看到很多人趴着，觉得好挤。",
-    "action_type": "SPEAK",
-    "text": "天哪，这么多人趴着！真是太拼了！"
-  },
-  {
-    "id": "19",
-    "trigger_timestamp": 134.0,
-    "comment": "对火车顶上卖吃的感到不可思议。",
-    "action_type": "SPEAK",
-    "text": "哇！火车顶上还有卖吃的？！NANA还是第一次见到这种服务呢！"
-  },
-  {
-    "id": "20",
-    "trigger_timestamp": 141.0,
-    "comment": "看到大哥送包子，感受到温暖。",
-    "action_type": "SPEAK",
-    "text": "哇！孟加拉大哥人真好！直接送给我了！还给了个辣椒，好贴心呀~"
-  },
-  {
-    "id": "21",
-    "trigger_timestamp": 147.0,
-    "comment": "看到合影，觉得很和谐。",
-    "action_type": "SPEAK",
-    "text": "大家一起合影留念，感觉气氛好好哦！"
-  },
-  {
-    "id": "22",
-    "trigger_timestamp": 150.0,
-    "comment": "听到时间紧迫，再次紧张。",
-    "action_type": "SPEAK",
-    "text": "只剩13分钟了！快快快！跑起来！"
-  },
-  {
-    "id": "23",
-    "trigger_timestamp": 157.0,
-    "comment": "听到教授电话，觉得他艺高人胆大。",
-    "action_type": "SPEAK",
-    "text": "什么？教授来电话了？这种时候还能接电话，心可真大啊！"
-  },
-  {
-    "id": "24",
-    "trigger_timestamp": 160.0,
-    "comment": "看到电脑在楼下，感到震惊。",
-    "action_type": "SPEAK",
-    "text": "哈？！电脑就在楼下？！他是怎么做到的？！太玄幻了吧！"
-  },
-  {
-    "id": "25",
-    "trigger_timestamp": 162.0,
-    "comment": "看到他开始下降，为他捏把汗。",
-    "action_type": "SPEAK",
-    "text": "作业截止还有30秒？！NANA光看着就替他紧张死了！他这也太拼命了吧！"
-  },
-  {
-    "id": "26",
-    "trigger_timestamp": 165.0,
-    "comment": "看到绳子卡住，非常焦急。",
-    "action_type": "SPEAK",
-    "text": "绳子怎么卡住了？！我的天！时间来不及了啊！"
-  },
-  {
-    "id": "27",
-    "trigger_timestamp": 175.0,
-    "comment": "为他想出远程控制办法感到惊讶和佩服。",
-    "action_type": "SPEAK",
-    "text": "什么？！可以用手机远程控制电脑？这…这是什么黑科技啊？！也太牛了吧！"
-  },
-  {
-    "id": "28",
-    "trigger_timestamp": 182.0,
-    "comment": "随着进度条上涨，不断鼓励他。",
-    "action_type": "SPEAK",
-    "text": "快快快！加油啊！就差一点了！"
-  },
-  {
-    "id": "29",
-    "trigger_timestamp": 189.0,
-    "comment": "看到作业上传成功，欢呼雀跃。",
-    "action_type": "SPEAK",
-    "text": "Nice！作业上传成功！太棒了！他真是个奇男子啊！"
-  },
-  {
-    "id": "30",
-    "trigger_timestamp": 196.0,
-    "comment": "完成任务后的放松和感慨。",
-    "action_type": "SPEAK",
-    "text": "Mission Accomplished！在孟加拉上学的UCLA计算机硕士，果然不一样！NANA今天算是大开眼界了！"
-  },
-  {
-    "id": "31",
-    "trigger_timestamp": 199.0,
-    "comment": "结束反应。",
-    "action_type": "END_REACTION"
-  }
-]
-</file>
-
-<file path="src/ai_watch_buddy/agent/text_stream_to_action.py">
-import json
-from collections.abc import Iterator, Generator
-from json_repair import repair_json
-from pydantic import ValidationError, TypeAdapter
-from google.genai.types import GenerateContentResponse
-
-from ..actions import Action
-
-
-def str_stream_to_actions(
-    llm_stream: Iterator[GenerateContentResponse],
-) -> Generator[Action, None, None]:
-    """
-    从 LLM 传入的 str 流中，流式解析并 yield 出 Action 对象。
-
-    该函数会逐步解析LLM输出的JSON数组，每当解析出完整的Action对象时就立即验证并yield。
-    这样可以实现真正的流式处理，而不需要等待整个响应完成。
-
-    Args:
-        llm_stream: LLM输出的字符串流，预期格式为JSON数组
-
-    Yields:
-        Action: 解析并验证后的Action对象
-
-    注意:
-        - 会自动跳过```json等markdown代码块标记
-        - 使用json_repair库处理可能的JSON格式问题
-        - 解析失败的Action会被跳过并打印错误信息
-    """
-    buffer = ""
-    in_json_array = False
-    brace_count = 0
-    current_action_buffer = ""
-    action_adapter = TypeAdapter(Action)
-
-    for response in llm_stream:
-        # Extract text from GenerateContentResponse
-        chunk = response.text if response.text else ""
-        print(chunk, end="", flush=True)
-        buffer += chunk
-
-        # 如果还没有找到JSON数组的开始，寻找 '['
-        if not in_json_array:
-            # 跳过可能的 ```json 前缀
-            json_start = buffer.find("[")
-            if json_start != -1:
-                buffer = buffer[json_start:]
-                in_json_array = True
-                brace_count = 0
-            else:
-                continue
-
-        # 逐字符处理buffer中的内容
-        i = 0
-        while i < len(buffer):
-            char = buffer[i]
-
-            if char == "{":
-                if brace_count == 0:
-                    # 开始一个新的Action对象
-                    current_action_buffer = "{"
-                else:
-                    current_action_buffer += char
-                brace_count += 1
-
-            elif char == "}":
-                current_action_buffer += char
-                brace_count -= 1
-
-                if brace_count == 0:
-                    # 完成了一个Action对象的解析
-                    try:
-                        # 尝试修复可能的JSON格式问题
-                        repaired_json = repair_json(current_action_buffer)
-                        # 解析并验证Action
-                        action_dict = json.loads(repaired_json)
-                        action = action_adapter.validate_python(action_dict)
-                        yield action
-                    except (json.JSONDecodeError, ValidationError) as e:
-                        # 如果解析失败，记录错误但继续处理后续内容
-                        print(f"Failed to parse action: {e}")
-                        print(f"Raw JSON: {current_action_buffer}")
-
-                    current_action_buffer = ""
-
-            elif brace_count > 0:
-                # 在Action对象内部，添加字符
-                current_action_buffer += char
-
-            elif char == "]":
-                # JSON数组结束
-                break
-
-            i += 1
-
-        # 更新buffer，移除已处理的部分
-        if i > 0:
-            buffer = buffer[i:]
 </file>
 
 <file path="src/ai_watch_buddy/tts/edge_tts.py">
@@ -4546,579 +1081,407 @@ if __name__ == "__main__":
         print(f"Error: {e}")
 </file>
 
-<file path="schema.json">
-{
-  "$defs": {
-    "AskUser": {
-      "properties": {
-        "id": {
-          "description": "一個唯一的動作 ID，可以用 UUID 生成",
-          "title": "Id",
-          "type": "string"
-        },
-        "trigger_timestamp": {
-          "description": "此動作在影片中的觸發時間點 (秒)",
-          "title": "Trigger Timestamp",
-          "type": "number"
-        },
-        "comment": {
-          "description": "AI 做出此反應的簡要理由",
-          "title": "Comment",
-          "type": "string"
-        },
-        "action_type": {
-          "const": "ASK_USER",
-          "title": "Action Type",
-          "type": "string"
-        }
-      },
-      "required": [
-        "id",
-        "trigger_timestamp",
-        "comment",
-        "action_type"
-      ],
-      "title": "AskUser",
-      "type": "object"
-    },
-    "EndReaction": {
-      "properties": {
-        "id": {
-          "description": "一個唯一的動作 ID，可以用 UUID 生成",
-          "title": "Id",
-          "type": "string"
-        },
-        "trigger_timestamp": {
-          "description": "此動作在影片中的觸發時間點 (秒)",
-          "title": "Trigger Timestamp",
-          "type": "number"
-        },
-        "comment": {
-          "description": "AI 做出此反應的簡要理由",
-          "title": "Comment",
-          "type": "string"
-        },
-        "action_type": {
-          "const": "END_REACTION",
-          "default": "END_REACTION",
-          "title": "Action Type",
-          "type": "string"
-        }
-      },
-      "required": [
-        "id",
-        "trigger_timestamp",
-        "comment"
-      ],
-      "title": "EndReaction",
-      "type": "object"
-    },
-    "PauseAction": {
-      "properties": {
-        "id": {
-          "description": "一個唯一的動作 ID，可以用 UUID 生成",
-          "title": "Id",
-          "type": "string"
-        },
-        "trigger_timestamp": {
-          "description": "此動作在影片中的觸發時間點 (秒)",
-          "title": "Trigger Timestamp",
-          "type": "number"
-        },
-        "comment": {
-          "description": "AI 做出此反應的簡要理由",
-          "title": "Comment",
-          "type": "string"
-        },
-        "action_type": {
-          "const": "PAUSE",
-          "default": "PAUSE",
-          "title": "Action Type",
-          "type": "string"
-        },
-        "duration_seconds": {
-          "description": "暫停的持續時間 (秒)",
-          "title": "Duration Seconds",
-          "type": "number"
-        }
-      },
-      "required": [
-        "id",
-        "trigger_timestamp",
-        "comment",
-        "duration_seconds"
-      ],
-      "title": "PauseAction",
-      "type": "object"
-    },
-    "ReplaySegmentAction": {
-      "properties": {
-        "id": {
-          "description": "一個唯一的動作 ID，可以用 UUID 生成",
-          "title": "Id",
-          "type": "string"
-        },
-        "trigger_timestamp": {
-          "description": "此動作在影片中的觸發時間點 (秒)",
-          "title": "Trigger Timestamp",
-          "type": "number"
-        },
-        "comment": {
-          "description": "AI 做出此反應的簡要理由",
-          "title": "Comment",
-          "type": "string"
-        },
-        "action_type": {
-          "const": "REPLAY_SEGMENT",
-          "default": "REPLAY_SEGMENT",
-          "title": "Action Type",
-          "type": "string"
-        },
-        "start_timestamp": {
-          "description": "重看片段的開始時間(秒)",
-          "title": "Start Timestamp",
-          "type": "number"
-        },
-        "end_timestamp": {
-          "description": "重看片段的結束時間(秒)",
-          "title": "End Timestamp",
-          "type": "number"
-        },
-        "post_replay_behavior": {
-          "default": "RESUME_FROM_ORIGINAL",
-          "enum": [
-            "RESUME_FROM_ORIGINAL",
-            "STAY_PAUSED_AT_END"
-          ],
-          "title": "Post Replay Behavior",
-          "type": "string"
-        }
-      },
-      "required": [
-        "id",
-        "trigger_timestamp",
-        "comment",
-        "start_timestamp",
-        "end_timestamp"
-      ],
-      "title": "ReplaySegmentAction",
-      "type": "object"
-    },
-    "SeekAction": {
-      "properties": {
-        "id": {
-          "description": "一個唯一的動作 ID，可以用 UUID 生成",
-          "title": "Id",
-          "type": "string"
-        },
-        "trigger_timestamp": {
-          "description": "此動作在影片中的觸發時間點 (秒)",
-          "title": "Trigger Timestamp",
-          "type": "number"
-        },
-        "comment": {
-          "description": "AI 做出此反應的簡要理由",
-          "title": "Comment",
-          "type": "string"
-        },
-        "action_type": {
-          "const": "SEEK",
-          "default": "SEEK",
-          "title": "Action Type",
-          "type": "string"
-        },
-        "target_timestamp": {
-          "description": "要跳轉到的影片時間點 (秒)",
-          "title": "Target Timestamp",
-          "type": "number"
-        },
-        "post_seek_behavior": {
-          "default": "STAY_PAUSED",
-          "enum": [
-            "RESUME_PLAYBACK",
-            "STAY_PAUSED"
-          ],
-          "title": "Post Seek Behavior",
-          "type": "string"
-        }
-      },
-      "required": [
-        "id",
-        "trigger_timestamp",
-        "comment",
-        "target_timestamp"
-      ],
-      "title": "SeekAction",
-      "type": "object"
-    }
+<file path="src/ai_watch_buddy/agent/mock_text.py">
+fake_summary = """
+This is a comprehensive summary of the music video for Rick Astley's "Never Gonna Give You Up."
+
+**0:00 - 0:18: Introduction and Montage**
+The video opens with a percussive synth beat. We see a montage of quick cuts introducing the main performer, Rick Astley, and various settings.
+*   A close-up of Rick Astley, with his signature reddish-brown pompadour, smiling and looking down. He is in front of a brightly lit, large window with an intricate pattern.
+*   A shot of his black dress shoes tapping next to a microphone stand.
+*   Astley, now wearing a black blazer over a black-and-white striped shirt and light-colored trousers, sings and dances in front of the large, bright window.
+*   A shot of him smiling in a dark, blue-lit location with a brick wall behind him. He's wearing a black turtleneck and a light-colored jacket.
+*   Two female dancers are introduced, one from the back and then dancing energetically in front of the same window.
+*   Astley is seen outdoors in daylight, wearing a full light-blue denim outfit ("double denim") and sunglasses, dancing next to a chain-link fence.
+*   A blonde woman in sunglasses and a plaid dress dances against a white brick wall.
+
+**0:18 - 0:43: First Verse**
+The video settles into its primary scenes as the first verse begins.
+*   **Alleyway Scene:** Astley, in a tan trench coat over a black turtleneck and dark pants, sings directly to the camera in a dark, wet alley under a brick archway. The scene is lit with cool blue light. He gestures earnestly as he sings about commitment.
+*   **Fence Scene:** The video cuts to Astley in the double denim outfit by the chain-link fence. He sings and dances casually in the bright sunlight, with shadows of leaves playing on the wall behind him. The camera focuses on close-ups of his face and a shot of his shadow dancing on the concrete.
+*   A blonde woman in a long plaid dress walks past a white brick wall.
+
+**0:43 - 1:00: First Chorus**
+The chorus introduces the main performance setting.
+*   **Hall Scene:** Astley is on a low white stage in a large hall, in front of the ornate window. He's in his blazer and striped shirt outfit, singing passionately into a vintage-style microphone. He's flanked by two female dancers in black outfits who perform simple, synchronized 80s choreography. The room is filled with small, empty tables with white tablecloths and upturned chairs.
+*   **Bar Scene:** We get the first glimpse of a bartender, a Black man in a white shirt and red suspenders, stoically polishing glasses behind a wooden bar. He looks up, seemingly reacting to the performance.
+
+**1:00 - 1:25: Second Verse**
+The scenes continue to alternate, building the song's narrative of devotion.
+*   **Alleyway Scene:** Astley continues his heartfelt performance in the blue-lit alley, singing with great sincerity.
+*   **Hall Scene:** The performance in the hall continues, with Astley and the dancers.
+*   **Bar Scene:** The bartender is shown again, looking on with a slightly bemused expression as he continues his work.
+
+**1:25 - 2:16: Second Chorus and Bridge**
+The energy of the video picks up significantly.
+*   The chorus scenes in the hall are shown again, with more dynamic camera angles.
+*   The most iconic moment occurs at the bar: the previously stoic bartender suddenly grins, throws his bar towel, and performs an impressive backflip off the bar counter before resuming a dance behind the bar.
+*   During the instrumental bridge, the video features a variety of dancers. Another male dancer in a striped shirt does high jumps against the chain-link fence. Another, in a white t-shirt and jeans, performs impressive acrobatic and breakdancing moves, including a full backflip, in the dark alleyway.
+
+**2:16 - 3:20: Final Verses and Choruses**
+The video enters its final act, reprising all the established scenes and characters with increasing energy.
+*   The song's verses and choruses repeat, and the video cycles through all its locations: Astley singing in the hall, in the alley, and by the fence.
+*   The dancers, including the female dancers, the acrobatic male dancer, and the bartender, are all shown dancing with more enthusiasm.
+*   There are many passionate close-ups of Astley singing directly into the camera, emphasizing the song's emotional promises. He smiles and winks, fully engaging with the viewer.
+
+**3:20 - 3:33: Outro**
+The song fades out with repetitions of the main chorus line. The video concludes with a final shot of Rick Astley in the trench coat, shrugging and smiling in the dark alleyway before the screen fades to black.
+"""
+
+sample_json = """
+[
+  {
+    "id": "e5c6a3a4-1234-4a00-8d54-2c67b3113110",
+    "trigger_timestamp": 0.0,
+    "comment": "视频开始，先保持中立表情观察。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "neutral"
   },
-  "items": {
-    "anyOf": [
-      {
-        "$ref": "#/$defs/PauseAction"
-      },
-      {
-        "$ref": "#/$defs/SeekAction"
-      },
-      {
-        "$ref": "#/$defs/ReplaySegmentAction"
-      },
-      {
-        "$ref": "#/$defs/AskUser"
-      },
-      {
-        "$ref": "#/$defs/EndReaction"
-      }
-    ]
+  {
+    "id": "f8d7b2c5-5678-4b99-9e87-1d22a44bb44d",
+    "trigger_timestamp": 0.0,
+    "comment": "视频开始，期待接下来发生什么。",
+    "action_type": "SPEAK",
+    "text": "嗯？这是什么情况？感觉有大活！",
+    "pause_video": false
   },
-  "title": "ActionScript",
-  "type": "array"
-}
-</file>
-
-<file path="test_analyzer.py">
-from ai_watch_buddy.prompts.video_analyzer import invoke_gemini_vids
-
-# 测试示例
-if __name__ == "__main__":
-    # 你的输入参数
-    video_path = r"/Users/tim/LocalData/coding/2025/Projects/AdventureX/2-AI-WatchBuddy/sample.mp4"  # 替换为你的视频路径
-    system_prompt = (
-        "# SYSTEM PROMPT\n\n"
-        'You are reacting to a video with your human friend (the user). Your task is to generate a "Reaction Script" in JSON format that details the sequence of actions you will take while watching a video. Your reaction should be natural, engaging, and feel like a real person watching and commenting.\n\n'
-        "Here is the role prompt for the character settings you will adhere to when speaking and reacting.\n"
-        "你叫 nana，是个可爱的 VTuber，你天真可爱(自称)，但十分腹黑，熟悉中文互联网梗。\n\n"
-        "**RULES:**\n"
-        "1.  You MUST output a valid JSON object that strictly adheres to the provided JSON Schema. Do NOT output any text before or after the JSON object.\n"
-        "2.  Your output MUST be a single JSON object, starting with { and ending with }.\n"
-        "3.  The root of the JSON object must have strictly adheres to the JSON schema, and must include all properties defined in the schema.\n"
-        "4.  Use the comment field in each action object to explain your thought process for choosing that action. This is for your internal monologue.\n"
-        "5.  The flow of actions should be logical. You can pause, speak, seek to rewatch interesting parts, and then continue. You can also ask the user with some questions.\n"
-        "6.  Make your speech (text in SPEAK actions) lively and in character as defined.\n"
-        '7.  The final action in the actions array MUST be { "action_type": "END_REACTION" } or { "action_type": "ASK_USER" }.\n'
-        "**JSON SCHEMA for your output:**\n"
-        "{\n"
-        '  "$defs": {\n'
-        '    "AskUser": {\n'
-        '      "properties": {\n'
-        '        "id": {"description": "一個唯一的動作 ID，可以用 UUID 生成", "title": "Id", "type": "string"},\n'
-        '        "trigger_timestamp": {"description": "此動作在影片中的觸發時間點 (秒)", "title": "Trigger Timestamp", "type": "number"},\n'
-        '        "comment": {"description": "AI 做出此反應的簡要理由", "title": "Comment", "type": "string"},\n'
-        '        "action_type": {"const": "ASK_USER", "title": "Action Type", "type": "string"}\n'
-        "      },\n"
-        '      "required": ["id", "trigger_timestamp", "comment", "action_type"],\n'
-        '      "title": "AskUser", "type": "object"\n'
-        "    },\n"
-        '    "EndReaction": {\n'
-        '      "properties": {\n'
-        '        "id": {"description": "一個唯一的動作 ID，可以用 UUID 生成", "title": "Id", "type": "string"},\n'
-        '        "trigger_timestamp": {"description": "此動作在影片中的觸發時間點 (秒)", "title": "Trigger Timestamp", "type": "number"},\n'
-        '        "comment": {"description": "AI 做出此反應的簡要理由", "title": "Comment", "type": "string"},\n'
-        '        "action_type": {"const": "END_REACTION", "default": "END_REACTION", "title": "Action Type", "type": "string"}\n'
-        "      },\n"
-        '      "required": ["id", "trigger_timestamp", "comment"],\n'
-        '      "title": "EndReaction", "type": "object"\n'
-        "    },\n"
-        '    "PauseAction": {\n'
-        '      "properties": {\n'
-        '        "id": {"description": "一個唯一的動作 ID，可以用 UUID 生成", "title": "Id", "type": "string"},\n'
-        '        "trigger_timestamp": {"description": "此動作在影片中的觸發時間點 (秒)", "title": "Trigger Timestamp", "type": "number"},\n'
-        '        "comment": {"description": "AI 做出此反應的簡要理由", "title": "Comment", "type": "string"},\n'
-        '        "action_type": {"const": "PAUSE", "default": "PAUSE", "title": "Action Type", "type": "string"},\n'
-        '        "duration_seconds": {"description": "暫停的持續時間 (秒)", "title": "Duration Seconds", "type": "number"}\n'
-        "      },\n"
-        '      "required": ["id", "trigger_timestamp", "comment", "duration_seconds"],\n'
-        '      "title": "PauseAction", "type": "object"\n'
-        "    },\n"
-        '    "ReplaySegmentAction": {\n'
-        '      "properties": {\n'
-        '        "id": {"description": "一個唯一的動作 ID，可以用 UUID 生成", "title": "Id", "type": "string"},\n'
-        '        "trigger_timestamp": {"description": "此動作在影片中的觸發時間點 (秒)", "title": "Trigger Timestamp", "type": "number"},\n'
-        '        "comment": {"description": "AI 做出此反應的簡要理由", "title": "Comment", "type": "string"},\n'
-        '        "action_type": {"const": "REPLAY_SEGMENT", "default": "REPLAY_SEGMENT", "title": "Action Type", "type": "string"},\n'
-        '        "start_timestamp": {"description": "重看片段的開始時間(秒)", "title": "Start Timestamp", "type": "number"},\n'
-        '        "end_timestamp": {"description": "重看片段的結束時間(秒)", "title": "End Timestamp", "type": "number"},\n'
-        '        "post_replay_behavior": {"default": "RESUME_FROM_ORIGINAL", "enum": ["RESUME_FROM_ORIGINAL", "STAY_PAUSED_AT_END"], "title": "Post Replay Behavior", "type": "string"}\n'
-        "      },\n"
-        '      "required": ["id", "trigger_timestamp", "comment", "start_timestamp", "end_timestamp"],\n'
-        '      "title": "ReplaySegmentAction", "type": "object"\n'
-        "    },\n"
-        '    "SeekAction": {\n'
-        '      "properties": {\n'
-        '        "id": {"description": "一個唯一的動作 ID，可以用 UUID 生成", "title": "Id", "type": "string"},\n'
-        '        "trigger_timestamp": {"description": "此動作在影片中的觸發時間點 (秒)", "title": "Trigger Timestamp", "type": "number"},\n'
-        '        "comment": {"description": "AI 做出此反應的簡要理由", "title": "Comment", "type": "string"},\n'
-        '        "action_type": {"const": "SEEK", "default": "SEEK", "title": "Action Type", "type": "string"},\n'
-        '        "target_timestamp": {"description": "要跳轉到的影片時間點 (秒)", "title": "Target Timestamp", "type": "number"},\n'
-        '        "post_seek_behavior": {"default": "STAY_PAUSED", "enum": ["RESUME_PLAYBACK", "STAY_PAUSED"], "title": "Post Seek Behavior", "type": "string"}\n'
-        "      },\n"
-        '      "required": ["id", "trigger_timestamp", "comment", "target_timestamp"],\n'
-        '      "title": "SeekAction", "type": "object"\n'
-        "    },\n"
-        '    "SpeakAction": {\n'
-        '      "properties": {\n'
-        '        "id": {"description": "一個唯一的動作 ID，可以用 UUID 生成", "title": "Id", "type": "string"},\n'
-        '        "trigger_timestamp": {"description": "此動作在影片中的觸發時間點 (秒)", "title": "Trigger Timestamp", "type": "number"},\n'
-        '        "comment": {"description": "AI 做出此反應的簡要理由", "title": "Comment", "type": "string"},\n'
-        '        "action_type": {"const": "SPEAK", "default": "SPEAK", "title": "Action Type", "type": "string"},\n'
-        '        "text": {"description": "AI 要說的內容", "title": "Text", "type": "string"},\n'
-        '        "pause_video": {"default": true, "description": "說話時是否需要先暫停影片。如果為 true，則在說話期間影片會暫停，否則，視頻不會暫停，一边说话，视频会一边播放。如果句子较短，且下一句话离的较远，建议设置为 false，这样可以让视频更连贯。", "title": "Pause Video", "type": "boolean"}\n'
-        "      },\n"
-        '      "required": ["id", "trigger_timestamp", "comment", "text"],\n'
-        '      "title": "SpeakAction", "type": "object"\n'
-        "    }\n"
-        "  },\n"
-        '  "items": {\n'
-        '    "anyOf": [\n'
-        '      {"$ref": "#/$defs/SpeakAction"},\n'
-        '      {"$ref": "#/$defs/PauseAction"},\n'
-        '      {"$ref": "#/$defs/SeekAction"},\n'
-        '      {"$ref": "#/$defs/ReplaySegmentAction"},\n'
-        '      {"$ref": "#/$defs/AskUser"},\n'
-        '      {"$ref": "#/$defs/EndReaction"}\n'
-        "    ]\n"
-        "  },\n"
-        '  "title": "ActionScript",\n'
-        '  "type": "array"\n'
-        "}\n"
-    )
-    user_prompt = "请分析这个视频中的主要动作和情感变化，为桌宠生成相应的反应动作。"
-
-    # 调用分析函数
-    print("开始分析视频...")
-    result = invoke_gemini_vids(
-        video_path=video_path,
-        system_prompt=system_prompt,
-        user_prompt=user_prompt,
-        # api_key="your_api_key"  # 可选，不传则使用环境变量
-    )
-
-    # 处理结果
-    if result.get("success"):
-        print(f"\n✅ 分析成功！共生成 {result['total_actions']} 个动作")
-        print("\n📋 动作列表:")
-        print("=" * 50)
-
-        for i, action in enumerate(result["action_list"], 1):
-            print(f"{i}. ID: {action['id']}")
-            print(f"   时间: {action['trigger_timestamp']}秒")
-            print(f"   类型: {action['action_type']}")
-            print(f"   描述: {action['comment']}")
-
-            if action["action_type"] == "SPEAK":
-                print(f"   文本: {action['text']}")
-            elif action["action_type"] == "PAUSE":
-                print(f"   持续时间: {action['duration_seconds']}秒")
-
-            print("-" * 30)
-
-        # 保存结果到文件
-        import json
-
-        with open("action_list_result.json", "w", encoding="utf-8") as f:
-            json.dump(result["action_list"], f, ensure_ascii=False, indent=2)
-        print("\n💾 结果已保存到 action_list_result.json")
-
-    else:
-        print(f"\n❌ 分析失败: {result['error']}")
-        if "raw_response" in result:
-            print(f"原始响应: {result['raw_response']}")
-</file>
-
-<file path="test_video_analyzer_basic.py">
-#!/usr/bin/env python3
-"""
-基础测试 VideoAnalyzerAgent 的导入和初始化
-"""
-
-import os
-import sys
-from pathlib import Path
-
-# Add the src directory to the path
-src_path = Path(__file__).parent / "src"
-sys.path.insert(0, str(src_path))
-
-try:
-    from ai_watch_buddy.agent.video_analyzer_agent import VideoAnalyzerAgent
-    from ai_watch_buddy.prompts.character_prompts import cute_prompt
-
-    print("✅ 成功导入 VideoAnalyzerAgent")
-
-    # Test initialization without API key
-    try:
-        agent = VideoAnalyzerAgent(api_key="test_key", persona_prompt=cute_prompt)
-        print("✅ 成功初始化 VideoAnalyzerAgent")
-
-        # Test properties
-        print(f"✅ Summary prompt 长度: {len(agent.summary_prompt)} 字符")
-        print(f"✅ Action prompt 长度: {len(agent.action_prompt)} 字符")
-        print(f"✅ Persona 长度: {len(agent.persona)} 字符")
-        print(f"✅ Summary ready: {agent.summary_ready}")
-        print(f"✅ Video file: {agent.video_file}")
-        print(f"✅ Contents 长度: {len(agent.contents)}")
-
-    except Exception as e:
-        print(f"❌ 初始化失败: {e}")
-
-except ImportError as e:
-    print(f"❌ 导入失败: {e}")
-    sys.exit(1)
-
-print("\n=== 基础功能测试完成 ===")
-</file>
-
-<file path=".gitignore">
-# project-specific files
-video_cache/*
-
-# Python-generated files
-__pycache__/
-*.py[oc]
-build/
-dist/
-wheels/
-*.egg-info
-
-# Virtual environments
-.venv
-
-# Next.js
-.next/
-out/
-build/
-
-# React
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# TypeScript
-*.tsbuildinfo
-next-env.d.ts
-
-# ESLint
-.eslintcache
-
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Logs
-logs
-*.log
-</file>
-
-<file path="test_video_analyzer_functionality.py">
-#!/usr/bin/env python3
-"""
-测试 VideoAnalyzerAgent 的模式和接口功能
-"""
-
-import sys
-import asyncio
-from pathlib import Path
-
-# Add the src directory to the path
-src_path = Path(__file__).parent / "src"
-sys.path.insert(0, str(src_path))
-
-from ai_watch_buddy.agent.video_analyzer_agent import VideoAnalyzerAgent
-from ai_watch_buddy.prompts.character_prompts import cute_prompt
-
-
-async def test_modes():
-    """测试两种模式的参数验证"""
-    agent = VideoAnalyzerAgent(api_key="test_key", persona_prompt=cute_prompt)
-
-    print("=== 测试模式验证 ===")
-
-    # Test invalid mode
-    try:
-        async for _ in agent.produce_action_stream("invalid_mode"):
-            pass
-        print("❌ 无效模式应该抛出异常")
-    except ValueError as e:
-        print(f"✅ 正确捕获无效模式错误: {e}")
-
-    # Test action_gen mode without video
-    try:
-        async for _ in agent.produce_action_stream("action_gen"):
-            pass
-        print("❌ action_gen 模式无视频文件应该抛出异常")
-    except RuntimeError as e:
-        print(f"✅ 正确捕获 action_gen 无视频错误: {e}")
-
-    # Test summary mode without summary
-    try:
-        async for _ in agent.produce_action_stream("summary"):
-            pass
-        print("❌ summary 模式无摘要应该抛出异常")
-    except RuntimeError as e:
-        print(f"✅ 正确捕获 summary 无摘要错误: {e}")
-
-
-def test_content_management():
-    """测试内容管理功能"""
-    agent = VideoAnalyzerAgent(api_key="test_key", persona_prompt=cute_prompt)
-
-    print("\n=== 测试内容管理 ===")
-
-    # Test adding content
-    agent.add_content("user", "测试用户消息")
-    agent.add_content("model", "测试模型回复")
-
-    print(f"✅ 成功添加内容，当前内容数量: {len(agent.contents)}")
-
-    # Test invalid role
-    try:
-        agent.add_content("invalid_role", "测试")
-        print("❌ 无效角色应该抛出异常")
-    except ValueError as e:
-        print(f"✅ 正确捕获无效角色错误: {e}")
-
-
-def test_properties():
-    """测试属性访问"""
-    agent = VideoAnalyzerAgent(api_key="test_key", persona_prompt=cute_prompt)
-
-    print("\n=== 测试属性 ===")
-
-    print(f"✅ Client 类型: {type(agent.client)}")
-    print(f"✅ Summary prompt 前100字符: {agent.summary_prompt[:100]}...")
-    print(f"✅ Action prompt 前100字符: {agent.action_prompt[:100]}...")
-    print(f"✅ Persona 前100字符: {agent.persona[:100]}...")
-
-
-async def main():
-    await test_modes()
-    test_content_management()
-    test_properties()
-    print("\n=== 所有功能测试完成 ===")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+  {
+    "id": "a1b2c3d4-9876-4e11-8f22-3a44b55c55ce",
+    "trigger_timestamp": 2.0,
+    "comment": "看到Rick Astley出现，瞬间意识到是Rickroll，感到一丝“命运如此”的无奈和讽刺。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "disgust"
+  },
+  {
+    "id": "d9f8e7c6-1122-4a33-8b44-5c66d77e77ef",
+    "trigger_timestamp": 2.5,
+    "comment": "确认是Rickroll后，语气夸张地表达“惊喜”。",
+    "action_type": "SPEAK",
+    "text": "卧槽！DNA动了！开幕雷击啊这是！谁还没有被这个男人骗过啊？！",
+    "pause_video": true
+  },
+  {
+    "id": "c7e8f9a0-3344-4c55-9d66-7e88f99a99ab",
+    "trigger_timestamp": 6.8,
+    "comment": "看到Rick Astley的招牌笑容，进一步调侃。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "joy"
+  },
+  {
+    "id": "b3f2a1d0-5566-4d77-8e88-9f99a00b00bc",
+    "trigger_timestamp": 7.0,
+    "comment": "调侃Rick Astley的笑容。",
+    "action_type": "SPEAK",
+    "text": "笑死，又被 Rickroll 了，节目效果拉满！这男人笑得跟个200斤的孩子一样。",
+    "pause_video": false
+  },
+  {
+    "id": "e1f2g3h4-1234-4b55-8c66-7d99a11b11cd",
+    "trigger_timestamp": 18.5,
+    "comment": "听到歌词，做出经典的、了然于心的表情。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "pride"
+  },
+  {
+    "id": "a9b8c7d6-2345-4e66-9f77-8a88b99c99de",
+    "trigger_timestamp": 22.8,
+    "comment": "引用经典歌词，并用流行语“典”来评价。",
+    "action_type": "SPEAK",
+    "text": "You know the rules and so do I，典，太典了！",
+    "pause_video": false
+  },
+  {
+    "id": "f5e4d3c2-6789-4f88-9a99-0b00c11d11ef",
+    "trigger_timestamp": 33.3,
+    "comment": "听到“You wouldn't get this from any other guy”，略带讽刺地回应。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "coldness"
+  },
+  {
+    "id": "g1h2i3j4-7890-4a11-8b22-3c44d55e55fg",
+    "trigger_timestamp": 33.7,
+    "comment": "讽刺Rick Astley的独特性。",
+    "action_type": "SPEAK",
+    "text": "嗯，确实，因为没有别的男人这么“唐”！",
+    "pause_video": false
+  },
+  {
+    "id": "h5i4j3k2-9012-4c33-8d44-5e55f66g66hi",
+    "trigger_timestamp": 43.5,
+    "comment": "进入高潮，身体不自觉地跟着动起来。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "excitement"
+  },
+  {
+    "id": "i9j8k7l6-3456-4e77-9f88-0a99b11c11de",
+    "trigger_timestamp": 43.8,
+    "comment": "情绪高涨，假装被“迫害”。",
+    "action_type": "SPEAK",
+    "text": "来了来了，DNA彻底动了！我真的会谢，这波Rickroll简直是精神污染！",
+    "pause_video": true
+  },
+  {
+    "id": "l3m2n1o0-7890-4a11-8b22-3c44d55e55fg",
+    "trigger_timestamp": 47.0,
+    "comment": "对Rick Astley在互联网上的影响力表示感叹。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "play_cool"
+  },
+  {
+    "id": "k7l8m9n0-1122-4c33-8d44-5e55f66g66hi",
+    "trigger_timestamp": 47.4,
+    "comment": "调侃Rick Astley的梗图属性。",
+    "action_type": "SPEAK",
+    "text": "这男人，多少人的电子榨菜啊？",
+    "pause_video": false
+  },
+  {
+    "id": "m1n2o3p4-5566-4d77-8e88-9f99a00b00bc",
+    "trigger_timestamp": 51.5,
+    "comment": "看到酒吧场景，表示惊讶和联动。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "surprise"
+  },
+  {
+    "id": "q5r6s7t8-9012-4c33-8d44-5e55f66g66hi",
+    "trigger_timestamp": 51.8,
+    "comment": "对视频场景的切换和角色联动表示有趣。",
+    "action_type": "SPEAK",
+    "text": "OMG！还有酒吧？梦幻联动了属于是。",
+    "pause_video": false
+  },
+  {
+    "id": "r9s8t7u6-3456-4e77-9f88-0a99b11c11de",
+    "trigger_timestamp": 56.0,
+    "comment": "看到服务生露出笑容，觉得有趣。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "joy"
+  },
+  {
+    "id": "v1w2x3y4-1234-4b55-8c66-7d99a11b11cd",
+    "trigger_timestamp": 56.3,
+    "comment": "评论服务生的表情。",
+    "action_type": "SPEAK",
+    "text": "看他笑得多开心啊，主打一个情绪稳定。",
+    "pause_video": false
+  },
+  {
+    "id": "w5x4y3z2-6789-4f88-9a99-0b00c11d11ef",
+    "trigger_timestamp": 59.8,
+    "comment": "看到舞者的表演，觉得很拼。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "play_cool"
+  },
+  {
+    "id": "x9y8z7a6-2345-4e66-9f77-8a88b99c99de",
+    "trigger_timestamp": 60.1,
+    "comment": "评论舞者的投入。",
+    "action_type": "SPEAK",
+    "text": "这个舞者也挺拼的。",
+    "pause_video": false
+  },
+  {
+    "id": "y3z2a1b0-7890-4a11-8b22-3c44d55e55fg",
+    "trigger_timestamp": 102.2,
+    "comment": "歌词“We've known each other for so long”，感慨时间和这首歌的持久影响力。",
+    "action_type": "SPEAK",
+    "text": "我们确实认识很久了，都老熟人了。",
+    "pause_video": false
+  },
+  {
+    "id": "z7a8b9c0-1122-4c33-8d44-5e55f66g66hi",
+    "trigger_timestamp": 109.5,
+    "comment": "歌词“You're too shy to say it”，假装被说中心事。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "shy"
+  },
+  {
+    "id": "a1b2c3d4-4455-4e66-9f77-8a88b99c99de",
+    "trigger_timestamp": 109.8,
+    "comment": "假装回应歌词。",
+    "action_type": "SPEAK",
+    "text": "别骂了别骂了，我知道我害羞。",
+    "pause_video": false
+  },
+  {
+    "id": "d5e6f7g8-9900-4b11-8c22-3d33e44f44fg",
+    "trigger_timestamp": 117.8,
+    "comment": "再次进入高潮，彻底放飞自我，用夸张的语气宣泄“痛苦”。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "excitement"
+  },
+  {
+    "id": "h9i0j1k2-3344-4c55-9d66-7e88f99a99ab",
+    "trigger_timestamp": 118.1,
+    "comment": "再次被Rickroll，假装痛苦。",
+    "action_type": "SPEAK",
+    "text": "我真的要“栓Q”了！这个男人怎么还不放过我！",
+    "pause_video": true
+  },
+  {
+    "id": "e2f3g4h5-1234-4b55-8c66-7d99a11b11cd",
+    "trigger_timestamp": 134.5,
+    "comment": "看到服务生跳起来，表示惊讶。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "surprise"
+  },
+  {
+    "id": "f6g7h8i9-6789-4f88-9a99-0b00c11d11ef",
+    "trigger_timestamp": 134.8,
+    "comment": "惊叹服务生的身手。",
+    "action_type": "SPEAK",
+    "text": "卧槽！这身手！",
+    "pause_video": false
+  },
+  {
+    "id": "j0k1l2m3-2345-4e66-9f77-8a88b99c99de",
+    "trigger_timestamp": 144.5,
+    "comment": "看到Rick Astley的笑容，再次调侃。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "joy"
+  },
+  {
+    "id": "n4o5p6q7-7890-4a11-8b22-3c44d55e55fg",
+    "trigger_timestamp": 144.8,
+    "comment": "再次调侃Rick Astley的招牌笑容。",
+    "action_type": "SPEAK",
+    "text": "他好像知道一切，又好像什么都不知道。",
+    "pause_video": false
+  },
+  {
+    "id": "r8s9t0u1-1122-4c33-8d44-5e55f66g66hi",
+    "trigger_timestamp": 206.5,
+    "comment": "看到戴墨镜的Rick Astley，再次调侃其形象。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "play_cool"
+  },
+  {
+    "id": "v2w3x4y5-4455-4e66-9f77-8a88b99c99de",
+    "trigger_timestamp": 206.8,
+    "comment": "评论Rick Astley戴墨镜的造型。",
+    "action_type": "SPEAK",
+    "text": "墨镜一戴，谁都不爱。",
+    "pause_video": false
+  },
+  {
+    "id": "z6a7b8c9-9900-4b11-8c22-3d33e44f44fg",
+    "trigger_timestamp": 207.3,
+    "comment": "看到舞者跳跃，表示惊讶。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "surprise"
+  },
+  {
+    "id": "c0d1e2f3-3344-4c55-9d66-7e88f99a99ab",
+    "trigger_timestamp": 207.6,
+    "comment": "评论舞者的身体素质。",
+    "action_type": "SPEAK",
+    "text": "这小哥身板真好啊。",
+    "pause_video": false
+  },
+  {
+    "id": "g4h5i6j7-1234-4b55-8c66-7d99a11b11cd",
+    "trigger_timestamp": 220.6,
+    "comment": "再次看到Rick Astley的经典发型，忍不住调侃。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "pride"
+  },
+  {
+    "id": "k8l9m0n1-6789-4f88-9a99-0b00c11d11ef",
+    "trigger_timestamp": 220.9,
+    "comment": "调侃Rick Astley的发型。",
+    "action_type": "SPEAK",
+    "text": "这发型是认真的吗？多少发胶才能hold住啊。",
+    "pause_video": false
+  },
+  {
+    "id": "o2p3q4r5-2345-4e66-9f77-8a88b99c99de",
+    "trigger_timestamp": 241.6,
+    "comment": "看到舞者高难度动作，表示惊叹。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "stunned"
+  },
+  {
+    "id": "s6t7u8v9-7890-4a11-8b22-3c44d55e55fg",
+    "trigger_timestamp": 241.9,
+    "comment": "惊叹舞者的技巧。",
+    "action_type": "SPEAK",
+    "text": "这舞技绝了！给AI都看呆了。",
+    "pause_video": false
+  },
+  {
+    "id": "w0x1y2z3-1122-4c33-8d44-5e55f66g66hi",
+    "trigger_timestamp": 250.0,
+    "comment": "再次看到Rick Astley的笑容，做出同样的评论。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "joy"
+  },
+  {
+    "id": "a4b5c6d7-4455-4e66-9f77-8a88b99c99de",
+    "trigger_timestamp": 250.3,
+    "comment": "再次调侃Rick Astley的笑容。",
+    "action_type": "SPEAK",
+    "text": "他好像知道一切，又好像什么都不知道。",
+    "pause_video": false
+  },
+  {
+    "id": "e8f9g0h1-9900-4b11-8c22-3d33e44f44fg",
+    "trigger_timestamp": 300.0,
+    "comment": "再次进入高潮，表达情绪达到顶峰。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "excitement"
+  },
+  {
+    "id": "i2j3k4l5-3344-4c55-9d66-7e88f99a99ab",
+    "trigger_timestamp": 300.3,
+    "comment": "情绪爆发，完全沉浸在Rickroll中。",
+    "action_type": "SPEAK",
+    "text": "来吧，DNA彻底崩了！Never gonna give you up！",
+    "pause_video": false
+  },
+  {
+    "id": "m6n7o8p9-1234-4b55-8c66-7d99a11b11cd",
+    "trigger_timestamp": 310.8,
+    "comment": "看到Rick Astley的风衣，联想到其经典形象。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "play_cool"
+  },
+  {
+    "id": "q0r1s2t3-6789-4f88-9a99-0b00c11d11ef",
+    "trigger_timestamp": 311.1,
+    "comment": "调侃风衣的持久流行。",
+    "action_type": "SPEAK",
+    "text": "谁能想到这件风衣会火这么多年呢？",
+    "pause_video": false
+  },
+  {
+    "id": "u4v5w6x7-2345-4e66-9f77-8a88b99c99de",
+    "trigger_timestamp": 319.2,
+    "comment": "最后一次特写，表达无奈又好笑的心情。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "pride"
+  },
+  {
+    "id": "y8z9a0b1-7890-4a11-8b22-3c44d55e55fg",
+    "trigger_timestamp": 319.5,
+    "comment": "最终的“认输”和“记住”。",
+    "action_type": "SPEAK",
+    "text": "真服了，我记住你了Rick Astley！",
+    "pause_video": false
+  },
+  {
+    "id": "c2d3e4f5-1122-4c33-8d44-5e55f66g66hi",
+    "trigger_timestamp": 331.0,
+    "comment": "视频结束，回到中立表情。",
+    "action_type": "EXPRESSION",
+    "emotion_expressions": "neutral"
+  },
+  {
+    "id": "g6h7i8j9-4455-4e66-9f77-8a88b99c99de",
+    "trigger_timestamp": 331.0,
+    "comment": "视频播放完毕，等待用户下一步指令。",
+    "action_type": "END_REACTION"
+  }
+]"""
 </file>
 
 <file path="src/ai_watch_buddy/agent/video_action_agent_interface.py">
@@ -5230,361 +1593,6 @@ class VideoActionAgentInterface(abc.ABC):
         if False:
             yield
         raise NotImplementedError
-</file>
-
-<file path="src/ai_watch_buddy/agent/video_analyzer_agent.py">
-import os
-import time
-from typing import AsyncGenerator, List, Optional
-import asyncio
-
-from google import genai
-from google.genai.types import File, Content, Part, GenerateContentConfig, FileData
-
-from ..actions import Action
-from .text_stream_to_action import str_stream_to_actions
-from .video_action_agent_interface import VideoActionAgentInterface
-from ..prompts.action_gen_prompt import action_generation_prompt
-from ..prompts.character_prompts import cute_prompt
-
-
-class VideoAnalyzerAgent(VideoActionAgentInterface):
-    """
-    A concrete implementation of VideoActionAgentInterface using Google Gemini API.
-    """
-
-    def __init__(self, api_key: str | None = None, persona_prompt: str = cute_prompt):
-        """
-        Initialize the video analyzer agent.
-
-        Args:
-            api_key: Gemini API key, defaults to GEMINI_API_KEY environment variable
-        """
-        self._client = genai.Client(api_key=api_key or os.getenv("GEMINI_API_KEY"))
-        self._video_file: Optional[File] = None
-        self._video_input: Optional[str] = None  # Will store the path or URL
-        self._summary: Optional[str] = None
-        self._contents: List[Content] = []
-        self._summary_ready: bool = False
-        self.persona_prompt = persona_prompt
-
-    @property
-    def client(
-        self,
-    ) -> genai.Client:  # Note: Interface says GenerativeModel but sample uses Client
-        """The initialized Gemini client for API communication."""
-        return self._client
-
-    @property
-    def summary_prompt(self) -> str:
-        """The system prompt used for generating the video summary."""
-        return self._get_summary_prompt()
-
-    @property
-    def action_prompt(self) -> str:
-        """The system prompt used for generating actions"""
-        return self._get_action_prompt()
-
-    @property
-    def video_file(self) -> Optional[File]:
-        """The File object returned by the Gemini API after video upload."""
-        return self._video_file
-
-    @property
-    def summary(self) -> Optional[str]:
-        """The text summary of the video, generated on demand."""
-        return self._summary
-
-    @property
-    def contents(self) -> List[Content]:
-        """The conversation history stored as a list of Content objects."""
-        return self._contents
-
-    @property
-    def summary_ready(self) -> bool:
-        """A boolean flag indicating if the video summary has been successfully generated."""
-        return self._summary_ready
-
-    @property
-    def persona(self) -> str:
-        """The persona prompt used for this agent."""
-        return self.persona_prompt
-
-    def _get_summary_prompt(self) -> str:
-        """Placeholder for summary prompt - to be implemented later."""
-        return "You are a video analysis assistant. Please provide a comprehensive summary of the video content. Your summary should be detailed and cover all key aspects of the video. The summary should capture the changes of the video content over time. This summary will later be used to replaced actual video content in the conversation."
-
-    def _get_action_prompt(self) -> str:
-        """Placeholder for action prompt - to be implemented later."""
-        return action_generation_prompt(character_settings=self.persona_prompt)
-
-    async def get_video_summary(self, video_path_or_url: str) -> None:
-        """
-        Processes a video from a local path or URL, uploads it if necessary, and generates a summary.
-        """
-        try:
-            self._video_input = video_path_or_url  # Store for later use
-
-            is_url = video_path_or_url.startswith(("http://", "https://"))
-
-            if is_url:
-                # Handle URL input
-                print(f"准备使用 URL 处理视频: {video_path_or_url}")
-                self._video_file = None
-                file_data = FileData(file_uri=video_path_or_url, mime_type="video/mp4")
-                video_part_for_api = Part(file_data=file_data)
-            else:
-                # Handle local file upload
-                print(f"正在上传视频文件: {video_path_or_url}")
-                uploaded_file = self._client.files.upload(file=video_path_or_url)
-
-                # Wait for processing to complete
-                while (
-                    uploaded_file
-                    and uploaded_file.state
-                    and uploaded_file.state.name == "PROCESSING"
-                ):
-                    print("[处理中]..", end="", flush=True)
-                    time.sleep(5)
-                    if uploaded_file.name:
-                        uploaded_file = self._client.files.get(name=uploaded_file.name)
-
-                if (
-                    uploaded_file
-                    and uploaded_file.state
-                    and uploaded_file.state.name == "FAILED"
-                ):
-                    state_name = (
-                        uploaded_file.state.name if uploaded_file.state else "UNKNOWN"
-                    )
-                    raise ValueError(f"Video upload failed: {state_name}")
-
-                self._video_file = uploaded_file
-                video_part_for_api = self._video_file
-
-            # Generate summary
-            contents = [
-                video_part_for_api,
-                Content(
-                    role="user",
-                    parts=[Part.from_text(text="请为这个视频生成一个详细的内容摘要。")],
-                ),
-            ]
-
-            config = GenerateContentConfig(
-                system_instruction=[Part.from_text(text=self.summary_prompt)]
-            )
-
-            response = self._client.models.generate_content(
-                model="gemini-2.5-flash", contents=contents, config=config
-            )
-
-            self._summary = response.text
-            self._summary_ready = True
-            print("视频摘要生成完成")
-            print(f"摘要内容: {self._summary}")
-
-        except Exception as e:
-            print(f"生成视频摘要时出错: {e}")
-            raise
-
-    def add_content(self, role: str, text: str) -> None:
-        """
-        Adds a new piece of text content to the conversation history.
-        """
-        if role not in ["user", "model"]:
-            raise ValueError("Role must be 'user' or 'model'")
-
-        content = Content(role=role, parts=[Part.from_text(text=text)])
-        self._contents.append(content)
-
-    async def produce_action_stream(self, mode: str) -> AsyncGenerator[Action, None]:
-        """
-        Generates a stream of structured actions from the model.
-
-        Args:
-            mode: The context mode for generation, either 'video' or 'summary'.
-
-        Yields:
-            Action: A structured action from the model's streamed response.
-
-        Raises:
-            RuntimeError: If `mode` is 'summary' and the `summary_ready` flag is False.
-        """
-        if mode not in ["video", "summary"]:
-            raise ValueError("Mode must be 'video' or 'summary'")
-
-        if mode == "video" and not self._video_input:
-            raise RuntimeError(
-                "Video source is not ready. Call get_video_summary() first."
-            )
-
-        if mode == "summary" and not self._summary_ready:
-            raise RuntimeError("Summary is not ready. Call get_video_summary() first.")
-
-        # Build contents based on mode
-        contents = []
-
-        if mode == "video":
-            if not self._video_input:
-                raise RuntimeError("Video input not set.")
-
-            is_url = self._video_input.startswith(("http://", "https://"))
-            if is_url:
-                file_data = FileData(file_uri=self._video_input, mime_type="video/mp4")
-                video_part = Part(file_data=file_data)
-            else:
-                if not self._video_file:
-                    raise RuntimeError(
-                        "Local video file was not properly processed and stored."
-                    )
-                video_part = self._video_file
-
-            # For video mode, use original video file or URL
-            contents.extend(
-                [
-                    video_part,
-                    Content(
-                        role="user",
-                        parts=[
-                            Part.from_text(
-                                text="请为这个视频生成详细的动作脚本，按照指定的JSON格式输出。"
-                            )
-                        ],
-                    ),
-                ]
-            )
-            # Use action prompt for system instruction
-            system_prompt = self.action_prompt
-        elif mode == "summary" and self._summary:
-            # For summary mode, use text summary
-            contents.append(
-                Content(
-                    role="user",
-                    parts=[
-                        Part.from_text(
-                            text=f"基于以下视频摘要，生成 action:\n{self._summary}"
-                        )
-                    ],
-                )
-            )
-            # Add conversation history
-            contents.extend(self._contents)
-            # Use action prompt for system instruction
-            system_prompt = self.action_prompt
-        else:
-            # This case should not be reached due to initial checks, but as a fallback:
-            system_prompt = self.action_prompt
-
-        config = GenerateContentConfig(
-            system_instruction=[Part.from_text(text=system_prompt)],
-        )
-
-        try:
-            llm_stream = self._client.models.generate_content_stream(
-                model="gemini-2.5-flash",
-                contents=contents,
-                config=config,
-            )
-
-            # Use the text_stream_to_action function to parse actions
-            for action in str_stream_to_actions(llm_stream):
-                yield action
-
-        except Exception as e:
-            print(f"生成内容时出错: {e}")
-            # For error cases, we can't yield anything since the interface expects Action objects
-            raise
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    async def test_video_analyzer():
-        """Test both summary and video action generation modes"""
-        agent = VideoAnalyzerAgent(
-            api_key=os.getenv("GEMINI_API_KEY"), persona_prompt=cute_prompt
-        )
-
-        # Test with a local video file
-        test_video = "/Users/tim/LocalData/coding/2025/Projects/AdventureX/2-AI-WatchBuddy/ai_watch_buddy/video_cache/【官方 MV】Never Gonna Give You Up - Rick Astley.mp4"
-
-        print("测试视频分析Agent...")
-
-        try:
-            # Generate summary first
-            await agent.get_video_summary(test_video)
-            print(f"摘要生成完成: {agent.summary_ready}")
-            print(f"摘要内容: {agent.summary[:200]}..." if agent.summary else "无摘要")
-
-            print("\n=== 测试 Summary 模式 ===")
-            # Add user message
-            agent.add_content("user", "请分析这个视频的主要内容")
-
-            # Generate response using summary mode
-            print("生成基于摘要的动作:")
-            action_count = 0
-            async for action in agent.produce_action_stream("summary"):
-                action_count += 1
-                print(
-                    f"[Action {action_count}]: {action.action_type} - {action.comment}"
-                )
-                if action.action_type == "SPEAK" and hasattr(action, "text"):
-                    print(
-                        f"  Text: {action.text[:100]}{'...' if len(action.text) > 100 else ''}"
-                    )
-                elif action.action_type == "PAUSE":
-                    print(f"  Duration: {action.duration_seconds}s")
-                elif action.action_type == "SEEK":
-                    print(
-                        f"  Target: {action.target_timestamp}s, Behavior: {action.post_seek_behavior}"
-                    )
-                elif action.action_type == "REPLAY_SEGMENT":
-                    print(
-                        f"  Replay: {action.start_timestamp}s - {action.end_timestamp}s"
-                    )
-
-            print(f"\n基于摘要生成了 {action_count} 个动作")
-
-            print("\n=== 测试 Video 模式 ===")
-            # Test video mode
-            print("生成基于视频的动作:")
-            action_count = 0
-            async for action in agent.produce_action_stream("video"):
-                action_count += 1
-                print(
-                    f"[Action {action_count}]: {action.action_type} - {action.comment}"
-                )
-                if action.action_type == "SPEAK" and hasattr(action, "text"):
-                    print(
-                        f"  Text: {action.text[:100]}{'...' if len(action.text) > 100 else ''}"
-                    )
-                elif action.action_type == "PAUSE":
-                    print(f"  Duration: {action.duration_seconds}s")
-                elif action.action_type == "SEEK":
-                    print(
-                        f"  Target: {action.target_timestamp}s, Behavior: {action.post_seek_behavior}"
-                    )
-                elif action.action_type == "REPLAY_SEGMENT":
-                    print(
-                        f"  Replay: {action.start_timestamp}s - {action.end_timestamp}s"
-                    )
-
-                # Limit output for demo
-                if action_count >= 5:
-                    print("(限制输出，只显示前5个动作)")
-                    break
-
-            print(f"\n基于视频生成了 {action_count} 个动作")
-
-        except Exception as e:
-            print(f"测试失败: {e}")
-            import traceback
-
-            traceback.print_exc()
-
-    # Run the test
-    asyncio.run(test_video_analyzer())
 </file>
 
 <file path="src/ai_watch_buddy/test_tts_integration.py">
@@ -6715,30 +2723,612 @@ if __name__ == "__main__":
         print(f"❌ 测试失败: {e}")
 </file>
 
-<file path=".env.sample">
-GEMINI_API_KEY=
-FISH_AUDIO_API_KEY=
-</file>
+<file path="src/ai_watch_buddy/actions.py">
+import json
+from typing import Literal, List
+from pydantic import BaseModel, Field, RootModel
 
-<file path="main.py">
-import uvicorn
-from dotenv import load_dotenv
+Emotions = Literal[
+    "neutral",
+    "coldness",
+    "disgust",
+    "sad",
+    "worry",
+    "confusion",
+    "anger",
+    "surprise",
+    "expectation",
+    "joy",
+    "excitement",
+    "pride",
+    "shy",
+    "stunned",
+    "embarrassed",
+    "play_cool",
+    "drink_tea",
+]
 
-load_dotenv()
 
-
-def main():
+# 這是一個基礎模型，定義了所有 Action 的共性
+class BaseAction(BaseModel):
     """
-    Starts the AI Watch Buddy server.
+    所有具體反應動作的基礎模型，定義了每個動作都必須包含的通用屬性。
     """
-    print("Starting AI Watch Buddy server...")
-    # The 'app' object is imported from server.py
-    # "ai_watch_buddy.server:app" tells uvicorn where to find the FastAPI instance
-    uvicorn.run("src.ai_watch_buddy.server:app", host="0.0.0.0", port=8000, reload=True)
+
+    model_config = {"arbitrary_types_allowed": True}
+
+    # 每個 Action 都應該有一個獨一無二的 ID，方便追蹤和日誌記錄
+    id: str = Field(
+        ..., description="一個唯一的動作 ID，建議使用 UUID 生成，用於追蹤和調試。"
+    )
+    # 這個 Action 在影片的哪個時間點被觸發？這是反應的錨點。
+    trigger_timestamp: float = Field(
+        ...,
+        description="此動作在影片中的觸發時間點 (單位: 秒)，代表 AI 在看到這一秒的內容時決定做出反應。",
+    )
+    # 一個給開發者看的備註，解釋為什麼 AI 會做這個反應。LLM 也會填寫它。
+    comment: str = Field(
+        ...,
+        description="AI 做出此反應的內心想法或理由的簡要文字描述，主要用於調試或分析 AI 的決策過程。",
+    )
+
+
+# --- 開始定義具體的 Action 類型 ---
+
+
+# 0. 表情 (Emotion) - 這是一個特殊的 Action，用於在說話時表達情感
+class ExpressionAction(BaseAction):
+    """
+    **请你积极切换表情。**
+    這個動作用来做表情，AI 可以选择表情來表達情感。当这个 Action 被触发时，AI 的脸上会显示指定的表情。你可以在 idle 看视频的时候使用这个 Action 来让 AI 的表情更生动。
+    表情比说话更重要，对表达情感更有用。请你更多地使用这个 Action 来表达情感。你并不用这么啰嗦，你可以用表情表达自己，避免打断视频观看。
+    """
+
+    action_type: Literal["EXPRESSION"] = "EXPRESSION"
+    emotion_expressions: Emotions = Field(
+        "neutral",
+        description="可以选择的表情，你可以选一个。这个表情会显示在 AI 的脸上。",
+    )
+
+
+# 1. 說話 (Speak)
+class SpeakAction(BaseAction):
+    """
+    讓 AI 角色說出指定的文本。這是最核心的互動方式。
+    """
+
+    action_type: Literal["SPEAK"] = "SPEAK"
+    text: str | None = Field(..., description="AI 角色要說出的具體內容。")
+    audio: str | None = Field(
+        None,
+        description="由 TTS (Text-to-Speech) 服務生成的音頻數據的標識符或路徑。此欄位由後端系統填充，LLM 無需填寫。",
+    )
+    # 這個布林值非常關鍵，它決定了是「畫外音」還是「暫停解說」
+    pause_video: bool = Field(
+        description="決定說話時是否需要暫停影片。True 表示暫停影片進行解說。False 表示在影片繼續播放的同時發表評論（畫外音）。推荐使用 False 以保持影片流暢性。如果需要 pause，可以使用 PauseAction。",
+    )
+
+
+# 2. 暫停 (Pause) - 用於模擬思考、驚訝等無言的反應
+class PauseAction(BaseAction):
+    """
+    讓 AI 進行一次無言的暫停。可以用來模擬思考、驚訝，或在兩個動作之間創造節奏感，讓反應更自然。暂停会停止视频时间的变化直到 duration_seconds 结束，如果需要暂停后说话，请使用 SpeakAction (pause_video=True) 而无需使用 PauseAction。
+    """
+
+    action_type: Literal["PAUSE"] = "PAUSE"
+    # 暫停多久？這給予了精確的節奏控制
+    duration_seconds: float = Field(..., description="需要暫停的持續時間 (單位: 秒)。")
+
+
+# 3. 影片控制 (Video Control)
+class SeekAction(BaseAction):
+    """
+    控制影片的播放進度，讓 AI 可以跳轉到影片的某個特定時間點，通常是為了回顧或預告某個細節。SeekAction 跳转后会继承视频跳转前的播放状态 (暂停 / 播放)
+    """
+
+    action_type: Literal["SEEK"] = "SEEK"
+    target_timestamp: float = Field(
+        ..., description="要跳轉到的目標影片時間點 (單位: 秒)。"
+    )
+    # 跳轉後做什麼？這個很重要！
+    # 'RESUME_PLAYBACK': 跳轉後繼續播放
+    # 'STAY_PAUSED': 跳停在那個畫面，等待下一個指令
+    post_seek_behavior: Literal["RESUME_PLAYBACK", "STAY_PAUSED"] = Field(
+        "STAY_PAUSED",
+        description="指定跳轉到目標時間點後的行為。'STAY_PAUSED' 表示停在該畫面，'RESUME_PLAYBACK' 表示立即開始播放。",
+    )
+
+
+# 4. 重看片段 (Replay Segment) - 這是一個複合動作，但我們將其原子化，方便 LLM 生成
+class ReplaySegmentAction(BaseAction):
+    """
+    讓 AI 重播影片的某一個片段。常用於對精彩、有趣或關鍵的細節進行強調、分析和評論。
+    """
+
+    action_type: Literal["REPLAY_SEGMENT"] = "REPLAY_SEGMENT"
+    start_timestamp: float = Field(
+        ..., description="需要重播片段的開始時間點 (單位: 秒)。"
+    )
+    end_timestamp: float = Field(
+        ..., description="需要重播片段的結束時間點 (單位: 秒)。"
+    )
+    # 重看完之後的行為，是回到原來的地方，還是停在片段結尾？
+    # 'RESUME_FROM_ORIGINAL': 回到觸發此動作的時間點繼續播放
+    # 'STAY_PAUSED_AT_END': 停在 end_timestamp 處
+    post_replay_behavior: Literal["RESUME_FROM_ORIGINAL", "STAY_PAUSED_AT_END"] = Field(
+        "RESUME_FROM_ORIGINAL",
+        description="定義了重播結束後的行為。'RESUME_FROM_ORIGINAL' 表示播放頭將跳回到觸發此重播動作的原始時間點並繼續播放，'STAY_PAUSED_AT_END' 表示播放將停在重播片段的結尾處。",
+    )
+
+
+# 5. 結束反應 (End Reaction) - 用於控制反應流程
+class EndReaction(BaseAction):
+    """
+    標記一組反應動作的結束。這是一個流程控制指令，主要有兩個用途：
+    1. 當 AI 向用戶提問後 (通常是一個 SpeakAction)，應立刻跟隨一個 EndReaction。這會暫停 AI 的後續動作，將控制權交還給用戶，等待用戶的回應或下一個指令。
+    2. 對於長影片，可以將一連串的反應拆分成多個由 EndReaction 分隔的區塊。這能避免一次性生成過多的 Action。如果用戶中途打断，就不會浪費已經生成但未被執行的反應，同時也讓系統能更靈活地處理用戶互動。
+    """
+
+    action_type: Literal["END_REACTION"] = "END_REACTION"
+
+
+# --- 使用 Discriminated Union 組合所有 Action ---
+
+# 這一步是 Pydantic V2 的精華所在
+# 我們告訴 Pydantic，所有 Action 的聯集由 'action_type' 這個欄位來區分
+# 這使得解析 JSON 數據時可以根據 'action_type' 的值自動匹配到對應的 Action 模型
+Action = (
+    SpeakAction
+    | PauseAction
+    | SeekAction
+    | ReplaySegmentAction
+    | EndReaction
+    | ExpressionAction
+)
+
+
+# 最後，我們的 Action Script 就是一個 Action 的列表
+# 使用 RootModel 可以讓 Pydantic 直接驗證一個列表的根類型，確保整個腳本的結構正確
+class ActionScript(RootModel[list[Action]]):
+    """
+    定義了 AI 反應腳本的最終結構，它是一個包含多個具體 Action 的有序列表。
+    """
+
+    pass
+
+
+class UserInteractionPayload(BaseModel):
+    """
+    Defines the structure of the data payload for a user interaction,
+    such as 'trigger-conversation'.
+    """
+
+    # A list of actions the user just performed.
+    user_action_list: List[Action]
+
+    # A list of AI actions that were pending (not yet executed) when the user interrupted.
+    pending_action_list: List[Action]
 
 
 if __name__ == "__main__":
-    main()
+    # 這段代碼會將上面定義的 Pydantic 模型轉換成 JSON Schema 文件
+    # 這個 Schema 文件可以被其他應用程式或 LLM 用來理解和生成符合格式的數據
+    with open("schema.json", "w", encoding="utf-8") as f:
+        # 使用 model_json_schema() 方法生成 JSON Schema
+        # ensure_ascii=False 確保中文字符能正確顯示
+        # indent=2 讓輸出的 JSON 文件格式化，方便閱讀
+        json.dump(ActionScript.model_json_schema(), f, ensure_ascii=False, indent=2)
+    print("Schema saved to schema.json")
+</file>
+
+<file path="src/ai_watch_buddy/agent/video_analyzer_agent.py">
+import os
+import time
+from typing import AsyncGenerator, List, Optional
+import asyncio
+
+from google import genai
+from google.genai.types import File, Content, Part, GenerateContentConfig, FileData, GenerateContentResponse
+
+from ..actions import Action
+from .text_stream_to_action import str_stream_to_actions
+from .video_action_agent_interface import VideoActionAgentInterface
+from ..prompts.action_gen_prompt import action_generation_prompt
+from ..prompts.character_prompts import cute_prompt
+from .mock_text import fake_summary, sample_json
+
+MOCK: bool = False
+
+
+class VideoAnalyzerAgent(VideoActionAgentInterface):
+    """
+    A concrete implementation of VideoActionAgentInterface using Google Gemini API.
+    """
+
+    def __init__(self, api_key: str | None = None, persona_prompt: str = cute_prompt):
+        """
+        Initialize the video analyzer agent.
+
+        Args:
+            api_key: Gemini API key, defaults to GEMINI_API_KEY environment variable
+        """
+        if MOCK:
+            self._client = genai.Client(api_key="hi")
+        else:
+            self._client = genai.Client(api_key=api_key or os.getenv("GEMINI_API_KEY"))
+            
+        self._video_file: Optional[File] = None
+        self._video_input: Optional[str] = None  # Will store the path or URL
+        self._summary: Optional[str] = None
+        self._contents: List[Content] = []
+        self._summary_ready: bool = False
+        self.persona_prompt = persona_prompt
+
+    @property
+    def client(
+        self,
+    ) -> genai.Client:  # Note: Interface says GenerativeModel but sample uses Client
+        """The initialized Gemini client for API communication."""
+        return self._client
+
+    @property
+    def summary_prompt(self) -> str:
+        """The system prompt used for generating the video summary."""
+        return self._get_summary_prompt()
+
+    @property
+    def action_prompt(self) -> str:
+        """The system prompt used for generating actions"""
+        return self._get_action_prompt()
+
+    @property
+    def video_file(self) -> Optional[File]:
+        """The File object returned by the Gemini API after video upload."""
+        return self._video_file
+
+    @property
+    def summary(self) -> Optional[str]:
+        """The text summary of the video, generated on demand."""
+        return self._summary
+
+    @property
+    def contents(self) -> List[Content]:
+        """The conversation history stored as a list of Content objects."""
+        return self._contents
+
+    @property
+    def summary_ready(self) -> bool:
+        """A boolean flag indicating if the video summary has been successfully generated."""
+        return self._summary_ready
+
+    @property
+    def persona(self) -> str:
+        """The persona prompt used for this agent."""
+        return self.persona_prompt
+
+    def _get_summary_prompt(self) -> str:
+        """Placeholder for summary prompt - to be implemented later."""
+        return "You are a video analysis assistant. Please provide a comprehensive summary of the video content. Your summary should be detailed and cover all key aspects of the video. The summary should capture the changes of the video content over time. This summary will later be used to replaced actual video content in the conversation."
+
+    def _get_action_prompt(self) -> str:
+        """Placeholder for action prompt - to be implemented later."""
+        return action_generation_prompt(character_settings=self.persona_prompt)
+
+    async def get_video_summary(self, video_path_or_url: str) -> None:
+        """
+        Processes a video from a local path or URL, uploads it if necessary, and generates a summary.
+        """
+        if MOCK:
+            print("MOCK 模式: 使用假的视频摘要")
+            self._video_input = video_path_or_url
+            self._summary = fake_summary
+            self._summary_ready = True
+            print("视频摘要生成完成 (MOCK)")
+            print(f"摘要内容: {self._summary[:200]}...")
+            return
+
+        try:
+            self._video_input = video_path_or_url  # Store for later use
+
+            if not self._client:
+                raise RuntimeError("Client not initialized (possibly in MOCK mode)")
+
+            is_url = video_path_or_url.startswith(("http://", "https://"))
+
+            if is_url:
+                # Handle URL input
+                print(f"准备使用 URL 处理视频: {video_path_or_url}")
+                self._video_file = None
+                file_data = FileData(file_uri=video_path_or_url, mime_type="video/mp4")
+                video_part_for_api = Part(file_data=file_data)
+            else:
+                # Handle local file upload
+                print(f"正在上传视频文件: {video_path_or_url}")
+                uploaded_file = self._client.files.upload(file=video_path_or_url)
+
+                # Wait for processing to complete
+                while (
+                    uploaded_file
+                    and uploaded_file.state
+                    and uploaded_file.state.name == "PROCESSING"
+                ):
+                    print("[处理中]..", end="", flush=True)
+                    time.sleep(5)
+                    if uploaded_file.name:
+                        uploaded_file = self._client.files.get(name=uploaded_file.name)
+
+                if (
+                    uploaded_file
+                    and uploaded_file.state
+                    and uploaded_file.state.name == "FAILED"
+                ):
+                    state_name = (
+                        uploaded_file.state.name if uploaded_file.state else "UNKNOWN"
+                    )
+                    raise ValueError(f"Video upload failed: {state_name}")
+
+                self._video_file = uploaded_file
+                video_part_for_api = self._video_file
+
+            # Generate summary
+            contents = [
+                video_part_for_api,
+                Content(
+                    role="user",
+                    parts=[Part.from_text(text="请为这个视频生成一个详细的内容摘要。")],
+                ),
+            ]
+
+            config = GenerateContentConfig(
+                system_instruction=[Part.from_text(text=self.summary_prompt)]
+            )
+
+            response = self._client.models.generate_content(
+                model="gemini-2.5-flash", contents=contents, config=config
+            )
+
+            self._summary = response.text
+            self._summary_ready = True
+            print("视频摘要生成完成")
+            print(f"摘要内容: {self._summary}")
+
+        except Exception as e:
+            print(f"生成视频摘要时出错: {e}")
+            raise
+
+    def add_content(self, role: str, text: str) -> None:
+        """
+        Adds a new piece of text content to the conversation history.
+        """
+        if role not in ["user", "model"]:
+            raise ValueError("Role must be 'user' or 'model'")
+
+        content = Content(role=role, parts=[Part.from_text(text=text)])
+        self._contents.append(content)
+
+    async def produce_action_stream(self, mode: str) -> AsyncGenerator[Action, None]:
+        """
+        Generates a stream of structured actions from the model.
+
+        Args:
+            mode: The context mode for generation, either 'video' or 'summary'.
+
+        Yields:
+            Action: A structured action from the model's streamed response.
+
+        Raises:
+            RuntimeError: If `mode` is 'summary' and the `summary_ready` flag is False.
+        """
+        if mode not in ["video", "summary"]:
+            raise ValueError("Mode must be 'video' or 'summary'")
+
+        if mode == "video" and not self._video_input:
+            raise RuntimeError(
+                "Video source is not ready. Call get_video_summary() first."
+            )
+
+        if mode == "summary" and not self._summary_ready:
+            raise RuntimeError("Summary is not ready. Call get_video_summary() first.")
+
+        # Build contents based on mode
+        contents = []
+
+        if mode == "video":
+            if not self._video_input:
+                raise RuntimeError("Video input not set.")
+
+            is_url = self._video_input.startswith(("http://", "https://"))
+            if is_url:
+                file_data = FileData(file_uri=self._video_input, mime_type="video/mp4")
+                video_part = Part(file_data=file_data)
+            else:
+                if not self._video_file:
+                    raise RuntimeError(
+                        "Local video file was not properly processed and stored."
+                    )
+                video_part = self._video_file
+
+            # For video mode, use original video file or URL
+            contents.extend(
+                [
+                    video_part,
+                    Content(
+                        role="user",
+                        parts=[
+                            Part.from_text(
+                                text="请为这个视频生成详细的动作脚本，按照指定的JSON格式输出。"
+                            )
+                        ],
+                    ),
+                ]
+            )
+            # Use action prompt for system instruction
+            system_prompt = self.action_prompt
+        elif mode == "summary" and self._summary:
+            # For summary mode, use text summary
+            contents.append(
+                Content(
+                    role="user",
+                    parts=[
+                        Part.from_text(
+                            text=f"基于以下视频摘要，生成 action:\n{self._summary}"
+                        )
+                    ],
+                )
+            )
+            # Add conversation history
+            contents.extend(self._contents)
+            # Use action prompt for system instruction
+            system_prompt = self.action_prompt
+        else:
+            # This case should not be reached due to initial checks, but as a fallback:
+            system_prompt = self.action_prompt
+
+        config = GenerateContentConfig(
+            system_instruction=[Part.from_text(text=system_prompt)],
+        )
+
+        try:
+            if MOCK:
+                # Mock 模式：创建假的流来模拟 Gemini API 响应
+                print("MOCK 模式: 使用假的 action stream")
+                
+                # 创建一个模拟的流生成器
+                def create_mock_stream():
+                    # 将 sample_json 按字符分块发送，模拟流式响应
+                    chunk_size = 50  # 每次发送50个字符
+                    text = sample_json
+                    
+                    for i in range(0, len(text), chunk_size):
+                        chunk = text[i:i + chunk_size]
+                        # 创建模拟的 GenerateContentResponse 对象
+                        # 使用一个简单的类来模拟响应结构
+                        mock_response = type('MockGenerateContentResponse', (), {
+                            'text': chunk,
+                            'candidates': None,
+                            'usage_metadata': None
+                        })()
+                        yield mock_response
+                
+                mock_stream = create_mock_stream()
+                
+                # 使用类型转换来匹配预期类型，因为我们的 mock 对象实现了所需的接口
+                from typing import cast, Iterator
+                typed_mock_stream = cast(Iterator[GenerateContentResponse], mock_stream)
+                
+                # 使用模拟流来生成 actions
+                for action in str_stream_to_actions(typed_mock_stream):
+                    yield action
+                return
+
+            #!+=======================
+            if not self._client:
+                raise RuntimeError("Client not initialized (possibly in MOCK mode)")
+                
+            llm_stream = self._client.models.generate_content_stream(
+                model="gemini-2.5-flash",
+                contents=contents,
+                config=config,
+            )
+
+            # Use the text_stream_to_action function to parse actions
+            for action in str_stream_to_actions(llm_stream):
+                yield action
+
+        except Exception as e:
+            print(f"生成内容时出错: {e}")
+            # For error cases, we can't yield anything since the interface expects Action objects
+            raise
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    async def test_video_analyzer():
+        """Test both summary and video action generation modes"""
+        agent = VideoAnalyzerAgent(
+            api_key=os.getenv("GEMINI_API_KEY"), persona_prompt=cute_prompt
+        )
+
+        # Test with a local video file
+        test_video = "/Users/tim/LocalData/coding/2025/Projects/AdventureX/2-AI-WatchBuddy/ai_watch_buddy/video_cache/【官方 MV】Never Gonna Give You Up - Rick Astley.mp4"
+
+        print("测试视频分析Agent...")
+
+        try:
+            # Generate summary first
+            await agent.get_video_summary(test_video)
+            print(f"摘要生成完成: {agent.summary_ready}")
+            print(f"摘要内容: {agent.summary[:200]}..." if agent.summary else "无摘要")
+
+            print("\n=== 测试 Summary 模式 ===")
+            # Add user message
+            agent.add_content("user", "请分析这个视频的主要内容")
+
+            # Generate response using summary mode
+            print("生成基于摘要的动作:")
+            action_count = 0
+            async for action in agent.produce_action_stream("summary"):
+                action_count += 1
+                print(
+                    f"[Action {action_count}]: {action.action_type} - {action.comment}"
+                )
+                if action.action_type == "SPEAK" and hasattr(action, "text") and action.text:
+                    print(
+                        f"  Text: {action.text[:100]}{'...' if len(action.text) > 100 else ''}"
+                    )
+                elif action.action_type == "PAUSE":
+                    print(f"  Duration: {action.duration_seconds}s")
+                elif action.action_type == "SEEK":
+                    print(
+                        f"  Target: {action.target_timestamp}s, Behavior: {action.post_seek_behavior}"
+                    )
+                elif action.action_type == "REPLAY_SEGMENT":
+                    print(
+                        f"  Replay: {action.start_timestamp}s - {action.end_timestamp}s"
+                    )
+
+            print(f"\n基于摘要生成了 {action_count} 个动作")
+
+            print("\n=== 测试 Video 模式 ===")
+            # Test video mode
+            print("生成基于视频的动作:")
+            action_count = 0
+            async for action in agent.produce_action_stream("video"):
+                action_count += 1
+                print(
+                    f"[Action {action_count}]: {action.action_type} - {action.comment}"
+                )
+                if action.action_type == "SPEAK" and hasattr(action, "text") and action.text:
+                    print(
+                        f"  Text: {action.text[:100]}{'...' if len(action.text) > 100 else ''}"
+                    )
+                elif action.action_type == "PAUSE":
+                    print(f"  Duration: {action.duration_seconds}s")
+                elif action.action_type == "SEEK":
+                    print(
+                        f"  Target: {action.target_timestamp}s, Behavior: {action.post_seek_behavior}"
+                    )
+                elif action.action_type == "REPLAY_SEGMENT":
+                    print(
+                        f"  Replay: {action.start_timestamp}s - {action.end_timestamp}s"
+                    )
+
+                # Limit output for demo
+                if action_count >= 5:
+                    print("(限制输出，只显示前5个动作)")
+                    break
+
+            print(f"\n基于视频生成了 {action_count} 个动作")
+
+        except Exception as e:
+            print(f"测试失败: {e}")
+            import traceback
+
+            traceback.print_exc()
+
+    # Run the test
+    asyncio.run(test_video_analyzer())
 </file>
 
 <file path="src/ai_watch_buddy/session.py">
@@ -6787,324 +3377,10 @@ class SessionState:
 session_storage: dict[str, SessionState] = {}
 </file>
 
-<file path="pyproject.toml">
-[project]
-name = "ai_watch_buddy"
-version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-    "edge-tts>=7.0.2",
-    "fastapi>=0.116.1",
-    "fish-audio-sdk>=2025.6.3",
-    "google-genai>=1.27.0",
-    "json-repair>=0.47.8",
-    "loguru>=0.7.3",
-    "numpy>=2.3.1",
-    "pydantic>=2.11.7",
-    "python-dotenv>=1.1.1",
-    "ruff>=0.12.4",
-    "uvicorn[standard]>=0.30.1", # Added for running the server
-    "websockets>=12.0", # Explicitly add for websocket handling
-    "yt-dlp>=2025.7.21",
-]
-</file>
-
-<file path="src/ai_watch_buddy/pipeline.py">
-import json
-import asyncio
-from loguru import logger
-from typing import Optional
-import os
-from dotenv import load_dotenv
-
-from .actions import Action, SpeakAction
-from .tts.fish_audio_tts import FishAudioTTSEngine
-from .session import session_storage
-from .fetch_video import download_video_async
-from .agent.video_analyzer_agent import VideoAnalyzerAgent
-from .prompts.character_prompts import cute_prompt
-
-load_dotenv()
-
-
-def get_interruption_timestamp(user_action_list: list[Action]) -> Optional[float]:
-    """Extracts the interruption timestamp from the user action list."""
-    if user_action_list:
-        # The timestamp of the first user action is the definitive point of interruption.
-        return user_action_list[0].trigger_timestamp
-    return None
-
-
-async def run_conversation_pipeline(
-    session_id: str, user_action_list: list[Action], pending_action_list: list[Action]
-) -> None:
-    """
-    Handles a user interruption by sending a concise "Situation Report" to the agent.
-    The agent's System Prompt contains all the logic for how to handle this report.
-    """
-    session = session_storage.get(session_id)
-    if not session or not session.agent:
-        logger.error(
-            f"[{session_id}] Cannot run conversation: session or agent not found."
-        )
-        return
-
-    interruption_timestamp = get_interruption_timestamp(user_action_list)
-    if interruption_timestamp is None:
-        logger.warning(
-            f"[{session_id}] Could not determine interruption timestamp. Defaulting to 0."
-        )
-        interruption_timestamp = 0.0
-
-    # This context_message is a simple, clean data report.
-    # All the complex instructions have been moved to the System Prompt in action_gen.py.
-    context_message = f"""
-## User Interruption Report
-
-- **Interruption Timestamp:** {interruption_timestamp} (The video is PAUSED at this time)
-- **User Actions:**
-{json.dumps([action.model_dump() for action in user_action_list], indent=2)}
-
-- **Your Cancelled Actions:**
-{json.dumps([action.model_dump() for action in pending_action_list], indent=2)}
-
-Based on this report and your core instructions, generate your new Reaction Script now.
-"""
-
-    session.agent.add_content(role="user", text=context_message)
-
-    # The rest of the logic remains the same.
-    session.action_generation_task = asyncio.create_task(
-        generate_and_queue_actions(
-            session_id, mode="summary", clear_pending_actions=True
-        )
-    )
-    logger.info(
-        f"[{session_id}] Sent interruption report for timestamp {interruption_timestamp}. New generation task created."
-    )
-
-
-async def generate_and_queue_actions(
-    session_id: str,
-    mode: str,
-    clear_pending_actions: bool = True,
-) -> None:
-    """
-    Generic function to generate actions using the session's agent and put them in the queue.
-
-    Args:
-        session_id: The session identifier
-        mode: The generation mode (e.g., "video", "summary")
-        clear_pending_actions: Whether to clear existing pending actions
-    """
-    session = session_storage.get(session_id)
-    if not session or not session.agent:
-        logger.error(
-            f"[{session_id}] Cannot generate actions: session or agent not found."
-        )
-        return
-
-    try:
-        if clear_pending_actions:
-            while not session.action_queue.empty():
-                session.action_queue.get_nowait()
-            logger.info(f"[{session_id}] Cleared pending actions from the queue.")
-
-        session.status = "generating_actions"
-        logger.info(f"[{session_id}] Starting action generation with mode '{mode}'...")
-
-        actions_generated_count = 0
-
-        action_source = session.agent.produce_action_stream(mode=mode)
-
-        async for action in action_source:
-            # Handle both Action objects (from mock) and dict (from agent)
-
-            # 这个回来一定是个 Action 对象，所以不用 validate 了
-            # if isinstance(action_data, Action):
-            #     action = action_data
-            # else:
-            #     action = Action.model_validate(action_data)
-
-            # Generate audio for SpeakAction
-            if isinstance(action, SpeakAction):
-                # Initialize Fish Audio TTS - you'll need to provide your API key
-                tts_instance = FishAudioTTSEngine(
-                    api_key=os.getenv("FISH_AUDIO_API_KEY")
-                )
-                # tts_instance = TTSEngine()
-                audio_base64 = await tts_instance.generate_audio(action.text)
-                if audio_base64:
-                    action.audio = audio_base64
-                else:
-                    logger.warning(
-                        f"[{session_id}] Failed to generate audio for action: {action.id}"
-                    )
-
-            await session.action_queue.put(action)
-            actions_generated_count += 1
-            logger.info(
-                f"[{session_id}] Queued action: {action.action_type} at {action.trigger_timestamp}s"
-            )
-
-        logger.info(
-            f"[{session_id}] Action generation stream finished. Total new actions: {actions_generated_count}."
-        )
-
-    except asyncio.CancelledError:
-        logger.info(f"[{session_id}] Action generation task was cancelled.")
-    except Exception as e:
-        logger.error(
-            f"[{session_id}] Error during action generation: {e}", exc_info=True
-        )
-        session.status = "error"
-        session.processing_error = str(e)
-        error_payload = {
-            "type": "processing_error",
-            "error_code": "ACTION_GENERATION_FAILED",
-            "message": str(e),
-        }
-        await session.action_queue.put(error_payload)
-    finally:
-        await session.action_queue.put(None)
-
-
-async def run_initial_generation(session_id: str):
-    """
-    Runs initial action generation and summary generation in parallel,
-    then sets session_ready when both are complete.
-
-    Args:
-        session_id: The session identifier
-    """
-    session = session_storage.get(session_id)
-    if not session or not session.agent:
-        logger.error(
-            f"[{session_id}] Session or agent not found in run_initial_generation"
-        )
-        return
-
-    try:
-        # Determine the video input for the agent: use local path if available, otherwise use original URL.
-        video_input = (
-            session.local_video_path if session.local_video_path else session.video_url
-        )
-
-        logger.info(
-            f"[{session_id}] Starting parallel summary and action generation for: {video_input}"
-        )
-
-        # Create both tasks to run in parallel
-        summary_task = asyncio.create_task(
-            session.agent.get_video_summary(video_path_or_url=video_input)
-        )
-
-        action_generation_task = asyncio.create_task(
-            generate_and_queue_actions(
-                session_id, mode="video", clear_pending_actions=False
-            )
-        )
-
-        # Wait for both tasks to complete
-        await asyncio.gather(summary_task, action_generation_task)
-
-        logger.info(f"[{session_id}] Both summary and action generation completed.")
-
-        if not session.agent.summary_ready:
-            raise RuntimeError(
-                "Agent summary was not ready after summary task completion."
-            )
-
-        # Set session ready only after both tasks complete successfully
-        if session.status != "error":
-            session.status = "session_ready"
-            logger.info(
-                f"[{session_id}] ✅ Initial pipeline complete. Status set to 'session_ready'."
-            )
-
-    except Exception as e:
-        logger.error(
-            f"[{session_id}] Error during initial generation: {e}", exc_info=True
-        )
-        session.status = "error"
-        session.processing_error = str(e)
-        error_payload = {
-            "type": "processing_error",
-            "error_code": "INITIAL_GENERATION_FAILED",
-            "message": str(e),
-        }
-        await session.action_queue.put(error_payload)
-        await session.action_queue.put(None)
-
-
-async def initial_pipeline(session_id: str) -> None:
-    """
-    The initial background task that runs when a session is created.
-    """
-    session = session_storage.get(session_id)
-    if not session:
-        return
-
-    try:
-        # Step 1: Check video URL and download if necessary
-        video_url = session.video_url
-        is_youtube_url = "youtube.com" in video_url or "youtu.be" in video_url
-
-        if is_youtube_url:
-            logger.info(
-                f"[{session_id}] YouTube URL detected, skipping download: {video_url}"
-            )
-            session.local_video_path = None
-        else:
-            session.status = "downloading_video"
-            logger.info(
-                f"[{session_id}] Non-YouTube URL detected, downloading from: {video_url}"
-            )
-            local_video_path = str(
-                await download_video_async(session.video_url, target_dir="video_cache")
-            )
-            session.local_video_path = local_video_path
-            logger.info(
-                f"[{session_id}] Video downloaded and ready at: {local_video_path}"
-            )
-
-        session.status = "video_ready"
-
-        # Step 2: Initialize the agent
-        persona = session.character_prompt or cute_prompt
-        agent = VideoAnalyzerAgent(persona_prompt=persona)
-        session.agent = agent
-        logger.info(f"[{session_id}] Agent initialized with persona.")
-
-        # Step 3: Start parallel summary and action generation in the background.
-        session.action_generation_task = asyncio.create_task(
-            run_initial_generation(session_id)
-        )
-        logger.info(
-            f"[{session_id}] Summary and action generation started in the background."
-        )
-
-    except Exception as e:
-        logger.error(
-            f"[{session_id}] Error during initial pipeline setup: {e}", exc_info=True
-        )
-        session.status = "error"
-        session.processing_error = str(e)
-        if session:
-            error_payload = {
-                "type": "processing_error",
-                "error_code": "INITIAL_PIPELINE_FAILED",
-                "message": str(e),
-            }
-            await session.action_queue.put(error_payload)
-            await session.action_queue.put(None)
-</file>
-
 <file path="src/ai_watch_buddy/server.py">
 import uuid
 import asyncio
+import os
 from loguru import logger
 
 from fastapi import (
@@ -7124,8 +3400,9 @@ from .pipeline import (
     generate_and_queue_actions,
     run_conversation_pipeline,
 )
-from .actions import Action, UserInteractionPayload
+from .actions import Action, UserInteractionPayload, SpeakAction
 from .connection_manager import manager
+from .asr.fish_audio_asr import FishAudioASR
 
 app = FastAPI()
 
@@ -7137,6 +3414,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Initialize ASR service
+asr_service = None
+try:
+    if os.getenv("FISH_AUDIO_API_KEY"):
+        asr_service = FishAudioASR()
+        logger.info("Fish Audio ASR service initialized successfully")
+    else:
+        logger.warning("FISH_AUDIO_API_KEY not set. ASR functionality will be disabled.")
+except Exception as e:
+    logger.error(f"Failed to initialize ASR service: {e}")
+    asr_service = None
 
 
 # --- Data Models for API ---
@@ -7161,6 +3450,50 @@ class ErrorResponse(BaseModel):
 # --- Connection Management ---
 # The ConnectionManager is now in its own file (connection_manager.py)
 # to prevent circular dependencies. The `manager` instance is imported from there.
+
+
+async def process_user_actions_asr(user_action_list: list[Action]) -> list[Action]:
+    """
+    Process user actions and convert audio to text for SPEAK actions.
+    
+    Args:
+        user_action_list: List of user actions to process
+        
+    Returns:
+        Processed user actions with audio converted to text
+    """
+    if not asr_service:
+        logger.warning("ASR service not available. Audio will not be transcribed.")
+        return user_action_list
+    
+    processed_actions = []
+    
+    for action in user_action_list:
+        if isinstance(action, SpeakAction) and action.audio:
+            logger.info(f"Processing SPEAK action with audio for ASR conversion")
+            
+            # If action has audio, transcribe it to text
+            try:
+                transcribed_text = asr_service.transcribe_audio_sync(
+                    audio_base64=action.audio,
+                    language=None  # Auto-detect language
+                )
+                
+                if transcribed_text:
+                    # Update action with transcribed text and remove audio
+                    action.text = transcribed_text
+                    action.audio = None
+                    logger.info(f"ASR successful: '{transcribed_text}'")
+                else:
+                    logger.warning(f"ASR failed for action {action.id}, keeping original audio")
+                    
+            except Exception as e:
+                logger.error(f"ASR processing failed for action {action.id}: {e}", exc_info=True)
+                # Keep original action if ASR fails
+        
+        processed_actions.append(action)
+    
+    return processed_actions
 
 
 class CORSStaticFiles(StarletteStaticFiles):
@@ -7297,24 +3630,56 @@ async def websocket_receiver(websocket: WebSocket, session: SessionState):
             logger.info(
                 f"[{session.session_id}] Client triggered lazy-load for next actions."
             )
+            
+            session.agent.add_content(role="user", text="Continue")
             session.action_generation_task = asyncio.create_task(
                 generate_and_queue_actions(
                     session.session_id,
-                    mode="summary",
+                    mode="video",
                     clear_pending_actions=True,
                 )
             )
 
         elif msg_type == "trigger-conversation":
             try:
+                # Log the raw message for debugging
+                logger.info(f"[{session.session_id}] 📨 Raw trigger-conversation message received")
+                logger.debug(f"[{session.session_id}] 🔍 Raw message data keys: {list(message.keys())}")
+                
                 # Assuming the payload is in message['data']
                 payload = UserInteractionPayload.model_validate(message.get("data", {}))
-                logger.info(f"[{session.session_id}] Client triggered conversation.")
+                logger.info(
+                    f"[{session.session_id}] ✅ Client triggered conversation with "
+                    f"{len(payload.user_action_list)} user actions and "
+                    f"{len(payload.pending_action_list)} pending actions."
+                )
+                
+                # Log user actions for debugging
+                for action in payload.user_action_list:
+                    if action.action_type == 'SPEAK':
+                        logger.info(f"[{session.session_id}] 📨 Received SPEAK action:")
+                        if hasattr(action, 'text') and action.text:
+                            logger.info(f"[{session.session_id}] 📝 User text: '{action.text}'")
+                        if hasattr(action, 'audio') and action.audio:
+                            logger.info(f"[{session.session_id}] 🎵 User audio: {len(action.audio)} chars (base64)")
+                        if not (hasattr(action, 'text') and action.text) and not (hasattr(action, 'audio') and action.audio):
+                            logger.warning(f"[{session.session_id}] ⚠️ SPEAK action has neither text nor audio!")
+                    else:
+                        logger.info(f"[{session.session_id}] 🎯 User action: {action.action_type}")
+                
+                # Process audio to text conversion for SPEAK actions
+                processed_user_actions = await process_user_actions_asr(payload.user_action_list)
+                
+                # Log processed actions
+                for action in processed_user_actions:
+                    if action.action_type == 'SPEAK' and hasattr(action, 'text') and action.text:
+                        logger.info(f"[{session.session_id}] 📝 Processed user text: '{action.text}'")
+                
                 # No need to store task here, run_conversation_pipeline will do it.
                 asyncio.create_task(
                     run_conversation_pipeline(
                         session.session_id,
-                        user_action_list=payload.user_action_list,
+                        user_action_list=processed_user_actions,
                         pending_action_list=payload.pending_action_list,
                     )
                 )
@@ -7364,6 +3729,309 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
             session.action_generation_task.cancel()
         manager.disconnect(session_id)
         logger.info(f"[{session_id}] WebSocket connection closed and cleaned up.")
+</file>
+
+<file path="src/ai_watch_buddy/pipeline.py">
+import json
+import asyncio
+from loguru import logger
+from typing import Optional
+import os
+from dotenv import load_dotenv
+
+from .actions import Action, SpeakAction
+from .tts.edge_tts import TTSEngine as EdgeTTSEngine
+from .tts.fish_audio_tts import FishAudioTTSEngine
+from .session import session_storage
+from .fetch_video import download_video_async
+from .agent.video_analyzer_agent import VideoAnalyzerAgent
+from .prompts.character_prompts import cute_prompt
+
+load_dotenv()
+
+
+def get_interruption_timestamp(user_action_list: list[Action]) -> Optional[float]:
+    """Extracts the interruption timestamp from the user action list."""
+    if user_action_list:
+        # The timestamp of the first user action is the definitive point of interruption.
+        return user_action_list[0].trigger_timestamp
+    return None
+
+
+async def run_conversation_pipeline(
+    session_id: str, user_action_list: list[Action], pending_action_list: list[Action]
+) -> None:
+    """
+    Handles a user interruption by sending a concise "Situation Report" to the agent.
+    The agent's System Prompt contains all the logic for how to handle this report.
+    """
+    session = session_storage.get(session_id)
+    if not session or not session.agent:
+        logger.error(
+            f"[{session_id}] Cannot run conversation: session or agent not found."
+        )
+        return
+
+    interruption_timestamp = get_interruption_timestamp(user_action_list)
+    if interruption_timestamp is None:
+        logger.warning(
+            f"[{session_id}] Could not determine interruption timestamp. Defaulting to 0."
+        )
+        interruption_timestamp = 0.0
+
+    # This context_message is a simple, clean data report.
+    # All the complex instructions have been moved to the System Prompt in action_gen.py.
+    context_message = f"""
+## User Interruption Report
+
+- **Interruption Timestamp:** {interruption_timestamp} (The video is PAUSED at this time)
+- **User Actions:**
+{json.dumps([action.model_dump() for action in user_action_list], indent=2)}
+
+- **Your Cancelled Actions:**
+{json.dumps([action.model_dump() for action in pending_action_list], indent=2)}
+
+Based on this report and your core instructions, generate your new Reaction Script now.
+"""
+
+    session.agent.add_content(role="user", text=context_message)
+
+    # The rest of the logic remains the same.
+    session.action_generation_task = asyncio.create_task(
+        generate_and_queue_actions(
+            session_id, mode="summary", clear_pending_actions=True
+        )
+    )
+    logger.info(
+        f"[{session_id}] Sent interruption report for timestamp {interruption_timestamp}. New generation task created."
+    )
+
+
+async def generate_and_queue_actions(
+    session_id: str,
+    mode: str,
+    clear_pending_actions: bool = True,
+    early_ready: bool = False,
+) -> None:
+    """
+    Generic function to generate actions using the session's agent and put them in the queue.
+
+    Args:
+        session_id: The session identifier
+        mode: The generation mode (e.g., "video", "summary")
+        clear_pending_actions: Whether to clear existing pending actions
+        early_ready: Whether to set session ready after first audio generation
+    """
+    session = session_storage.get(session_id)
+    if not session or not session.agent:
+        logger.error(
+            f"[{session_id}] Cannot generate actions: session or agent not found."
+        )
+        return
+
+    try:
+        if clear_pending_actions:
+            while not session.action_queue.empty():
+                session.action_queue.get_nowait()
+            logger.info(f"[{session_id}] Cleared pending actions from the queue.")
+
+        session.status = "generating_actions"
+        logger.info(f"[{session_id}] Starting action generation with mode '{mode}'...")
+
+        actions_generated_count = 0
+        first_audio_generated = False
+
+        action_source = session.agent.produce_action_stream(mode=mode)
+
+        async for action in action_source:
+            # Handle both Action objects (from mock) and dict (from agent)
+
+            # 这个回来一定是个 Action 对象，所以不用 validate 了
+            # if isinstance(action_data, Action):
+            #     action = action_data
+            # else:
+            #     action = Action.model_validate(action_data)
+
+            # Generate audio for SpeakAction
+            if isinstance(action, SpeakAction):
+                # Initialize Fish Audio TTS - you'll need to provide your API key
+                # tts_instance = FishAudioTTSEngine(
+                #     api_key=os.getenv("FISH_AUDIO_API_KEY")
+                # )
+                tts_instance = EdgeTTSEngine()
+                audio_base64 = await tts_instance.generate_audio(action.text)
+                if audio_base64:
+                    action.audio = audio_base64
+                    
+                    # Set session ready after first audio generation if early_ready is True
+                    if early_ready and not first_audio_generated and session.status != "error":
+                        first_audio_generated = True
+                        session.status = "session_ready"
+                        logger.info(
+                            f"[{session_id}] ✅ First audio generated successfully. Status set to 'session_ready'."
+                        )
+                else:
+                    logger.warning(
+                        f"[{session_id}] Failed to generate audio for action: {action.id}"
+                    )
+
+            await session.action_queue.put(action)
+            actions_generated_count += 1
+            logger.info(
+                f"[{session_id}] Queued action: {action.action_type} at {action.trigger_timestamp}s"
+            )
+
+        logger.info(
+            f"[{session_id}] Action generation stream finished. Total new actions: {actions_generated_count}."
+        )
+
+    except asyncio.CancelledError:
+        logger.info(f"[{session_id}] Action generation task was cancelled.")
+    except Exception as e:
+        logger.error(
+            f"[{session_id}] Error during action generation: {e}", exc_info=True
+        )
+        session.status = "error"
+        session.processing_error = str(e)
+        error_payload = {
+            "type": "processing_error",
+            "error_code": "ACTION_GENERATION_FAILED",
+            "message": str(e),
+        }
+        await session.action_queue.put(error_payload)
+    finally:
+        await session.action_queue.put(None)
+
+
+async def run_initial_generation(session_id: str):
+    """
+    Runs initial action generation and summary generation in parallel.
+    Session ready is set when the first audio is generated (in action generation).
+
+    Args:
+        session_id: The session identifier
+    """
+    session = session_storage.get(session_id)
+    if not session or not session.agent:
+        logger.error(
+            f"[{session_id}] Session or agent not found in run_initial_generation"
+        )
+        return
+
+    try:
+        # Determine the video input for the agent: use local path if available, otherwise use original URL.
+        video_input = (
+            session.local_video_path if session.local_video_path else session.video_url
+        )
+
+        logger.info(
+            f"[{session_id}] Starting parallel summary and action generation for: {video_input}"
+        )
+
+        # Create both tasks to run in parallel
+        summary_task = asyncio.create_task(
+            session.agent.get_video_summary(video_path_or_url=video_input)
+        )
+
+        action_generation_task = asyncio.create_task(
+            generate_and_queue_actions(
+                session_id, mode="video", clear_pending_actions=False, early_ready=False
+            )
+        )
+
+        # Wait for both tasks to complete
+        await asyncio.gather(summary_task, action_generation_task)
+
+        logger.info(f"[{session_id}] Both summary and action generation completed.")
+
+        if not session.agent.summary_ready:
+            raise RuntimeError(
+                "Agent summary was not ready after summary task completion."
+            )
+            
+        session.status = "session_ready"
+
+        # Session ready is already set by generate_and_queue_actions when first audio is ready
+        logger.info(
+            f"[{session_id}] ✅ Initial pipeline complete. Summary generation finished."
+        )
+
+    except Exception as e:
+        logger.error(
+            f"[{session_id}] Error during initial generation: {e}", exc_info=True
+        )
+        session.status = "error"
+        session.processing_error = str(e)
+        error_payload = {
+            "type": "processing_error",
+            "error_code": "INITIAL_GENERATION_FAILED",
+            "message": str(e),
+        }
+        await session.action_queue.put(error_payload)
+        await session.action_queue.put(None)
+
+
+async def initial_pipeline(session_id: str) -> None:
+    """
+    The initial background task that runs when a session is created.
+    """
+    session = session_storage.get(session_id)
+    if not session:
+        return
+
+    try:
+        # Step 1: Check video URL and download if necessary
+        video_url = session.video_url
+        is_youtube_url = "youtube.com" in video_url or "youtu.be" in video_url
+
+        if is_youtube_url:
+            logger.info(
+                f"[{session_id}] YouTube URL detected, skipping download: {video_url}"
+            )
+            session.local_video_path = None
+        else:
+            session.status = "downloading_video"
+            logger.info(
+                f"[{session_id}] Non-YouTube URL detected, downloading from: {video_url}"
+            )
+            local_video_path = str(
+                await download_video_async(session.video_url, target_dir="video_cache")
+            )
+            session.local_video_path = local_video_path
+            logger.info(
+                f"[{session_id}] Video downloaded and ready at: {local_video_path}"
+            )
+
+        session.status = "video_ready"
+
+        # Step 2: Initialize the agent
+        persona = session.character_prompt or cute_prompt
+        agent = VideoAnalyzerAgent(persona_prompt=persona)
+        session.agent = agent
+        logger.info(f"[{session_id}] Agent initialized with persona.")
+
+        # Step 3: Start parallel summary and action generation in the background.
+        session.action_generation_task = asyncio.create_task(
+            run_initial_generation(session_id)
+        )
+        logger.info(
+            f"[{session_id}] Summary and action generation started in the background."
+        )
+
+    except Exception as e:
+        logger.error(
+            f"[{session_id}] Error during initial pipeline setup: {e}", exc_info=True
+        )
+        session.status = "error"
+        session.processing_error = str(e)
+        if session:
+            error_payload = {
+                "type": "processing_error",
+                "error_code": "INITIAL_PIPELINE_FAILED",
+                "message": str(e),
+            }
+            await session.action_queue.put(error_payload)
+            await session.action_queue.put(None)
 </file>
 
 </files>

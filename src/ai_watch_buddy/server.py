@@ -1,5 +1,6 @@
 import uuid
 import asyncio
+import os
 from loguru import logger
 from pathlib import Path
 
@@ -22,8 +23,9 @@ from .pipeline import (
     generate_and_queue_actions,
     run_conversation_pipeline,
 )
-from .actions import Action, UserInteractionPayload
+from .actions import Action, UserInteractionPayload, SpeakAction
 from .connection_manager import manager
+from .asr.fish_audio_asr import FishAudioASR
 
 app = FastAPI()
 
@@ -35,6 +37,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Initialize ASR service
+asr_service = None
+try:
+    if os.getenv("FISH_AUDIO_API_KEY"):
+        asr_service = FishAudioASR()
+        logger.info("Fish Audio ASR service initialized successfully")
+    else:
+        logger.warning("FISH_AUDIO_API_KEY not set. ASR functionality will be disabled.")
+except Exception as e:
+    logger.error(f"Failed to initialize ASR service: {e}")
+    asr_service = None
 
 
 # --- Data Models for API ---
@@ -59,6 +73,50 @@ class ErrorResponse(BaseModel):
 # --- Connection Management ---
 # The ConnectionManager is now in its own file (connection_manager.py)
 # to prevent circular dependencies. The `manager` instance is imported from there.
+
+
+async def process_user_actions_asr(user_action_list: list[Action]) -> list[Action]:
+    """
+    Process user actions and convert audio to text for SPEAK actions.
+    
+    Args:
+        user_action_list: List of user actions to process
+        
+    Returns:
+        Processed user actions with audio converted to text
+    """
+    if not asr_service:
+        logger.warning("ASR service not available. Audio will not be transcribed.")
+        return user_action_list
+    
+    processed_actions = []
+    
+    for action in user_action_list:
+        if isinstance(action, SpeakAction) and action.audio:
+            logger.info(f"Processing SPEAK action with audio for ASR conversion")
+            
+            # If action has audio, transcribe it to text
+            try:
+                transcribed_text = asr_service.transcribe_audio_sync(
+                    audio_base64=action.audio,
+                    language=None  # Auto-detect language
+                )
+                
+                if transcribed_text:
+                    # Update action with transcribed text and remove audio
+                    action.text = transcribed_text
+                    action.audio = None
+                    logger.info(f"ASR successful: '{transcribed_text}'")
+                else:
+                    logger.warning(f"ASR failed for action {action.id}, keeping original audio")
+                    
+            except Exception as e:
+                logger.error(f"ASR processing failed for action {action.id}: {e}", exc_info=True)
+                # Keep original action if ASR fails
+        
+        processed_actions.append(action)
+    
+    return processed_actions
 
 
 class CORSStaticFiles(StarletteStaticFiles):
@@ -270,6 +328,59 @@ async def websocket_receiver(websocket: WebSocket, session: SessionState):
                 )
 
         elif msg_type == "trigger-conversation":
+            
+            from .agent.video_analyzer_agent import MOCK
+            if MOCK == True:
+                # Mock conversation with specified Chinese text
+                import uuid
+                import os
+                from .tts.fish_audio_tts import FishAudioTTSEngine
+                
+                logger.info(f"[{session.session_id}] 🎭 Mock mode enabled - generating mock conversation")
+                
+                # Parse payload to get pending actions
+                try:
+                    payload = UserInteractionPayload.model_validate(message.get("data", {}))
+                    logger.info(f"[{session.session_id}] 📨 Mock mode: received {len(payload.pending_action_list)} pending actions")
+                    
+                    # Queue all pending actions first
+                    for action in payload.pending_action_list:
+                        await session.action_queue.put(action)
+                        logger.info(f"[{session.session_id}] ➕ Queued pending action: {action.action_type}")
+                    
+                except ValidationError as e:
+                    logger.error(f"[{session.session_id}] ❌ Mock mode: Invalid payload: {e}")
+                    # Continue with mock even if payload is invalid
+                
+                # Create mock SpeakAction
+                mock_action = SpeakAction(
+                    id=f"mock_{uuid.uuid4().hex[:8]}",
+                    trigger_timestamp=0.0,
+                    comment="Mock conversation response about the bar dancer",
+                    text="他是视频中的酒吧舞者，谐音 985，网上无法公开查到他的身份。",
+                    pause_video=False
+                ) # Real genereated data for quick testing
+                
+                # Generate TTS for the mock action
+                try:
+                    tts_instance = FishAudioTTSEngine(api_key=os.getenv("FISH_AUDIO_API_KEY"))
+                    audio_base64 = await tts_instance.generate_audio(mock_action.text)
+                    if audio_base64:
+                        mock_action.audio = audio_base64
+                        logger.info(f"[{session.session_id}] 🎵 Mock TTS generated successfully")
+                    else:
+                        logger.warning(f"[{session.session_id}] ⚠️ Mock TTS generation failed")
+                except Exception as e:
+                    logger.error(f"[{session.session_id}] ❌ Mock TTS error: {e}")
+                
+                # Queue the mock action
+                await session.action_queue.put(mock_action)
+                logger.info(f"[{session.session_id}] ✅ Mock action queued successfully")
+                
+                # End the batch
+                await session.action_queue.put(None)
+                return
+                
             try:
                 # Log the raw message for debugging
                 logger.info(f"[{session.session_id}] 📨 Raw trigger-conversation message received")
@@ -296,11 +407,19 @@ async def websocket_receiver(websocket: WebSocket, session: SessionState):
                     else:
                         logger.info(f"[{session.session_id}] 🎯 User action: {action.action_type}")
                 
+                # Process audio to text conversion for SPEAK actions
+                processed_user_actions = await process_user_actions_asr(payload.user_action_list)
+                
+                # Log processed actions
+                for action in processed_user_actions:
+                    if action.action_type == 'SPEAK' and hasattr(action, 'text') and action.text:
+                        logger.info(f"[{session.session_id}] 📝 Processed user text: '{action.text}'")
+                
                 # No need to store task here, run_conversation_pipeline will do it.
                 asyncio.create_task(
                     run_conversation_pipeline(
                         session.session_id,
-                        user_action_list=payload.user_action_list,
+                        user_action_list=processed_user_actions,
                         pending_action_list=payload.pending_action_list,
                     )
                 )
