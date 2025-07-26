@@ -1,8 +1,10 @@
 import { useCallback, useRef, useState } from 'react';
-import { AIAction } from './use-message-handler';
+import { AIAction } from '@/context/websocket-context';
 import { useAudioTask } from './use-audio-task';
 import { useLive2DExpression } from './use-live2d-expression';
 import { useLive2DConfig } from '@/context/live2d-config-context';
+import { useChat } from '@/context/chat-context';
+import { useSettings } from '@/context/settings-context';
 
 export interface VideoPlayerControl {
   pause: () => void;
@@ -15,6 +17,8 @@ export interface VideoPlayerControl {
   showSpeakingOverlay: () => void;
   hideSpeakingOverlay: () => void;
   animateSeek: (targetTime: number, duration?: number) => Promise<void>;
+  setVolume: (volume: number) => void;
+  getVolume: () => number;
 }
 
 export interface ActionExecutorOptions {
@@ -34,8 +38,11 @@ export const useActionExecutor = (options: ActionExecutorOptions = {}): UseActio
   const { addAudioTask, stopCurrentAudioAndLipSync } = useAudioTask();
   const { setExpression } = useLive2DExpression();
   const { modelInfo } = useLive2DConfig();
+  const { addMessage } = useChat();
+  const { generalSettings } = useSettings();
   
   const [isExecuting, setIsExecuting] = useState(false);
+  const originalVolumeRef = useRef<number>(1);
 
   // Individual action executors - defined first so they can be referenced
   const executeExpressionAction = useCallback(async (action: AIAction): Promise<void> => {
@@ -112,12 +119,26 @@ export const useActionExecutor = (options: ActionExecutorOptions = {}): UseActio
     const shouldPauseVideo = action.pause_video !== false; // Default to true if not specified
     console.log(`AI speaking: "${action.text}" (pause_video: ${shouldPauseVideo})`);
 
+    // Add AI message to chat when actually speaking
+    addMessage({
+      type: 'ai',
+      content: action.text,
+    });
+
     // Stop any current audio to prevent overlapping
     stopCurrentAudioAndLipSync();
 
     // Store the current video time and playing state
     let videoWasPlaying = false;
     let currentVideoTime = 0;
+    
+    // Handle video volume reduction if enabled
+    if (videoPlayerControl && generalSettings.reduceVideoVolumeOnSpeech) {
+      originalVolumeRef.current = videoPlayerControl.getVolume();
+      const reducedVolume = originalVolumeRef.current * (generalSettings.videoVolumeReductionPercent / 100);
+      videoPlayerControl.setVolume(reducedVolume);
+      console.log(`Reduced video volume from ${originalVolumeRef.current} to ${reducedVolume} (${generalSettings.videoVolumeReductionPercent}%)`);
+    }
     
     // Show speaking overlay
     if (videoPlayerControl) {
@@ -134,8 +155,9 @@ export const useActionExecutor = (options: ActionExecutorOptions = {}): UseActio
     }
 
     // If audio data is available, use it for lip sync
-    if (action.audio) {
+    if (action.audio && action.audio.trim().length > 10) { // Ensure meaningful base64 data
       try {
+        console.log(`Playing AI audio with ${action.audio.length} chars of base64 data`);
         await addAudioTask({
           audioBase64: action.audio,
           volumes: [], // Will be calculated by the audio task
@@ -147,10 +169,12 @@ export const useActionExecutor = (options: ActionExecutorOptions = {}): UseActio
         console.error('Failed to play audio with lip sync:', error);
         // Fallback: just display the text
         console.log(`Fallback text display: "${action.text}"`);
+        // Simulate a delay for text-only speech
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     } else {
       // No audio available, just display text
-      console.log(`Text-only speech: "${action.text}"`);
+      console.log(`Text-only speech: "${action.text}" (no audio data: ${action.audio?.length || 0} chars)`);
       // Simulate a delay for text-only speech
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
@@ -158,6 +182,12 @@ export const useActionExecutor = (options: ActionExecutorOptions = {}): UseActio
     // Hide speaking overlay
     if (videoPlayerControl) {
       videoPlayerControl.hideSpeakingOverlay();
+    }
+
+    // Restore original video volume if it was reduced
+    if (videoPlayerControl && generalSettings.reduceVideoVolumeOnSpeech) {
+      videoPlayerControl.setVolume(originalVolumeRef.current);
+      console.log(`Restored video volume to ${originalVolumeRef.current}`);
     }
 
     // Resume video if it was paused and was playing before
@@ -175,7 +205,7 @@ export const useActionExecutor = (options: ActionExecutorOptions = {}): UseActio
       console.log('Resuming video playback after speech');
       videoPlayerControl.resume();
     }
-  }, [addAudioTask, stopCurrentAudioAndLipSync, videoPlayerControl]);
+  }, [addAudioTask, stopCurrentAudioAndLipSync, videoPlayerControl, addMessage, generalSettings]);
 
   const executeSeekAction = useCallback(async (action: AIAction): Promise<void> => {
     if (!videoPlayerControl) {

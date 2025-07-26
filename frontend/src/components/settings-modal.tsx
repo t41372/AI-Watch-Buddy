@@ -23,7 +23,9 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
   // Default values to prevent undefined issues
   const defaultGeneralSettings: GeneralSettings = {
     baseUrl: 'http://127.0.0.1:8000',
-    websocketBaseUrl: 'ws://127.0.0.1:8000/ws'
+    websocketBaseUrl: 'ws://127.0.0.1:8000/ws',
+    reduceVideoVolumeOnSpeech: true,
+    videoVolumeReductionPercent: 50
   };
   
   const defaultBackgroundSettings: BackgroundSettings = {
@@ -125,8 +127,8 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
 
   const tabs = [
     { key: 'general' as TabKey, label: 'General', icon: '⚙️' },
-    { key: 'user' as TabKey, label: 'User', icon: '👤' },
     { key: 'background' as TabKey, label: 'Background', icon: '🖼️' },
+    { key: 'user' as TabKey, label: 'User', icon: '👤' },
     { key: 'character' as TabKey, label: 'Character', icon: '🎭' }
   ];
 
@@ -135,30 +137,89 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
       case 'general':
         return (
           <div className="space-y-5">
-            <div>
-              <label className="block text-[13px] font-medium text-[#202124] mb-2">
-                Base URL
-              </label>
-              <input
-                type="url"
-                value={localGeneralSettings?.baseUrl ?? ''}
-                onChange={(e) => setLocalGeneralSettings(prev => ({ ...prev, baseUrl: e.target.value }))}
-                placeholder="http://127.0.0.1:8000"
-                className="w-full px-3 py-2 text-[14px] border border-[#dadce0] rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:ring-opacity-20 focus:border-[#1a73e8] transition-colors"
-              />
+            {/* Audio Settings */}
+            <div className="border-b border-[#e8eaed] pb-5">
+              <h3 className="text-[14px] font-medium text-[#202124] mb-4">Audio Settings</h3>
+              
+              {/* Reduce Video Volume on Speech */}
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <label className="text-[13px] font-medium text-[#202124]">
+                    Reduce video volume when AI speaks
+                  </label>
+                  <p className="text-[12px] text-[#5f6368] mt-1">
+                    Automatically lower video volume during AI speech for better clarity
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={localGeneralSettings?.reduceVideoVolumeOnSpeech ?? true}
+                    onChange={(e) => setLocalGeneralSettings(prev => ({ ...prev, reduceVideoVolumeOnSpeech: e.target.checked }))}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+
+              {/* Volume Reduction Percentage */}
+              {localGeneralSettings?.reduceVideoVolumeOnSpeech && (
+                <div>
+                  <label className="block text-[13px] font-medium text-[#202124] mb-2">
+                    Volume reduction: {localGeneralSettings?.videoVolumeReductionPercent ?? 50}%
+                  </label>
+                  <input
+                    type="range"
+                    min="10"
+                    max="90"
+                    step="5"
+                    value={localGeneralSettings?.videoVolumeReductionPercent ?? 50}
+                    onChange={(e) => setLocalGeneralSettings(prev => ({ ...prev, videoVolumeReductionPercent: parseInt(e.target.value) }))}
+                    className="w-full h-2 bg-[#e8eaed] rounded-lg appearance-none cursor-pointer slider"
+                  />
+                  <div className="flex justify-between text-[11px] text-[#5f6368] mt-1">
+                    <span>10%</span>
+                    <span>50%</span>
+                    <span>90%</span>
+                  </div>
+                  <p className="text-[12px] text-[#5f6368] mt-2">
+                    Video volume will be reduced to {localGeneralSettings?.videoVolumeReductionPercent ?? 50}% of original volume
+                  </p>
+                </div>
+              )}
             </div>
-            
+
+            {/* Server Settings */}
             <div>
-              <label className="block text-[13px] font-medium text-[#202124] mb-2">
-                WebSocket Base URL
-              </label>
-              <input
-                type="url"
-                value={localGeneralSettings?.websocketBaseUrl ?? ''}
-                onChange={(e) => setLocalGeneralSettings(prev => ({ ...prev, websocketBaseUrl: e.target.value }))}
-                placeholder="ws://127.0.0.1:8000/ws"
-                className="w-full px-3 py-2 text-[14px] border border-[#dadce0] rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:ring-opacity-20 focus:border-[#1a73e8] transition-colors"
-              />
+              <h3 className="text-[14px] font-medium text-[#202124] mb-4">Server Settings</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[13px] font-medium text-[#202124] mb-2">
+                    Base URL
+                  </label>
+                  <input
+                    type="url"
+                    value={localGeneralSettings?.baseUrl ?? ''}
+                    onChange={(e) => setLocalGeneralSettings(prev => ({ ...prev, baseUrl: e.target.value }))}
+                    placeholder="http://127.0.0.1:8000"
+                    className="w-full px-3 py-2 text-[14px] border border-[#dadce0] rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:ring-opacity-20 focus:border-[#1a73e8] transition-colors"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-[13px] font-medium text-[#202124] mb-2">
+                    WebSocket Base URL
+                  </label>
+                  <input
+                    type="url"
+                    value={localGeneralSettings?.websocketBaseUrl ?? ''}
+                    onChange={(e) => setLocalGeneralSettings(prev => ({ ...prev, websocketBaseUrl: e.target.value }))}
+                    placeholder="ws://127.0.0.1:8000/ws"
+                    className="w-full px-3 py-2 text-[14px] border border-[#dadce0] rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:ring-opacity-20 focus:border-[#1a73e8] transition-colors"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         );

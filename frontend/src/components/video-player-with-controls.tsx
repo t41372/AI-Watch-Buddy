@@ -23,6 +23,8 @@ export interface VideoPlayerWithControlsRef {
   showSpeakingOverlay: () => void;
   hideSpeakingOverlay: () => void;
   animateSeek: (targetTime: number, duration: number) => Promise<void>;
+  setVolume: (volume: number) => void;
+  getVolume: () => number;
 }
 
 export const VideoPlayerWithControls = forwardRef<VideoPlayerWithControlsRef, VideoPlayerWithControlsProps>(({ 
@@ -121,8 +123,16 @@ export const VideoPlayerWithControls = forwardRef<VideoPlayerWithControlsRef, Vi
         
         animate();
       });
+    },
+    setVolume: (volume: number) => {
+      const clampedVolume = Math.max(0, Math.min(1, volume));
+      setState((prevState) => ({ ...prevState, volume: clampedVolume }));
+      console.log(`Video volume set to: ${clampedVolume}`);
+    },
+    getVolume: () => {
+      return state.volume;
     }
-  }), [isSessionReady]);
+      }), [isSessionReady]);
 
   const initialState = {
     src: src || undefined,

@@ -4,8 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { VideoPlayerWithControls } from './video-player-with-controls';
 import { useDraggable } from '@/hooks/use-draggable';
 import { useSession } from '@/hooks/use-session';
-import { useWebSocket } from '@/hooks/use-websocket';
-import { useMessageHandler } from '@/hooks/use-message-handler';
+import { useWebSocketContext } from '@/context/websocket-context';
 import { useActionQueue } from '@/hooks/use-action-queue';
 import { useActionExecutor, VideoPlayerControl } from '@/hooks/use-action-executor';
 import { useSettings } from '@/context/settings-context';
@@ -55,40 +54,25 @@ export const ChromeBrowser = ({
   });
 
   // Session management
-  const { status: sessionStatus, sessionId, error: sessionError, createSession, resetSession } = useSession();
+  const { status: sessionCreateStatus, sessionId, error: sessionError, createSession, resetSession } = useSession();
 
-  // Message handling
-  const { 
-    sessionStatus: messageSessionStatus, 
-    processingError, 
-    receivedActions, 
-    isSessionReady, 
-    handleMessage,
-    clearError,
-    resetHandler,
-    clearReceivedActions
-  } = useMessageHandler();
+  // Message handling is now part of WebSocket context
 
-  // WebSocket connection (moved before useActionQueue to provide sendMessage)
-  const webSocketUrl = sessionId ? `${generalSettings.websocketBaseUrl}/${sessionId}` : '';
-  
-  // Stable callback for connection changes
-  const handleConnectionChange = useCallback((status: string) => {
-    console.log('WebSocket status changed:', status);
-  }, []);
+  // WebSocket connection is now handled globally
 
   const { 
     status: wsStatus, 
-    sendMessage, 
-    connect, 
-    disconnect,
-    error: wsError 
-  } = useWebSocket({
-    url: webSocketUrl,
-    autoReconnect: true,
-    onMessage: handleMessage,
-    onConnectionChange: handleConnectionChange
-  });
+    sendMessage,
+    error: wsError,
+    connect: connectWebSocket,
+    sessionStatus,
+    processingError,
+    isSessionReady,
+    receivedActions,
+    clearReceivedActions,
+    clearError,
+    resetHandler
+  } = useWebSocketContext();
 
   // Action queue management
   const {
@@ -155,6 +139,14 @@ export const ChromeBrowser = ({
       if (videoPlayerRef.current?.animateSeek) {
         return videoPlayerRef.current.animateSeek(targetTime, duration);
       }
+    },
+    setVolume: (volume: number) => {
+      if (videoPlayerRef.current?.setVolume) {
+        videoPlayerRef.current.setVolume(volume);
+      }
+    },
+    getVolume: () => {
+      return videoPlayerRef.current?.getVolume() || 1;
     }
   };
 
@@ -201,6 +193,10 @@ export const ChromeBrowser = ({
         
         if (newSessionId) {
           console.log('Session created successfully:', newSessionId);
+          // 连接 WebSocket after session is created
+          setTimeout(() => {
+            connectWebSocket(newSessionId);
+          }, 100); // 小延迟确保后端准备就绪
         }
       } catch (error) {
         console.error('Failed to create session:', error);
@@ -208,26 +204,18 @@ export const ChromeBrowser = ({
     };
 
     createSessionForVideo();
-  }, [videoSrc, sessionConfig, createSession]);
+  }, [videoSrc, sessionConfig, createSession, connectWebSocket]);
 
-  // Connect to WebSocket when session is created
-  useEffect(() => {
-    console.log('WebSocket connection check:', { sessionId, wsStatus, webSocketUrl });
-    if (sessionId && wsStatus === 'disconnected' && webSocketUrl) {
-      console.log('Connecting to WebSocket for session:', sessionId);
-      console.log('WebSocket URL:', webSocketUrl);
-      connect();
-    }
-  }, [sessionId, wsStatus, webSocketUrl, connect]);
+  // WebSocket connection is now manually triggered after session creation
 
   // Handle session status changes
   useEffect(() => {
-    if (sessionStatus === 'error' && sessionError) {
+    if (sessionCreateStatus === 'error' && sessionError) {
       console.error('Session creation failed:', sessionError);
       // Show user-friendly error (you can replace this with a proper UI notification)
       alert(`Failed to create session: ${sessionError.message}`);
     }
-  }, [sessionStatus, sessionError]);
+  }, [sessionCreateStatus, sessionError]);
 
   // Handle processing errors
   useEffect(() => {
@@ -240,15 +228,14 @@ export const ChromeBrowser = ({
   // Debug: Log session and WebSocket status changes
   useEffect(() => {
     console.log('Session states:', {
-      sessionStatus,
+      sessionCreateStatus,
       sessionId,
-      messageSessionStatus,
-      isSessionReady,
       wsStatus,
+      isSessionReady,
       currentUrl: currentUrl || 'none',
       videoSrc: videoSrc || 'none'
     });
-  }, [sessionStatus, sessionId, messageSessionStatus, isSessionReady, wsStatus, currentUrl, videoSrc]);
+  }, [sessionCreateStatus, sessionId, wsStatus, isSessionReady, currentUrl, videoSrc]);
 
   // Add received actions to queue
   useEffect(() => {
@@ -261,11 +248,11 @@ export const ChromeBrowser = ({
 
   // Clear queue when session resets
   useEffect(() => {
-    if (sessionStatus === 'creating') {
+    if (sessionCreateStatus === 'creating') {
       clearQueue();
       resetHandler();
     }
-  }, [sessionStatus, clearQueue, resetHandler]);
+  }, [sessionCreateStatus, clearQueue, resetHandler]);
 
   // Handle current time updates for action queue management
   const handleCurrentTimeChange = useCallback((time: number) => {

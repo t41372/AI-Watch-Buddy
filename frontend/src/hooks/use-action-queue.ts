@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { AIAction } from './use-message-handler';
-import { WebSocketMessage } from './use-websocket';
+import { AIAction, WebSocketMessage } from '../context/websocket-context';
 
 export interface ActionQueueOptions {
   threshold?: number; // Time threshold in seconds to request more actions
@@ -42,8 +41,17 @@ export const useActionQueue = (options: ActionQueueOptions = {}): UseActionQueue
     if (actions.length === 0) return;
 
     setActionQueue(prevQueue => {
+      // Filter out actions that already exist in the queue
+      const existingIds = new Set(prevQueue.map(action => action.id));
+      const newActions = actions.filter(action => !existingIds.has(action.id));
+      
+      if (newActions.length === 0) {
+        console.log('All actions already exist in queue, skipping duplicates');
+        return prevQueue;
+      }
+      
       // Combine and sort all actions by trigger_timestamp
-      const newQueue = [...prevQueue, ...actions];
+      const newQueue = [...prevQueue, ...newActions];
       const sortedQueue = newQueue.sort((a, b) => {
         // Primary sort by trigger_timestamp
         if (a.trigger_timestamp !== b.trigger_timestamp) {
@@ -57,7 +65,7 @@ export const useActionQueue = (options: ActionQueueOptions = {}): UseActionQueue
         return aPriority - bPriority;
       });
 
-      console.log(`Added ${actions.length} actions to queue. New queue size: ${sortedQueue.length}`);
+      console.log(`Added ${newActions.length} new actions to queue (${actions.length - newActions.length} duplicates skipped). New queue size: ${sortedQueue.length}`);
       return sortedQueue;
     });
 

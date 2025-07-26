@@ -73,10 +73,34 @@ export const useAudioTask = () => {
     const { audioBase64, expressions } = options;
 
     try {
+      // Check if audioBase64 is valid before proceeding
+      if (!audioBase64 || audioBase64.trim() === '' || audioBase64.trim().length < 10) {
+        console.log(`No valid audio data provided (${audioBase64?.length || 0} chars), skipping audio playback`);
+        resolve();
+        return;
+      }
+
+      // Validate base64 string format
+      const base64Pattern = /^[A-Za-z0-9+/]*={0,2}$/;
+      if (!base64Pattern.test(audioBase64.trim())) {
+        console.error('Invalid base64 audio data format');
+        resolve();
+        return;
+      }
+
+      stopCurrentAudioAndLipSync();
+
       // Process audio if available
       if (audioBase64) {
-        // Change the MIME type to audio/mp3 which is more widely supported
+        // Change the MIME type to audio/wav
         const audioDataUrl = `data:audio/wav;base64,${audioBase64}`;
+        
+        // Validate the data URL
+        if (!audioDataUrl || audioDataUrl === 'data:audio/wav;base64,') {
+          console.error('Invalid audio data URL generated');
+          resolve();
+          return;
+        }
 
         // Get Live2D manager and model
         const live2dManager = (window as any).getLive2DManager?.();
@@ -126,12 +150,20 @@ export const useAudioTask = () => {
         const audio = new Audio();
         currentAudioRef.current = audio;
         let isFinished = false;
+        let isCleanedUp = false;
 
         const cleanup = () => {
+          if (isCleanedUp) return; // 防止重复清理
+          isCleanedUp = true;
+
+          console.log('Cleaning up audio playback');
+          
+          // 只清理当前正在播放的音频
           if (currentAudioRef.current === audio) {
             currentAudioRef.current = null;
             currentModelRef.current = null;
           }
+          
           if (!isFinished) {
             isFinished = true;
             resolve();
@@ -143,8 +175,8 @@ export const useAudioTask = () => {
 
         audio.addEventListener('canplaythrough', () => {
           // Check for interruption before playback
-          if (currentAudioRef.current !== audio) {
-            console.warn('Audio playback cancelled due to new audio');
+          if (currentAudioRef.current !== audio || isCleanedUp) {
+            console.warn('Audio playback cancelled due to new audio or cleanup');
             cleanup();
             return;
           }
@@ -156,7 +188,7 @@ export const useAudioTask = () => {
           });
 
           // Setup lip sync
-          if (model._wavFileHandler) {
+          if (model._wavFileHandler && !isCleanedUp) {
             if (!model._wavFileHandler._initialized) {
               console.log('Applying enhanced lip sync');
               model._wavFileHandler._initialized = true;
@@ -170,31 +202,72 @@ export const useAudioTask = () => {
               };
             }
 
-            if (currentAudioRef.current === audio) {
+            if (currentAudioRef.current === audio && !isCleanedUp) {
               model._wavFileHandler.start(audioDataUrl);
             } else {
-              console.warn('WavFileHandler start skipped - audio was stopped');
+              console.warn('WavFileHandler start skipped - audio was stopped or cleaned up');
             }
           }
         });
 
         audio.addEventListener('ended', () => {
-          console.log("Audio playback completed");
-          cleanup();
+          if (!isCleanedUp) {
+            console.log("Audio playback completed");
+            cleanup();
+          }
         });
 
         audio.addEventListener('error', (error) => {
+          // 只处理当前活跃音频的错误，忽略已经清理的音频错误
+          if (currentAudioRef.current !== audio || isCleanedUp) {
+            console.log('Ignoring error from stopped/cleaned audio');
+            return;
+          }
+
           console.error("Audio playback error:", error);
           // Add more detailed error information
           const audioElement = error.target as HTMLAudioElement;
           console.error("Audio error code:", audioElement.error?.code);
           console.error("Audio error message:", audioElement.error?.message);
+          console.error("Audio src:", audioElement.src?.substring(0, 50) + '...');
+          console.error("Audio readyState:", audioElement.readyState);
+          console.error("Audio networkState:", audioElement.networkState);
+          
+          // Provide user-friendly error messages
+          switch (audioElement.error?.code) {
+            case 1: // MEDIA_ERR_ABORTED
+              console.error("Audio playback was aborted");
+              break;
+            case 2: // MEDIA_ERR_NETWORK
+              console.error("Network error occurred while loading audio");
+              break;
+            case 3: // MEDIA_ERR_DECODE
+              console.error("Audio decoding error - invalid format");
+              break;
+            case 4: // MEDIA_ERR_SRC_NOT_SUPPORTED
+              console.error("Audio source not supported or empty");
+              break;
+            default:
+              console.error("Unknown audio error");
+          }
+          
           cleanup();
         });
 
         // Set the source after adding event listeners
-        audio.src = audioDataUrl;
-        audio.load();
+        // Double-check audioDataUrl before setting
+        if (audioDataUrl && 
+            audioDataUrl.length > 'data:audio/wav;base64,'.length && 
+            audioDataUrl !== 'data:audio/wav;base64,' &&
+            !audioDataUrl.endsWith('base64,')) {
+          console.log('Setting audio source, data URL length:', audioDataUrl.length);
+          audio.src = audioDataUrl;
+          audio.load();
+        } else {
+          console.error('Cannot set audio source: invalid or empty audioDataUrl:', audioDataUrl?.substring(0, 50) + '...');
+          cleanup();
+          return;
+        }
       } else {
         resolve();
       }

@@ -1,5 +1,5 @@
 import { useCallback, useState, useEffect } from 'react';
-import { WebSocketMessage } from './use-websocket';
+import { WebSocketMessage } from '@/context/websocket-context';
 
 // Action types from AI backend - updated to match new schema
 export interface AIAction {

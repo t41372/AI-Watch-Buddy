@@ -6,6 +6,7 @@ import { ChromeBrowser } from "../components/chrome-browser";
 import { ChatRoom } from "../components/chat-room";
 import { VideoConfigModal } from "../components/video-config-modal";
 import { SettingsModal } from "../components/settings-modal";
+import { WebSocketHandler } from "../components/websocket-handler";
 import { useSettings } from "@/context/settings-context";
 import { useChat } from "@/context/chat-context";
 import { LAppAdapter } from '@cubismsdksamples/lappadapter';
@@ -50,21 +51,6 @@ export default function HomePage() {
       }
 
       // Settings are now managed by SettingsContext
-      
-      // Add some demo messages to showcase the chat room
-      setTimeout(() => {
-        addMessage({
-          type: 'system',
-          content: 'Chat room initialized. Welcome!'
-        });
-      }, 1000);
-      
-      setTimeout(() => {
-        addMessage({
-          type: 'ai',
-          content: 'Hello! I\'m your AI companion. Ready to watch some videos together? 🎬'
-        });
-      }, 2000);
     }
   }, [addMessage]);
 
@@ -174,78 +160,80 @@ export default function HomePage() {
   };
 
   return (
-    <div 
-      className="w-screen h-screen overflow-hidden relative"
-      style={getBackgroundStyle()}
-    >
-      {/* Background Pattern Overlay */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="w-full h-full bg-gradient-to-br from-black/10 via-transparent to-black/10"></div>
-      </div>
-
-      {/* Settings Button */}
-      <div className="absolute top-6 left-6 z-30">
-        <button
-          onClick={() => setShowSettingsModal(true)}
-          className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg border border-white/20 hover:bg-white/95 transition-all duration-200 hover:scale-105"
-          title="Settings"
-        >
-          <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Main Content Area */}
-      <div className="relative w-full h-full">
-        {/* Video Display Area - AI's shared screen */}
-        <ChromeBrowser
-          videoSrc={currentVideoUrl}
-          onUrlSubmit={handleVideoUrlSubmit}
-          className="w-full max-w-5xl"
-          position={browserPosition}
-          onPositionChange={setBrowserPosition}
-          sessionConfig={sessionConfig}
-        />
-
-        {/* Live2D Container - Right side */}
-        <div 
-          ref={live2dContainerRef}
-          style={{ 
-            position: 'absolute', 
-            left: live2dPosition.x, 
-            top: live2dPosition.y,
-            width: '34rem', // w-96
-            height: '100%',
-            zIndex: 20,
-            cursor: 'move',
-          }}
-          {...live2dListeners}
-        >
-          <Live2D />
+    <WebSocketHandler>
+      <div 
+        className="w-screen h-screen overflow-hidden relative"
+        style={getBackgroundStyle()}
+      >
+        {/* Background Pattern Overlay */}
+        <div className="absolute inset-0 opacity-30">
+          <div className="w-full h-full bg-gradient-to-br from-black/10 via-transparent to-black/10"></div>
         </div>
 
-        {/* Chat Room - Draggable Discord/Twitch style */}
-        <ChatRoom
-          position={chatPosition}
-          onPositionChange={setChatPosition}
+        {/* Settings Button */}
+        <div className="absolute top-6 left-6 z-30">
+          <button
+            onClick={() => setShowSettingsModal(true)}
+            className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg border border-white/20 hover:bg-white/95 transition-all duration-200 hover:scale-105"
+            title="Settings"
+          >
+            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="relative w-full h-full">
+          {/* Video Display Area - AI's shared screen */}
+          <ChromeBrowser
+            videoSrc={currentVideoUrl}
+            onUrlSubmit={handleVideoUrlSubmit}
+            className="w-full max-w-5xl"
+            position={browserPosition}
+            onPositionChange={setBrowserPosition}
+            sessionConfig={sessionConfig}
+          />
+
+          {/* Live2D Container - Right side */}
+          <div 
+            ref={live2dContainerRef}
+            style={{ 
+              position: 'absolute', 
+              left: live2dPosition.x, 
+              top: live2dPosition.y,
+              width: '34rem', // w-96
+              height: '100%',
+              zIndex: 20,
+              cursor: 'move',
+            }}
+            {...live2dListeners}
+          >
+            <Live2D />
+          </div>
+
+          {/* Chat Room - Draggable Discord/Twitch style */}
+          <ChatRoom
+            position={chatPosition}
+            onPositionChange={setChatPosition}
+          />
+        </div>
+
+        {/* Video Configuration Modal */}
+        <VideoConfigModal
+          isOpen={showConfigModal}
+          videoUrl={pendingVideoUrl}
+          onClose={handleConfigClose}
+          onConfirm={handleConfigConfirm}
+        />
+
+        {/* Settings Modal */}
+        <SettingsModal
+          isOpen={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
         />
       </div>
-
-      {/* Video Configuration Modal */}
-      <VideoConfigModal
-        isOpen={showConfigModal}
-        videoUrl={pendingVideoUrl}
-        onClose={handleConfigClose}
-        onConfirm={handleConfigConfirm}
-      />
-
-      {/* Settings Modal */}
-      <SettingsModal
-        isOpen={showSettingsModal}
-        onClose={() => setShowSettingsModal(false)}
-      />
-    </div>
+    </WebSocketHandler>
   );
 }; 

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useChat, ChatMessage } from '@/context/chat-context';
 import { useMicrophone } from '@/context/microphone-context';
 import { useDraggable } from '@/hooks/use-draggable';
-import { useWebSocket } from '@/hooks/use-websocket';
+import { useWebSocketContext } from '@/context/websocket-context';
 import { MicrophoneIcon } from '@heroicons/react/24/solid';
 import { MicrophoneIcon as MicrophoneOutlineIcon } from '@heroicons/react/24/outline';
 
@@ -100,95 +100,78 @@ function MessageItem({ message }: { message: ChatMessage }) {
 }
 
 // Microphone button component with VAD integration
-function MicrophoneButton({ sessionId, onVideoControl }: { 
-  sessionId?: string; 
+function MicrophoneButton({ onVideoControl }: { 
   onVideoControl?: (action: 'pause' | 'play') => void; 
 }) {
-  const { state, vadState, isRecording, toggleRecording, error, setAudioDataCallback } = useMicrophone();
+  const { state, isRecording, toggleRecording, error, setAudioDataCallback } = useMicrophone();
+  const { sendMessage, status: wsStatus } = useWebSocketContext();
   const [isProcessingAudio, setIsProcessingAudio] = useState(false);
-  const [pendingAudioData, setPendingAudioData] = useState<string | null>(null);
-  
-  // WebSocket connection for sending audio data
-  const { sendMessage, status: wsStatus } = useWebSocket({
-    url: sessionId ? `ws://127.0.0.1:8000/ws/${sessionId}` : '',
-    autoReconnect: true,
-    onMessage: (message) => {
-      console.log('📨 Received WebSocket message:', message);
-      
-      // Handle audio processing acknowledgment
-      if (message.type === 'audio_received') {
-        setIsProcessingAudio(false);
-        console.log('✅ Audio processing acknowledged by server');
-      }
-    },
-  });
 
   // Setup audio data callback when recording starts
   useEffect(() => {
-    if (isRecording && sessionId) {
-      console.log('🎯 Setting up audio data callback for session:', sessionId);
+    if (isRecording) {
+      console.log('🎯 Setting up audio data callback');
       
-      setAudioDataCallback((audioData: ArrayBuffer, isVADDetected: boolean) => {
-        if (isVADDetected && wsStatus === 'connected' && !isProcessingAudio) {
-          console.log('🎵 VAD detected speech, preparing to send...');
+      setAudioDataCallback((audioData: ArrayBuffer) => {
+        if (wsStatus === 'connected' && !isProcessingAudio) {
+          console.log('🎵 Processing audio input...');
+          setIsProcessingAudio(true);
+          
+          // Pause video when user starts speaking
+          if (onVideoControl) {
+            onVideoControl('pause');
+            console.log('⏸️ Video paused for user input');
+          }
           
           // Convert ArrayBuffer to base64 for transmission
           const uint8Array = new Uint8Array(audioData);
+          
+          // Validate audio data
+          if (audioData.byteLength === 0) {
+            console.warn('Empty audio data received, skipping...');
+            setIsProcessingAudio(false);
+            return;
+          }
+          
           const base64Audio = btoa(String.fromCharCode.apply(null, Array.from(uint8Array)));
           
-          // Store the audio data temporarily
-          setPendingAudioData(base64Audio);
+          // Validate base64 audio
+          if (!base64Audio || base64Audio.length === 0) {
+            console.warn('Failed to generate base64 audio, skipping...');
+            setIsProcessingAudio(false);
+            return;
+          }
           
-          console.log('📼 Audio data ready:', base64Audio.length, 'chars');
+          console.log('📼 Generated audio data:', audioData.byteLength, 'bytes,', base64Audio.length, 'base64 chars');
+          
+          // Create user action with audio data
+          const userAction = {
+            id: `user_speak_${Date.now()}`,
+            action_type: 'SPEAK',
+            trigger_timestamp: Date.now() / 1000,
+            comment: 'User voice input',
+            audio: base64Audio,
+            pause_video: true,
+          };
+
+          // Send trigger-conversation message
+          sendMessage({
+            type: 'trigger-conversation',
+            data: {
+              user_action_list: [userAction],
+              pending_action_list: [],
+            },
+          });
+
+          console.log('📤 Sent trigger-conversation with user audio input');
+          setIsProcessingAudio(false);
         }
       });
     } else {
       // Clear callback when not recording
       setAudioDataCallback(() => {});
-      setPendingAudioData(null);
     }
-  }, [isRecording, sessionId, setAudioDataCallback, wsStatus, isProcessingAudio]);
-
-  // Send trigger-conversation when VAD detects speech end and we have audio data
-  useEffect(() => {
-    if (vadState === 'speech_ended' && pendingAudioData && !isProcessingAudio) {
-      console.log('🗣️ Speech ended, sending user audio input...');
-      setIsProcessingAudio(true);
-      
-      // Pause video when user starts speaking
-      if (onVideoControl) {
-        onVideoControl('pause');
-        console.log('⏸️ Video paused for user input');
-      }
-      
-      // Create user action with audio data
-      const userAction = {
-        id: `user_speak_${Date.now()}`,
-        action_type: 'SPEAK',
-        trigger_timestamp: Date.now() / 1000, // Current time as trigger
-        comment: 'User voice input via VAD',
-        audio: pendingAudioData, // Use audio instead of text
-        pause_video: true,
-      };
-
-      // For now, pending_action_list is empty - in a real app you'd get this from state
-      const pendingActionList: any[] = [];
-
-      // Send trigger-conversation message
-      sendMessage({
-        type: 'trigger-conversation',
-        data: {
-          user_action_list: [userAction],
-          pending_action_list: pendingActionList,
-        },
-      });
-
-      console.log('📤 Sent trigger-conversation with user audio input');
-      
-      // Clear pending audio data
-      setPendingAudioData(null);
-    }
-  }, [vadState, pendingAudioData, isProcessingAudio, sendMessage, onVideoControl]);
+  }, [isRecording, setAudioDataCallback, wsStatus, isProcessingAudio, sendMessage, onVideoControl]);
 
   const getMicStyle = () => {
     // Only 2 states: recording (green) or off (red)
@@ -242,29 +225,18 @@ function MicrophoneButton({ sessionId, onVideoControl }: {
 export function ChatRoom({ className = '', position, onPositionChange }: ChatRoomProps) {
   const { messages, addMessage, isVisible } = useChat();
   const [inputText, setInputText] = useState('');
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const [isVideoPlaying, setIsVideoPlaying] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // WebSocket connection for sending messages
-  const { sendMessage: sendWebSocketMessage, status: wsStatus } = useWebSocket({
-    url: sessionId ? `ws://127.0.0.1:8000/ws/${sessionId}` : '',
-    autoReconnect: true,
-  });
+  // Use global WebSocket connection
+  const { sendMessage: sendWebSocketMessage, status: wsStatus, error: wsError } = useWebSocketContext();
 
   // Draggable functionality
   const { listeners } = useDraggable({
     initialPosition: position || { x: 50, y: 100 },
     onPositionChange,
   });
-
-  // Get session ID from URL or context
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const sessionFromUrl = urlParams.get('session_id');
-    setSessionId(sessionFromUrl || 'test_session'); // fallback for testing
-  }, []);
 
   // Video control handler
   const handleVideoControl = useCallback((action: 'pause' | 'play') => {
@@ -278,7 +250,7 @@ export function ChatRoom({ className = '', position, onPositionChange }: ChatRoo
 
   // Send trigger-conversation for text input
   const sendTextConversation = useCallback((text: string) => {
-    if (!sessionId || !sendWebSocketMessage) return;
+    if (!sendWebSocketMessage) return;
 
     // Pause video when user sends a message
     handleVideoControl('pause');
@@ -289,24 +261,21 @@ export function ChatRoom({ className = '', position, onPositionChange }: ChatRoo
       action_type: 'SPEAK',
       trigger_timestamp: Date.now() / 1000,
       comment: 'User text input',
-      text: text, // Use text instead of audio
+      text: text,
       pause_video: true,
     };
-
-    // For now, pending_action_list is empty - in a real app you'd get this from state
-    const pendingActionList: any[] = [];
 
     // Send trigger-conversation message
     sendWebSocketMessage({
       type: 'trigger-conversation',
       data: {
         user_action_list: [userAction],
-        pending_action_list: pendingActionList,
+        pending_action_list: [],
       },
     });
 
     console.log('📤 Sent trigger-conversation with user text input:', text);
-  }, [sessionId, sendWebSocketMessage, handleVideoControl]);
+  }, [sendWebSocketMessage, handleVideoControl]);
 
   // Add webkit scrollbar styles
   useEffect(() => {
@@ -388,9 +357,20 @@ export function ChatRoom({ className = '', position, onPositionChange }: ChatRoo
       {/* Chat header */}
       <div className="flex items-center justify-between p-3 bg-black/50 border-b border-gray-600/50 cursor-move">
         <h3 className="text-white font-medium text-sm">Chat</h3>
-        <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${messages.length > 0 ? 'bg-green-400' : 'bg-gray-500'}`} />
-          <span className="text-xs text-gray-400">{messages.length}</span>
+        <div className="flex items-center gap-3">
+          {/* WebSocket Status */}
+          <div className="flex items-center gap-1">
+            <div className={`w-2 h-2 rounded-full ${
+              wsStatus === 'connected' ? 'bg-green-400' : 
+              wsStatus === 'connecting' ? 'bg-yellow-400' : 
+              wsStatus === 'error' ? 'bg-red-400' : 'bg-gray-500'
+            }`} />
+            <span className="text-xs text-gray-400 capitalize">{wsStatus}</span>
+          </div>
+          {/* Message Count */}
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-400">{messages.length} msgs</span>
+          </div>
         </div>
       </div>
 
@@ -409,9 +389,7 @@ export function ChatRoom({ className = '', position, onPositionChange }: ChatRoo
             </svg>
             <p>No messages yet...</p>
             <p className="text-xs mt-1 opacity-70">Start a conversation!</p>
-            {sessionId && (
-              <p className="text-xs mt-1 text-blue-400">VAD recording available</p>
-            )}
+        
           </div>
         ) : (
           <>
@@ -436,7 +414,7 @@ export function ChatRoom({ className = '', position, onPositionChange }: ChatRoo
             className="flex-1 px-3 py-2 bg-gray-800/80 border border-gray-600/50 rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
             maxLength={500}
           />
-          <MicrophoneButton sessionId={sessionId} onVideoControl={handleVideoControl} />
+          <MicrophoneButton onVideoControl={handleVideoControl} />
         </form>
         
         {/* Character count */}

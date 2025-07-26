@@ -5,6 +5,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 export interface GeneralSettings {
   baseUrl: string;
   websocketBaseUrl: string;
+  reduceVideoVolumeOnSpeech: boolean;
+  videoVolumeReductionPercent: number;
 }
 
 export interface BackgroundSettings {
@@ -33,7 +35,9 @@ interface SettingsContextType {
 
 const defaultGeneralSettings: GeneralSettings = {
   baseUrl: 'http://127.0.0.1:8000',
-  websocketBaseUrl: 'ws://127.0.0.1:8000/ws'
+  websocketBaseUrl: 'ws://127.0.0.1:8000/ws',
+  reduceVideoVolumeOnSpeech: true,
+  videoVolumeReductionPercent: 50
 };
 
 const defaultBackgroundSettings: BackgroundSettings = {
