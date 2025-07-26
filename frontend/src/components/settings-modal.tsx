@@ -172,30 +172,14 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
               <h3 className="text-[14px] font-medium text-[#202124] mb-4">Server Settings</h3>
               
               <div className="space-y-4">
-                <div>
-                  <label className="block text-[13px] font-medium text-[#202124] mb-2">
-                    Base URL
-                  </label>
-                  <input
-                    type="url"
-                    value={localGeneralSettings?.baseUrl ?? ''}
-                    onChange={(e) => setLocalGeneralSettings(prev => ({ ...prev, baseUrl: e.target.value }))}
-                    placeholder="http://127.0.0.1:8000"
-                    className="w-full px-3 py-2 text-[14px] border border-[#dadce0] rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:ring-opacity-20 focus:border-[#1a73e8] transition-colors"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-[13px] font-medium text-[#202124] mb-2">
-                    WebSocket Base URL
-                  </label>
-                  <input
-                    type="url"
-                    value={localGeneralSettings?.websocketBaseUrl ?? ''}
-                    onChange={(e) => setLocalGeneralSettings(prev => ({ ...prev, websocketBaseUrl: e.target.value }))}
-                    placeholder="ws://127.0.0.1:8000/ws"
-                    className="w-full px-3 py-2 text-[14px] border border-[#dadce0] rounded-md focus:outline-none focus:ring-2 focus:ring-[#1a73e8] focus:ring-opacity-20 focus:border-[#1a73e8] transition-colors"
-                  />
+                <div className="p-4 bg-[#f8f9fa] rounded-lg">
+                  <p className="text-[13px] text-[#5f6368] mb-2">
+                    Server URLs are now configured via environment variables:
+                  </p>
+                  <div className="text-[12px] text-[#5f6368] space-y-1">
+                    <div>API Base URL: {process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'}</div>
+                    <div>WebSocket URL: {process.env.NEXT_PUBLIC_WEBSOCKET_BASE_URL || 'ws://127.0.0.1:8000/ws'}</div>
+                  </div>
                 </div>
               </div>
             </div>

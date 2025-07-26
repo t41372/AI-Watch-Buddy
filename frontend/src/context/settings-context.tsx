@@ -3,14 +3,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface GeneralSettings {
-  baseUrl: string;
-  websocketBaseUrl: string;
   reduceVideoVolumeOnSpeech: boolean;
   videoVolumeReductionPercent: number;
 }
 
 export interface BackgroundSettings {
-  type: 'image';
+  type: 'image' | 'video' | 'none';
   imageUrl: string;
   imageFile: File | null;
   imageScale: number;
@@ -33,9 +31,11 @@ interface SettingsContextType {
   loadSettings: () => void;
 }
 
+// Environment-based URL configuration
+export const getApiBaseUrl = () => process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+export const getWebSocketBaseUrl = () => process.env.NEXT_PUBLIC_WEBSOCKET_BASE_URL || 'ws://127.0.0.1:8000/ws';
+
 const defaultGeneralSettings: GeneralSettings = {
-  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000',
-  websocketBaseUrl: process.env.NEXT_PUBLIC_WEBSOCKET_BASE_URL || 'ws://127.0.0.1:8000/ws',
   reduceVideoVolumeOnSpeech: true,
   videoVolumeReductionPercent: 50
 };
@@ -68,13 +68,12 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   const [generalSettings, setGeneralSettings] = useState<GeneralSettings>(defaultGeneralSettings);
   const [backgroundSettings, setBackgroundSettings] = useState<BackgroundSettings>(defaultBackgroundSettings);
 
-  // Load settings from localStorage on mount
+  // Load settings from localStorage on mount (only for non-URL settings)
   useEffect(() => {
     loadSettings();
     console.log("Environment variables:", {
       NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
-      NEXT_PUBLIC_WEBSOCKET_BASE_URL:
-        process.env.NEXT_PUBLIC_WEBSOCKET_BASE_URL,
+      NEXT_PUBLIC_WEBSOCKET_BASE_URL: process.env.NEXT_PUBLIC_WEBSOCKET_BASE_URL,
       defaultGeneralSettings,
     });
   }, []);
@@ -89,7 +88,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
 
   const saveSettings = () => {
     try {
-      // Save general settings
+      // Save general settings (excluding URL settings)
       localStorage.setItem('generalSettings', JSON.stringify(generalSettings));
       
       // Save background settings (excluding imageFile as it can't be serialized)
@@ -107,7 +106,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
 
   const loadSettings = () => {
     try {
-      // Load general settings
+      // Load general settings (excluding URL settings)
       const savedGeneralSettings = localStorage.getItem('generalSettings');
       if (savedGeneralSettings) {
         const parsed = JSON.parse(savedGeneralSettings);
