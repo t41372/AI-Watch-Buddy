@@ -42,10 +42,11 @@ class SpeakAction(BaseAction):
         None,
         description="由 TTS (Text-to-Speech) 服務生成的音頻數據的標識符或路徑。此欄位由後端系統填充，LLM 無需填寫。",
     )
+    #TODO emotion_expressions: Literal[]
     # 這個布林值非常關鍵，它決定了是「畫外音」還是「暫停解說」
     pause_video: bool = Field(
         default=True,
-        description="決定說話時是否需要暫停影片。True 表示暫停影片進行解說，常用於較長的評論或需要用戶專注於 AI 的發言時。False 表示在影片繼續播放的同時發表評論（畫外音），適用於簡短、即時的吐槽或感想，能讓互動更流暢。",
+        description="決定說話時是否需要暫停影片。True 表示暫停影片進行解說。False 表示在影片繼續播放的同時發表評論（畫外音）。推荐使用 False 以保持影片流暢性，除非句子特别特别长。",
     )
 
 

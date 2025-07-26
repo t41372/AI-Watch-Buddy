@@ -4,13 +4,16 @@ from typing import AsyncGenerator, List, Optional
 import asyncio
 
 from google import genai
-from google.genai.types import File, Content, Part, GenerateContentConfig, FileData
+from google.genai.types import File, Content, Part, GenerateContentConfig, FileData, GenerateContentResponse
 
 from ..actions import Action
 from .text_stream_to_action import str_stream_to_actions
 from .video_action_agent_interface import VideoActionAgentInterface
 from ..prompts.action_gen_prompt import action_generation_prompt
 from ..prompts.character_prompts import cute_prompt
+from .mock_text import fake_summary, sample_json
+
+MOCK: bool = True
 
 
 class VideoAnalyzerAgent(VideoActionAgentInterface):
@@ -25,7 +28,11 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
         Args:
             api_key: Gemini API key, defaults to GEMINI_API_KEY environment variable
         """
-        self._client = genai.Client(api_key=api_key or os.getenv("GEMINI_API_KEY"))
+        if MOCK:
+            self._client = genai.Client(api_key="hi")
+        else:
+            self._client = genai.Client(api_key=api_key or os.getenv("GEMINI_API_KEY"))
+            
         self._video_file: Optional[File] = None
         self._video_input: Optional[str] = None  # Will store the path or URL
         self._summary: Optional[str] = None
@@ -87,8 +94,20 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
         """
         Processes a video from a local path or URL, uploads it if necessary, and generates a summary.
         """
+        if MOCK:
+            print("MOCK 模式: 使用假的视频摘要")
+            self._video_input = video_path_or_url
+            self._summary = fake_summary
+            self._summary_ready = True
+            print("视频摘要生成完成 (MOCK)")
+            print(f"摘要内容: {self._summary[:200]}...")
+            return
+
         try:
             self._video_input = video_path_or_url  # Store for later use
+
+            if not self._client:
+                raise RuntimeError("Client not initialized (possibly in MOCK mode)")
 
             is_url = video_path_or_url.startswith(("http://", "https://"))
 
@@ -246,6 +265,42 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
         )
 
         try:
+            if MOCK:
+                # Mock 模式：创建假的流来模拟 Gemini API 响应
+                print("MOCK 模式: 使用假的 action stream")
+                
+                # 创建一个模拟的流生成器
+                def create_mock_stream():
+                    # 将 sample_json 按字符分块发送，模拟流式响应
+                    chunk_size = 50  # 每次发送50个字符
+                    text = sample_json
+                    
+                    for i in range(0, len(text), chunk_size):
+                        chunk = text[i:i + chunk_size]
+                        # 创建模拟的 GenerateContentResponse 对象
+                        # 使用一个简单的类来模拟响应结构
+                        mock_response = type('MockGenerateContentResponse', (), {
+                            'text': chunk,
+                            'candidates': None,
+                            'usage_metadata': None
+                        })()
+                        yield mock_response
+                
+                mock_stream = create_mock_stream()
+                
+                # 使用类型转换来匹配预期类型，因为我们的 mock 对象实现了所需的接口
+                from typing import cast, Iterator
+                typed_mock_stream = cast(Iterator[GenerateContentResponse], mock_stream)
+                
+                # 使用模拟流来生成 actions
+                for action in str_stream_to_actions(typed_mock_stream):
+                    yield action
+                return
+
+            #!+=======================
+            if not self._client:
+                raise RuntimeError("Client not initialized (possibly in MOCK mode)")
+                
             llm_stream = self._client.models.generate_content_stream(
                 model="gemini-2.5-flash",
                 contents=contents,
@@ -294,7 +349,7 @@ if __name__ == "__main__":
                 print(
                     f"[Action {action_count}]: {action.action_type} - {action.comment}"
                 )
-                if action.action_type == "SPEAK" and hasattr(action, "text"):
+                if action.action_type == "SPEAK" and hasattr(action, "text") and action.text:
                     print(
                         f"  Text: {action.text[:100]}{'...' if len(action.text) > 100 else ''}"
                     )
@@ -320,7 +375,7 @@ if __name__ == "__main__":
                 print(
                     f"[Action {action_count}]: {action.action_type} - {action.comment}"
                 )
-                if action.action_type == "SPEAK" and hasattr(action, "text"):
+                if action.action_type == "SPEAK" and hasattr(action, "text") and action.text:
                     print(
                         f"  Text: {action.text[:100]}{'...' if len(action.text) > 100 else ''}"
                     )
