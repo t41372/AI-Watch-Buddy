@@ -156,12 +156,12 @@ app.mount(
     name="live2d-models",
 )
 
-# Check if static directory exists and mount it
-static_dir = Path("static")
+# Check if frontend dist directory exists and mount it
+static_dir = Path("frontend/dist")
 if static_dir.exists() and static_dir.is_dir():
     app.mount(
         "/_next",
-        CORSStaticFiles(directory="static/_next"),
+        CORSStaticFiles(directory=static_dir / "_next"),
         name="static-next",
     )
     
@@ -169,12 +169,12 @@ if static_dir.exists() and static_dir.is_dir():
     if (static_dir / "favicon.ico").exists():
         @app.get("/favicon.ico")
         async def favicon():
-            return FileResponse("static/favicon.ico")
+            return FileResponse(static_dir / "favicon.ico")
     
     # Serve other static files for assets, but exclude root HTML files
     app.mount(
         "/static",
-        CORSStaticFiles(directory="static"),
+        CORSStaticFiles(directory=static_dir),
         name="static-assets",
     )
     
@@ -185,7 +185,7 @@ if static_dir.exists() and static_dir.is_dir():
         if index_path.exists():
             return FileResponse(str(index_path))
         else:
-            raise HTTPException(status_code=404, detail="Frontend not built. Run 'npm run build:static' in frontend directory.")
+            raise HTTPException(status_code=404, detail="Frontend not built. Run 'npm run build' in frontend directory.")
     
     # Catch-all route for SPA routing (after API routes)
     @app.get("/{path:path}")
