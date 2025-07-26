@@ -71,6 +71,12 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   // Load settings from localStorage on mount
   useEffect(() => {
     loadSettings();
+    console.log("Environment variables:", {
+      NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+      NEXT_PUBLIC_WEBSOCKET_BASE_URL:
+        process.env.NEXT_PUBLIC_WEBSOCKET_BASE_URL,
+      defaultGeneralSettings,
+    });
   }, []);
 
   const updateGeneralSettings = (settings: Partial<GeneralSettings>) => {

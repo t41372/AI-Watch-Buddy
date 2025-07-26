@@ -20,37 +20,15 @@ export const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
     saveSettings 
   } = useSettings();
   
-  // Default values to prevent undefined issues
-  const defaultGeneralSettings: GeneralSettings = {
-    baseUrl: 'http://127.0.0.1:8000',
-    websocketBaseUrl: 'ws://127.0.0.1:8000/ws',
-    reduceVideoVolumeOnSpeech: true,
-    videoVolumeReductionPercent: 50
-  };
-  
-  const defaultBackgroundSettings: BackgroundSettings = {
-    type: 'image',
-    imageUrl: '',
-    imageFile: null,
-    imageScale: 1,
-    imagePositionX: 50,
-    imagePositionY: 50,
-    imageMode: 'cover'
-  };
-  
-  // Local state for temporary changes - ensure defaults are always used
-  const [localGeneralSettings, setLocalGeneralSettings] = useState<GeneralSettings>(
-    { ...defaultGeneralSettings, ...generalSettings }
-  );
-  const [localBackgroundSettings, setLocalBackgroundSettings] = useState<BackgroundSettings>(
-    { ...defaultBackgroundSettings, ...backgroundSettings }
-  );
+  // Local state for temporary changes
+  const [localGeneralSettings, setLocalGeneralSettings] = useState<GeneralSettings>(generalSettings);
+  const [localBackgroundSettings, setLocalBackgroundSettings] = useState<BackgroundSettings>(backgroundSettings);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Update local state when context changes - ensure defaults are always merged
+  // Update local state when context changes
   useEffect(() => {
-    setLocalGeneralSettings({ ...defaultGeneralSettings, ...generalSettings });
-    setLocalBackgroundSettings({ ...defaultBackgroundSettings, ...backgroundSettings });
+    setLocalGeneralSettings(generalSettings);
+    setLocalBackgroundSettings(backgroundSettings);
   }, [generalSettings, backgroundSettings]);
 
   const handleConfirm = () => {
