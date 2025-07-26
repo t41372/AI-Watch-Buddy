@@ -258,9 +258,9 @@ class VideoAnalyzerAgent(VideoActionAgentInterface):
                     {"role": "system", "content": self.action_prompt},
                     {
                         "role": "user",
-                        "content": f"基于以下视频摘要，生成 action:\n{self._summary}",
-                    },
-                ],
+                        "content": self._summary,
+                    }
+                ].extend(self.contents),
                 stream=True,
             )
             for action in str_stream_to_actions_openai(response):
