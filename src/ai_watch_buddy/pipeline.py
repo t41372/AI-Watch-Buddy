@@ -15,6 +15,10 @@ from .prompts.character_prompts import cute_prompt
 
 load_dotenv()
 
+# TTS 并行控制配置
+TTS_MAX_PARALLEL = int(os.getenv("TTS_MAX_PARALLEL", "10"))  # 最大并行 TTS 任务数
+tts_semaphore = asyncio.Semaphore(TTS_MAX_PARALLEL)
+
 
 def get_interruption_timestamp(user_action_list: list[Action]) -> Optional[float]:
     """Extracts the interruption timestamp from the user action list."""
@@ -22,6 +26,42 @@ def get_interruption_timestamp(user_action_list: list[Action]) -> Optional[float
         # The timestamp of the first user action is the definitive point of interruption.
         return user_action_list[0].trigger_timestamp
     return None
+
+
+async def process_tts_action(action: SpeakAction, session_id: str) -> SpeakAction:
+    """
+    处理单个 TTS 任务，使用 semaphore 控制并发数。
+    
+    Args:
+        action: 需要生成语音的 SpeakAction
+        session_id: 会话 ID（用于日志）
+    
+    Returns:
+        处理后的 SpeakAction（包含音频数据）
+    """
+    async with tts_semaphore:
+        try:
+            logger.info(f"[{session_id}] Starting TTS for action {action.id}: '{action.text[:30]}...'")
+            
+            # 初始化 TTS 引擎
+            # tts_instance = FishAudioTTSEngine(
+            #     api_key=os.getenv("FISH_AUDIO_API_KEY")
+            # )
+            tts_instance = EdgeTTSEngine()
+            
+            # 生成音频
+            audio_base64 = await tts_instance.generate_audio(action.text)
+            
+            if audio_base64:
+                action.audio = audio_base64
+                logger.info(f"[{session_id}] ✅ TTS completed for action {action.id}")
+            else:
+                logger.warning(f"[{session_id}] Failed to generate audio for action: {action.id}")
+                
+        except Exception as e:
+            logger.error(f"[{session_id}] Error in TTS for action {action.id}: {e}")
+            
+    return action
 
 
 async def run_conversation_pipeline(
@@ -106,6 +146,28 @@ async def generate_and_queue_actions(
 
         actions_generated_count = 0
         first_audio_generated = False
+        tts_tasks = []  # 存储所有 TTS 任务
+
+        # 定义一个内部函数来处理 TTS 完成后的操作
+        async def handle_tts_completion(task: asyncio.Task, action: SpeakAction):
+            """当 TTS 任务完成时，立即将 action 放入队列"""
+            try:
+                processed_action = await task
+                await session.action_queue.put(processed_action)
+                logger.info(
+                    f"[{session_id}] Queued TTS action: {processed_action.id} at {processed_action.trigger_timestamp}s"
+                )
+                
+                # 处理 early_ready 逻辑
+                nonlocal first_audio_generated
+                if early_ready and not first_audio_generated and session.status != "error":
+                    first_audio_generated = True
+                    session.status = "session_ready"
+                    logger.info(
+                        f"[{session_id}] ✅ First audio generated successfully. Status set to 'session_ready'."
+                    )
+            except Exception as e:
+                logger.error(f"[{session_id}] Error handling TTS completion: {e}")
 
         action_source = session.agent.produce_action_stream(mode=mode)
 
@@ -118,41 +180,39 @@ async def generate_and_queue_actions(
             # else:
             #     action = Action.model_validate(action_data)
 
-            # Generate audio for SpeakAction
+            # 对于 SpeakAction，创建并行 TTS 任务
             if isinstance(action, SpeakAction):
-                # Initialize Fish Audio TTS - you'll need to provide your API key
-                # tts_instance = FishAudioTTSEngine(
-                #     api_key=os.getenv("FISH_AUDIO_API_KEY")
-                # )
-                tts_instance = EdgeTTSEngine()
-                audio_base64 = await tts_instance.generate_audio(action.text)
-                if audio_base64:
-                    action.audio = audio_base64
-                    
-                    # Set session ready after first audio generation if early_ready is True
-                    if early_ready and not first_audio_generated and session.status != "error":
-                        first_audio_generated = True
-                        session.status = "session_ready"
-                        logger.info(
-                            f"[{session_id}] ✅ First audio generated successfully. Status set to 'session_ready'."
-                        )
-                else:
-                    logger.warning(
-                        f"[{session_id}] Failed to generate audio for action: {action.id}"
-                    )
+                # 创建 TTS 任务
+                tts_task = asyncio.create_task(process_tts_action(action, session_id))
+                tts_tasks.append(tts_task)
+                
+                # 创建一个任务来处理 TTS 完成后的操作
+                asyncio.create_task(handle_tts_completion(tts_task, action))
+            else:
+                # 非 SpeakAction 直接放入队列
+                await session.action_queue.put(action)
+                logger.info(
+                    f"[{session_id}] Queued action: {action.action_type} at {action.trigger_timestamp}s"
+                )
 
-            await session.action_queue.put(action)
             actions_generated_count += 1
-            logger.info(
-                f"[{session_id}] Queued action: {action.action_type} at {action.trigger_timestamp}s"
-            )
 
         logger.info(
             f"[{session_id}] Action generation stream finished. Total new actions: {actions_generated_count}."
         )
+        
+        # 等待所有 TTS 任务完成
+        if tts_tasks:
+            logger.info(f"[{session_id}] Waiting for {len(tts_tasks)} TTS tasks to complete...")
+            await asyncio.gather(*tts_tasks, return_exceptions=True)
+            logger.info(f"[{session_id}] All TTS tasks completed.")
 
     except asyncio.CancelledError:
         logger.info(f"[{session_id}] Action generation task was cancelled.")
+        # 取消所有未完成的 TTS 任务
+        for task in tts_tasks:
+            if not task.done():
+                task.cancel()
     except Exception as e:
         logger.error(
             f"[{session_id}] Error during action generation: {e}", exc_info=True
@@ -201,7 +261,7 @@ async def run_initial_generation(session_id: str):
 
         action_generation_task = asyncio.create_task(
             generate_and_queue_actions(
-                session_id, mode="video", clear_pending_actions=False, early_ready=True
+                session_id, mode="video", clear_pending_actions=False, early_ready=False
             )
         )
 
@@ -214,6 +274,8 @@ async def run_initial_generation(session_id: str):
             raise RuntimeError(
                 "Agent summary was not ready after summary task completion."
             )
+            
+        session.status = "session_ready"
 
         # Session ready is already set by generate_and_queue_actions when first audio is ready
         logger.info(

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Live2D } from "../components/live2d";
-import { ChromeBrowser } from "../components/chrome-browser";
+import { ChromeBrowser, ChromeBrowserRef } from "../components/chrome-browser";
 import { ChatRoom } from "../components/chat-room";
 import { VideoConfigModal } from "../components/video-config-modal";
 import { SettingsModal } from "../components/settings-modal";
@@ -35,6 +35,7 @@ export default function HomePage() {
     endTime?: number;
     userRequirements?: string;
   }>({});
+  const [videoCurrentTime, setVideoCurrentTime] = useState<number>(0);
   
   const { backgroundSettings } = useSettings();
   const { addMessage } = useChat();
@@ -159,9 +160,21 @@ export default function HomePage() {
     }
   };
 
+  // Browser reference for video control
+  const chromeBrowserRef = useRef<ChromeBrowserRef>(null);
+  
+  // Video control handler for ChatRoom
+  const handleVideoControl = (action: 'pause' | 'play') => {
+    if (action === 'pause') {
+      chromeBrowserRef.current?.pauseVideo();
+    } else {
+      chromeBrowserRef.current?.resumeVideo();
+    }
+  };
+
   return (
     <WebSocketHandler>
-      <div 
+      <div
         className="w-screen h-screen overflow-hidden relative"
         style={getBackgroundStyle()}
       >
@@ -177,36 +190,57 @@ export default function HomePage() {
             className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg border border-white/20 hover:bg-white/95 transition-all duration-200 hover:scale-105"
             title="Settings"
           >
-            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <svg
+              className="w-5 h-5 text-gray-700"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
             </svg>
           </button>
         </div>
 
         {/* Main Content Area */}
         <div className="relative w-full h-full">
-          {/* Video Display Area - AI's shared screen */}
+          {/* AI's Browser Window - Left side with Chrome aesthetics */}
           <ChromeBrowser
+            ref={chromeBrowserRef}
             videoSrc={currentVideoUrl}
             onUrlSubmit={handleVideoUrlSubmit}
             className="w-full max-w-5xl"
             position={browserPosition}
             onPositionChange={setBrowserPosition}
-            sessionConfig={sessionConfig}
+            sessionConfig={{
+              startTime: sessionConfig.startTime,
+              endTime: sessionConfig.endTime,
+              userRequirements: sessionConfig.userRequirements,
+            }}
+            onVideoTimeUpdate={setVideoCurrentTime}
           />
 
           {/* Live2D Container - Right side */}
-          <div 
+          <div
             ref={live2dContainerRef}
-            style={{ 
-              position: 'absolute', 
-              left: live2dPosition.x, 
+            style={{
+              position: "absolute",
+              left: live2dPosition.x,
               top: live2dPosition.y,
-              width: '34rem', // w-96
-              height: '100%',
+              width: "34rem", // w-96
+              height: "100%",
               zIndex: 20,
-              cursor: 'move',
+              cursor: "move",
             }}
             {...live2dListeners}
           >
@@ -217,6 +251,8 @@ export default function HomePage() {
           <ChatRoom
             position={chatPosition}
             onPositionChange={setChatPosition}
+            videoCurrentTime={videoCurrentTime}
+            onVideoControl={handleVideoControl}
           />
         </div>
 

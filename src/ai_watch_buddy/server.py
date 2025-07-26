@@ -192,10 +192,12 @@ async def websocket_receiver(websocket: WebSocket, session: SessionState):
             logger.info(
                 f"[{session.session_id}] Client triggered lazy-load for next actions."
             )
+            
+            session.agent.add_content(role="user", text="Continue")
             session.action_generation_task = asyncio.create_task(
                 generate_and_queue_actions(
                     session.session_id,
-                    mode="summary",
+                    mode="video",
                     clear_pending_actions=True,
                 )
             )

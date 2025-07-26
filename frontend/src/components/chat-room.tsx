@@ -12,6 +12,8 @@ interface ChatRoomProps {
   className?: string;
   position?: { x: number; y: number };
   onPositionChange?: (position: { x: number; y: number }) => void;
+  videoCurrentTime?: number;
+  onVideoControl?: (action: 'pause' | 'play') => void;
 }
 
 // Individual message component
@@ -100,12 +102,28 @@ function MessageItem({ message }: { message: ChatMessage }) {
 }
 
 // Microphone button component with VAD integration
-function MicrophoneButton({ onVideoControl }: { 
-  onVideoControl?: (action: 'pause' | 'play') => void; 
+function MicrophoneButton({ 
+  onVideoControl,
+  videoCurrentTime 
+}: { 
+  onVideoControl?: (action: 'pause' | 'play') => void;
+  videoCurrentTime?: number;
 }) {
   const { state, isRecording, toggleRecording, error, setAudioDataCallback } = useMicrophone();
   const { sendMessage, status: wsStatus } = useWebSocketContext();
   const [isProcessingAudio, setIsProcessingAudio] = useState(false);
+
+  // Handle microphone toggle and video control
+  const handleMicrophoneToggle = () => {
+    if (!isRecording) {
+      // Pause video when starting recording
+      if (onVideoControl) {
+        onVideoControl('pause');
+        console.log('⏸️ Video paused when microphone opened');
+      }
+    }
+    toggleRecording();
+  };
 
   // Setup audio data callback when recording starts
   useEffect(() => {
@@ -117,11 +135,7 @@ function MicrophoneButton({ onVideoControl }: {
           console.log('🎵 Processing audio input...');
           setIsProcessingAudio(true);
           
-          // Pause video when user starts speaking
-          if (onVideoControl) {
-            onVideoControl('pause');
-            console.log('⏸️ Video paused for user input');
-          }
+          // Video is already paused when microphone was opened
           
           // Convert ArrayBuffer to base64 for transmission
           const uint8Array = new Uint8Array(audioData);
@@ -148,7 +162,7 @@ function MicrophoneButton({ onVideoControl }: {
           const userAction = {
             id: `user_speak_${Date.now()}`,
             action_type: 'SPEAK',
-            trigger_timestamp: Date.now() / 1000,
+            trigger_timestamp: videoCurrentTime || 0,  // Use video current time, fallback to 0
             comment: 'User voice input',
             audio: base64Audio,
             pause_video: true,
@@ -171,7 +185,7 @@ function MicrophoneButton({ onVideoControl }: {
       // Clear callback when not recording
       setAudioDataCallback(() => {});
     }
-  }, [isRecording, setAudioDataCallback, wsStatus, isProcessingAudio, sendMessage, onVideoControl]);
+  }, [isRecording, setAudioDataCallback, wsStatus, isProcessingAudio, sendMessage, onVideoControl, videoCurrentTime]);
 
   const getMicStyle = () => {
     // Only 2 states: recording (green) or off (red)
@@ -212,7 +226,7 @@ function MicrophoneButton({ onVideoControl }: {
   return (
     <div className="relative flex items-center">
       <button
-        onClick={toggleRecording}
+        onClick={handleMicrophoneToggle}
         className={`p-2 rounded-lg transition-all duration-200 hover:scale-105 ${getMicStyle()} flex items-center justify-center`}
         title={getTooltipText()}
       >
@@ -222,7 +236,7 @@ function MicrophoneButton({ onVideoControl }: {
   );
 }
 
-export function ChatRoom({ className = '', position, onPositionChange }: ChatRoomProps) {
+export function ChatRoom({ className = '', position, onPositionChange, videoCurrentTime, onVideoControl }: ChatRoomProps) {
   const { messages, addMessage, isVisible } = useChat();
   const [inputText, setInputText] = useState('');
   const [isVideoPlaying, setIsVideoPlaying] = useState(true);
@@ -238,15 +252,16 @@ export function ChatRoom({ className = '', position, onPositionChange }: ChatRoo
     onPositionChange,
   });
 
-  // Video control handler
+  // Video control handler - now use the prop directly
   const handleVideoControl = useCallback((action: 'pause' | 'play') => {
     setIsVideoPlaying(action === 'play');
     console.log(`🎥 Video ${action}d`);
     
-    // Here you would integrate with your video player
-    // For example, if you have a video player component, you could call its methods
-    // videoPlayerRef.current?.pause() or videoPlayerRef.current?.play()
-  }, []);
+    // Call the video control function from parent
+    if (onVideoControl) {
+      onVideoControl(action);
+    }
+  }, [onVideoControl]);
 
   // Send trigger-conversation for text input
   const sendTextConversation = useCallback((text: string) => {
@@ -259,7 +274,7 @@ export function ChatRoom({ className = '', position, onPositionChange }: ChatRoo
     const userAction = {
       id: `user_text_${Date.now()}`,
       action_type: 'SPEAK',
-      trigger_timestamp: Date.now() / 1000,
+      trigger_timestamp: videoCurrentTime || 0,  // Use video current time, fallback to 0
       comment: 'User text input',
       text: text,
       pause_video: true,
@@ -275,7 +290,7 @@ export function ChatRoom({ className = '', position, onPositionChange }: ChatRoo
     });
 
     console.log('📤 Sent trigger-conversation with user text input:', text);
-  }, [sendWebSocketMessage, handleVideoControl]);
+  }, [sendWebSocketMessage, handleVideoControl, videoCurrentTime]);
 
   // Add webkit scrollbar styles
   useEffect(() => {
@@ -414,7 +429,7 @@ export function ChatRoom({ className = '', position, onPositionChange }: ChatRoo
             className="flex-1 px-3 py-2 bg-gray-800/80 border border-gray-600/50 rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
             maxLength={500}
           />
-          <MicrophoneButton onVideoControl={handleVideoControl} />
+          <MicrophoneButton onVideoControl={handleVideoControl} videoCurrentTime={videoCurrentTime} />
         </form>
         
         {/* Character count */}
