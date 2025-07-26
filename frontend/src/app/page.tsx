@@ -16,7 +16,7 @@ export default function HomePage() {
   console.log('HomePage component is rendering!');
   const [browserPosition, setBrowserPosition] = useState({ x: 100, y: 100 });
   const [live2dPosition, setLive2dPosition] = useState({ x: 800, y: 150 });
-  const [chatPosition, setChatPosition] = useState({ x: 50, y: 100 });
+  const [chatPosition, setChatPosition] = useState({ x: 50, y: 250 });
 
   const live2dContainerRef = useRef<HTMLDivElement>(null);
 

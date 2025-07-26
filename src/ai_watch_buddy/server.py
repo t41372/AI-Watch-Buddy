@@ -202,10 +202,14 @@ async def websocket_receiver(websocket: WebSocket, session: SessionState):
 
         elif msg_type == "trigger-conversation":
             try:
+                # Log the raw message for debugging
+                logger.info(f"[{session.session_id}] 📨 Raw trigger-conversation message received")
+                logger.debug(f"[{session.session_id}] 🔍 Raw message data keys: {list(message.keys())}")
+                
                 # Assuming the payload is in message['data']
                 payload = UserInteractionPayload.model_validate(message.get("data", {}))
                 logger.info(
-                    f"[{session.session_id}] Client triggered conversation with "
+                    f"[{session.session_id}] ✅ Client triggered conversation with "
                     f"{len(payload.user_action_list)} user actions and "
                     f"{len(payload.pending_action_list)} pending actions."
                 )
@@ -213,12 +217,15 @@ async def websocket_receiver(websocket: WebSocket, session: SessionState):
                 # Log user actions for debugging
                 for action in payload.user_action_list:
                     if action.action_type == 'SPEAK':
+                        logger.info(f"[{session.session_id}] 📨 Received SPEAK action:")
                         if hasattr(action, 'text') and action.text:
-                            logger.info(f"[{session.session_id}] User text: {action.text}")
-                        elif hasattr(action, 'audio') and action.audio:
-                            logger.info(f"[{session.session_id}] User audio: {len(action.audio)} chars (base64)")
+                            logger.info(f"[{session.session_id}] 📝 User text: '{action.text}'")
+                        if hasattr(action, 'audio') and action.audio:
+                            logger.info(f"[{session.session_id}] 🎵 User audio: {len(action.audio)} chars (base64)")
+                        if not (hasattr(action, 'text') and action.text) and not (hasattr(action, 'audio') and action.audio):
+                            logger.warning(f"[{session.session_id}] ⚠️ SPEAK action has neither text nor audio!")
                     else:
-                        logger.info(f"[{session.session_id}] User action: {action.action_type}")
+                        logger.info(f"[{session.session_id}] 🎯 User action: {action.action_type}")
                 
                 # No need to store task here, run_conversation_pipeline will do it.
                 asyncio.create_task(

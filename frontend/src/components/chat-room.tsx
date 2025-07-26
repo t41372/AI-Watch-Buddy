@@ -227,10 +227,10 @@ function MicrophoneButton({ sessionId, onVideoControl }: {
   };
 
   return (
-    <div className="relative">
+    <div className="relative flex items-center">
       <button
         onClick={toggleRecording}
-        className={`p-2 rounded-lg transition-all duration-200 hover:scale-105 ${getMicStyle()}`}
+        className={`p-2 rounded-lg transition-all duration-200 hover:scale-105 ${getMicStyle()} flex items-center justify-center`}
         title={getTooltipText()}
       >
         {getMicIcon()}
@@ -391,11 +391,6 @@ export function ChatRoom({ className = '', position, onPositionChange }: ChatRoo
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${messages.length > 0 ? 'bg-green-400' : 'bg-gray-500'}`} />
           <span className="text-xs text-gray-400">{messages.length}</span>
-          {sessionId && (
-            <span className="text-xs text-blue-400" title={`Session: ${sessionId}`}>
-              🔗
-            </span>
-          )}
         </div>
       </div>
 
@@ -430,7 +425,7 @@ export function ChatRoom({ className = '', position, onPositionChange }: ChatRoo
 
       {/* Input area */}
       <div className="p-3 bg-black/50 border-t border-gray-600/50">
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <form onSubmit={handleSubmit} className="flex gap-2 items-center">
           <input
             ref={inputRef}
             type="text"
