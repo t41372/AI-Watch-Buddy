@@ -35,4 +35,4 @@ RUN mkdir -p logs video_cache
 EXPOSE 8000
 
 # Set the default command to run the application
-CMD ["python", "main.py"]
+CMD ["uv", "run", "main.py"]
